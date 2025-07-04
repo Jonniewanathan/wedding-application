@@ -1,0 +1,36 @@
+<!-- This template displays local attractions with an elegant card layout. -->
+<div class="flex flex-col items-center py-8 px-4">
+  <div class="bg-white shadow-xl rounded-xl max-w-6xl w-full p-6 md:p-10 lg:p-12 border border-gray-100">
+
+    <!-- Page Title -->
+    <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-6 text-center tracking-tight">
+      {{ pageTitle }}
+    </h1>
+    <p class="text-lg md:text-xl text-gray-600 mb-12 text-center max-w-3xl mx-auto leading-relaxed">
+      {{ introText }}
+    </p>
+
+    <!-- Attractions Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      @for (attraction of attractions;track attraction.name){
+        <div class="bg-cream-50 rounded-lg shadow-md overflow-hidden border border-cream-100 hover:shadow-lg transition duration-300 transform hover:-translate-y-1">
+          <!-- Attraction Image -->
+          <img [src]="attraction.image" alt="{{ attraction.name }}" class="w-full h-48 object-cover"
+               onerror="this.onerror=null;this.src='https://placehold.co/400x250/D0D0D0/999999?text=Image+Unavailable';">
+
+          <div class="p-5">
+            <!-- Attraction Name -->
+            <h3 class="text-2xl font-serif text-gray-800 font-semibold mb-3">{{ attraction.name }}</h3>
+            <!-- Attraction Description -->
+            <p class="text-md text-gray-600 mb-4">{{ attraction.description }}</p>
+            <!-- Learn More Button -->
+            <a [href]="attraction.link" target="_blank" rel="noopener" class="inline-block bg-gold-300 text-gray-800 px-6 py-2 rounded-full text-sm font-semibold hover:bg-gold-400 transition duration-300 shadow-sm">
+              Learn More
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,76 @@
+<!-- This template focuses on a formal invitation layout with clear sections for travel info. -->
+<div class="flex flex-col items-center justify-center py-8 px-4">
+  <div class="bg-white shadow-xl rounded-xl overflow-hidden max-w-5xl w-full p-6 md:p-10 lg:p-12 text-center border border-gray-100">
+
+    <!-- Invitation Header -->
+    <h1 class="text-5xl md:text-6xl font-serif italic text-gray-900 mb-6 tracking-wide">
+      You're Invited!
+    </h1>
+    <p class="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed">
+      {{ invitationMessage }}
+    </p>
+
+    <!-- Couple's Names - Prominent and Elegant -->
+    <h2 class="text-6xl md:text-7xl font-serif font-bold text-gray-800 mb-8 leading-tight">
+      {{ coupleNames }}
+    </h2>
+
+    <!-- Wedding Details Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mt-12 mb-12">
+      <!-- Date & Time -->
+      <div class="flex flex-col items-center md:items-start p-4 rounded-lg bg-cream-50 shadow-sm border border-cream-100">
+        <h3 class="text-2xl font-serif text-gray-700 mb-2">When</h3>
+        <p class="text-xl text-gray-600 font-semibold">{{ weddingDate }}</p>
+        <p class="text-xl text-gray-600">{{ weddingTime }}</p>
+      </div>
+      <!-- Ceremony Location -->
+      <div class="flex flex-col items-center md:items-start p-4 rounded-lg bg-cream-50 shadow-sm border border-cream-100">
+        <h3 class="text-2xl font-serif text-gray-700 mb-2">Where</h3>
+        <p class="text-xl text-gray-600 font-semibold">{{ ceremonyLocation }}</p>
+        <p class="text-md text-gray-500 mt-1">Ceremony & Reception</p>
+      </div>
+      <!-- Dress Code -->
+      <div class="md:col-span-2 flex flex-col items-center md:items-start p-4 rounded-lg bg-cream-50 shadow-sm border border-cream-100">
+        <h3 class="text-2xl font-serif text-gray-700 mb-2">Dress Code</h3>
+        <p class="text-xl text-gray-600">{{ dressCode }}</p>
+      </div>
+    </div>
+
+    <p class="text-xl md:text-2xl text-gray-700 mb-12 leading-relaxed">
+      {{ invitationClosing }}
+    </p>
+
+    <hr class="border-t border-gray-200 w-full max-w-sm mx-auto my-10">
+
+    <!-- Travel Information for Guests from Ireland Section -->
+    <div class="text-left mt-12 bg-cream-100 p-6 md:p-8 rounded-lg shadow-md border border-cream-200">
+      <h3 class="text-3xl font-serif font-semibold text-gray-800 mb-6 text-center">
+        {{ irelandTravelDetails.heading }}
+      </h3>
+      <p class="text-lg text-gray-600 mb-6 leading-relaxed">
+        {{ irelandTravelDetails.message }}
+      </p>
+
+      <ul class="list-disc list-inside text-gray-600 space-y-4">
+        <li class="text-lg"><span class="font-semibold">Passport Validity:</span> {{ irelandTravelDetails.passportReminder }}</li>
+        <li class="text-lg"><span class="font-semibold">Currency:</span> {{ irelandTravelDetails.currency }}</li>
+        <li class="text-lg"><span class="font-semibold">Language:</span> {{ irelandTravelDetails.language }}</li>
+        <li class="text-lg"><span class="font-semibold">Driving:</span> {{ irelandTravelDetails.driving }}</li>
+      </ul>
+      <p class="text-lg text-gray-600 mt-6">
+        More detailed travel information, including airport and hotel recommendations, can be found on our <span class="font-semibold text-gold-400">Travel Info</span> page.
+      </p>
+    </div>
+
+    <!-- RSVP Call to Action -->
+    <div class="mt-12">
+      <p class="text-gray-700 text-2xl mb-6 font-semibold">
+        Kindly RSVP by [RSVP Date - e.g., July 1st, 2026]
+      </p>
+      <a routerLink="/rsvp" class="inline-block bg-rose-400 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg hover:bg-rose-500 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-opacity-70">
+        RSVP Now
+      </a>
+    </div>
+
+  </div>
+</div>
