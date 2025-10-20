@@ -1,75 +1,63 @@
-<!-- This template provides structured information for travel, maintaining the classic and elegant aesthetic. -->
 <div class="flex flex-col items-center py-8 px-4">
-  <div class="bg-white shadow-xl rounded-xl max-w-5xl w-full p-6 md:p-10 lg:p-12 border border-gray-100">
-
-    <!-- Page Title -->
+  <p-card class="max-w-5xl w-full shadow-xl rounded-xl border-none text-left">
     <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-10 text-center tracking-tight">
       Travel Information
     </h1>
 
-    <!-- Airport & Flight Information Section -->
-    <section class="mb-12 bg-cream-50 p-6 md:p-8 rounded-lg shadow-md border border-cream-100">
-      <h2 class="text-4xl font-serif text-gray-700 mb-6 text-center">
-        {{ airportInfo.heading }}
-      </h2>
-      <p class="text-lg text-gray-600 mb-6 leading-relaxed">
-        {{ airportInfo.intro }}
-      </p>
+    <p-panel [header]="introInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
+      <p class="text-lg text-gray-700 mb-4 leading-relaxed">{{ introInfo.location }}</p>
+      <p class="text-lg text-gray-600 mb-4 leading-relaxed">{{ introInfo.recommendation }}</p>
+      <p class="text-lg text-gray-600 leading-relaxed">{{ introInfo.alternative }}</p>
+    </p-panel>
 
-      <div class="space-y-6">
-        <!-- Malaga Airport Details -->
-        <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-2xl font-serif text-gray-800 font-semibold mb-3">
-            {{ airportInfo.malagaAirport.name }}
-          </h3>
-          <p class="text-gray-600 mb-4">{{ airportInfo.malagaAirport.details }}</p>
-          <p class="text-md font-semibold text-gray-700 mb-2">Key Airlines from Ireland:</p>
-          <ul class="list-disc list-inside text-gray-600 ml-4 space-y-1">
-            @for (airline of airportInfo.malagaAirport.airlines; track airline.name) {
-              <li>
-                <span class="font-medium">{{ airline.name }}:</span> {{ airline.routes }}
-              </li>
-            }
-          </ul>
-          <p class="text-md text-gray-600 mt-4">{{ airportInfo.malagaAirport.transport }}</p>
-        </div>
+    <p-panel [header]="busInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
+      <p class="text-lg text-gray-700 mb-4 leading-relaxed">{{ busInfo.details }}</p>
+      <p class="text-lg text-gray-600 mb-4 leading-relaxed">{{ busInfo.routes }}</p>
+      <p class="text-lg text-gray-600 font-semibold leading-relaxed">{{ busInfo.rsvp }}</p>
+    </p-panel>
 
-        <!-- Alternative Airports -->
-        <div class="p-4 bg-white rounded-lg shadow-sm border border-gray-100">
-          <h3 class="text-2xl font-serif text-gray-800 font-semibold mb-3">
-            {{ airportInfo.otherAirports.heading }}
-          </h3>
-          <p class="text-gray-600">{{ airportInfo.otherAirports.details }}</p>
-        </div>
+    <p-panel [header]="airportInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
+      <p class="text-lg text-gray-600 mb-6 leading-relaxed">{{ airportInfo.intro }}</p>
+      <div class="mb-4 p-4 bg-white rounded border border-gray-100">
+        <h3 class="font-semibold text-xl text-gray-800">{{ airportInfo.faro.name }}</h3>
+        <p class="text-gray-700">{{ airportInfo.faro.details }}</p>
       </div>
-    </section>
+      <div class="p-4 bg-white rounded border border-gray-100">
+        <h3 class="font-semibold text-xl text-gray-800">{{ airportInfo.sevilla.name }}</h3>
+        <p class="text-gray-700">{{ airportInfo.sevilla.details }}</p>
+      </div>
+    </p-panel>
 
-    <!-- Hotel Recommendations Section -->
-    <section class="mt-12 bg-cream-50 p-6 md:p-8 rounded-lg shadow-md border border-cream-100">
-      <h2 class="text-4xl font-serif text-gray-700 mb-6 text-center">
-        {{ hotelInfo.heading }}
-      </h2>
-      <p class="text-lg text-gray-600 mb-8 leading-relaxed">
-        {{ hotelInfo.intro }}
+    <p-panel [header]="otherInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
+      <p class="text-lg text-gray-600 mb-4 leading-relaxed">
+        {{ otherInfo.carRental }}
       </p>
+      <div class="p-4 bg-white rounded-lg border">
+        <p class="font-semibold text-lg text-gray-800">Wedding Venue Address:</p>
+        <p class="text-gray-600">{{ otherInfo.venueAddress }}</p>
+      </div>
+    </p-panel>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        @for (hotel of hotelInfo.hotels; track hotel.name){
-          <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition duration-300">
-            <h3 class="text-2xl font-serif text-gray-800 font-semibold mb-2">{{ hotel.name }}</h3>
-            <p class="text-md text-gray-600 mb-3">{{ hotel.description }}</p>
-            <p class="text-md text-gray-500 mb-3">Price Range: <span class="font-semibold text-gold-400">{{ hotel.priceRange }}</span></p>
-            <a [href]="hotel.link" target="_blank" rel="noopener" class="inline-block bg-gold-300 text-gray-800 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gold-400 transition duration-300 shadow-sm">
-              Visit Website
-            </a>
+    <p-panel header="Locations at a Glance 📸" class="bg-cream-50 rounded-lg shadow-md border border-cream-100">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @for(photo of locationPhotos; track photo.name) {
+          <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+            <p-image
+              [src]="photo.imageUrl"
+              [alt]="photo.name"
+              imageClass="w-full object-cover"
+              [preview]="true">
+              <ng-template pTemplate="indicator">
+                <i class="pi pi-image text-4xl text-gray-400"></i>
+              </ng-template>
+            </p-image>
+            <div class="p-4">
+              <h3 class="font-semibold text-lg text-gray-800">{{ photo.name }}</h3>
+              <p class="text-sm text-gray-600">{{ photo.description }}</p>
+            </div>
           </div>
         }
       </div>
-
-      <p class="text-md text-gray-500 italic mt-8 text-center">
-        {{ hotelInfo.note }}
-      </p>
-    </section>
-
-  </div>
+    </p-panel>
+  </p-card>
 </div>

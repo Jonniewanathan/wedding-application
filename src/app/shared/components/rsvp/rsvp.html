@@ -1,8 +1,6 @@
-<!-- This template creates a mock RSVP form with elegant styling using Tailwind CSS. -->
 <div class="flex flex-col items-center py-8 px-4">
-  <div class="bg-white shadow-xl rounded-xl max-w-3xl w-full p-6 md:p-10 lg:p-12 border border-gray-100">
 
-    <!-- Page Title -->
+  <p-card class="max-w-3xl w-full shadow-xl rounded-xl border-none">
     <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-6 text-center tracking-tight">
       {{ pageTitle }}
     </h1>
@@ -10,78 +8,62 @@
       {{ introText }}
     </p>
 
-    <!-- RSVP Form -->
-    <form (ngSubmit)="submitRsvp()" class="space-y-8">
+    <form [formGroup]="rsvpForm" (ngSubmit)="submitRsvp()" class="space-y-8">
 
-      <!-- Guest Name Input -->
       <div>
         <label for="guestName" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Your Name(s)</label>
-        <input type="text" id="guestName" name="guestName" [(ngModel)]="guestName" required
-               class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-gold-300 focus:border-gold-300 sm:text-lg bg-cream-50 text-gray-800 placeholder-gray-400">
-        <p class="mt-2 text-sm text-gray-500">Please include all names in your party (e.g., John & Jane Doe).</p>
+        <input id="guestName" type="text" pInputText formControlName="guestName" class="w-full"
+               placeholder="e.g., John & Jane Doe"/>
+        <small class="block mt-2 text-gray-500">Please include all names in your party.</small>
       </div>
 
-      <!-- Attending Question -->
       <div>
         <span class="block text-xl font-semibold text-gray-700 mb-4 font-serif">Will you be able to join us?</span>
-        <div class="mt-2 space-y-4">
-          <label class="inline-flex items-center text-lg text-gray-700">
-            <input type="radio" name="attending" [(ngModel)]="attending" value="yes" class="form-radio h-5 w-5 text-gold-400 border-gray-300 focus:ring-gold-300">
-            <span class="ml-3">Joyfully Accepts</span>
-          </label>
-          <label class="inline-flex items-center ml-8 text-lg text-gray-700">
-            <input type="radio" name="attending" [(ngModel)]="attending" value="no" class="form-radio h-5 w-5 text-gray-500 border-gray-300 focus:ring-gray-300">
-            <span class="ml-3">Regretfully Declines</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Plus One Option (Conditional) -->
-      @if (attending === 'yes'){
-        <div>
-          <span class="block text-xl font-semibold text-gray-700 mb-4 font-serif">Will you be bringing a plus one?</span>
-          <div class="mt-2 space-y-4">
-            <label class="inline-flex items-center text-lg text-gray-700">
-              <input type="radio" name="plusOne" [(ngModel)]="plusOne" [value]="true" class="form-radio h-5 w-5 text-gold-400 border-gray-300 focus:ring-gold-300">
-              <span class="ml-3">Yes</span>
-            </label>
-            <label class="inline-flex items-center ml-8 text-lg text-gray-700">
-              <input type="radio" name="plusOne" [(ngModel)]="plusOne" [value]="false" class="form-radio h-5 w-5 text-gray-500 border-gray-300 focus:ring-gray-300">
-              <span class="ml-3">No</span>
-            </label>
+        <div class="flex flex-wrap gap-6 mt-2">
+          <div class="flex items-center">
+            <p-radioButton id="accepts" name="attending" value="yes" formControlName="attending" inputId="accepts"></p-radioButton>
+            <label for="accepts" class="ml-2 text-lg">Joyfully Accepts</label>
+          </div>
+          <div class="flex items-center">
+            <p-radioButton id="declines" name="attending" value="no" formControlName="attending" inputId="declines"></p-radioButton>
+            <label for="declines" class="ml-2 text-lg">Regretfully Declines</label>
           </div>
         </div>
-      }
-      <!-- Plus One Name Input (Conditional) -->
-      @if (attending === 'yes' && plusOne) {
-        <label for="plusOneName" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Plus One's Name</label>
-        <input type="text" id="plusOneName" name="plusOneName" [(ngModel)]="plusOneName"
-               class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-gold-300 focus:border-gold-300 sm:text-lg bg-cream-50 text-gray-800 placeholder-gray-400">
-      }
-
-      <!-- Dietary Restrictions / Special Requests -->
-      <div>
-        <label for="dietaryRestrictions" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Dietary Restrictions or Special Requests</label>
-        <textarea id="dietaryRestrictions" name="dietaryRestrictions" [(ngModel)]="dietaryRestrictions" rows="4"
-                  class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-gold-300 focus:border-gold-300 sm:text-lg bg-cream-50 text-gray-800 placeholder-gray-400"></textarea>
-        <p class="mt-2 text-sm text-gray-500">Please let us know about any allergies, dietary needs, or other special requests.</p>
       </div>
 
-      <!-- Message to the Couple -->
+      @if (rsvpForm.get('attending')?.value === 'yes') {
+        <div class="flex items-center justify-between p-4 rounded-lg bg-cream-50 border">
+          <span class="text-xl font-semibold text-gray-700 font-serif">Will you be bringing a plus one?</span>
+          <p-toggleswitch formControlName="plusOne" />
+        </div>
+
+        @if (rsvpForm.get('plusOne')?.value) {
+          <div>
+            <label for="plusOneName" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Plus One's Name</label>
+            <input id="plusOneName" type="text" pInputText formControlName="plusOneName" class="w-full" />
+          </div>
+        }
+      }
+
+      <div>
+        <label for="dietary" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Dietary Restrictions or Special Requests</label>
+        <textarea id="dietary" pInputTextarea formControlName="dietaryRestrictions" rows="4" class="w-full"
+                  placeholder="e.g., allergies, dietary needs..."></textarea>
+      </div>
+
       <div>
         <label for="message" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">A message for the couple (optional)</label>
-        <textarea id="message" name="message" [(ngModel)]="message" rows="4"
-                  class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-gold-300 focus:border-gold-300 sm:text-lg bg-cream-50 text-gray-800 placeholder-gray-400"></textarea>
+        <textarea id="message" pInputTextarea formControlName="message" rows="4" class="w-full"></textarea>
       </div>
 
-      <!-- Submit Button -->
       <div class="text-center pt-4">
-        <button type="submit"
-                class="bg-rose-400 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg hover:bg-rose-500 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-opacity-70">
-          Submit RSVP
-        </button>
+        <p-button type="submit" label="Submit RSVP" [disabled]="rsvpForm.invalid"
+                  size="large"
+                  raised="true"
+                  rounded="true"
+                  styleClass="shadow-lg bg-rose-400 hover:bg-rose-500 transition duration-300 ease-in-out transform hover:scale-105">
+        </p-button>
       </div>
     </form>
-
-  </div>
+  </p-card>
 </div>

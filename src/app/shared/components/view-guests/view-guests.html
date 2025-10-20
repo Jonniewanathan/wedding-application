@@ -1,0 +1,120 @@
+<p-toast></p-toast>
+
+<div class="p-fluid">
+  <p-table #table [value]="(guests$ | async)!" dataKey="id" editMode="row">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>First Name</th>
+        <th>Last Name</th>
+        <th>Country</th>
+        <th>Dietary</th>
+        <th>Type</th>
+        <th style="width:10rem">Actions</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-guest let-editing="editing" let-ri="rowIndex">
+      <tr [pEditableRow]="guest">
+        <td pEditableColumn>
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [(ngModel)]="guest.firstName" class="w-full">
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{ guest.firstName }}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td pEditableColumn>
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [(ngModel)]="guest.lastName" class="w-full">
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{ guest.lastName }}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td pEditableColumn>
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [(ngModel)]="guest.countryOfResidence" class="w-full">
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{ guest.countryOfResidence || 'N/A' }}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td pEditableColumn>
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [(ngModel)]="guest.dietaryRestrictions" class="w-full">
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{ guest.dietaryRestrictions || 'None' }}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td pEditableColumn>
+          <p-cellEditor>
+            <ng-template pTemplate="input">
+              <input pInputText type="text" [(ngModel)]="guest.type" class="w-full">
+            </ng-template>
+            <ng-template pTemplate="output">
+              {{ guest.type }}
+            </ng-template>
+          </p-cellEditor>
+        </td>
+
+        <td>
+          <div class="flex items-center justify-center gap-1">
+            @if (!editing) {
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                severity="info"
+                [text]="true"
+                (onClick)="table.initRowEdit(guest)"
+                pTooltip="Edit Guest"
+                tooltipPosition="top">
+              </p-button>
+
+              <p-button
+                icon="pi pi-sign-out"
+                [rounded]="true"
+                severity="warn"
+                [text]="true"
+                (onClick)="onUnassignGuest(guest)"
+                pTooltip="Unassign Guest"
+                tooltipPosition="top">
+              </p-button>
+            } @else {
+              <p-button
+                icon="pi pi-check"
+                [rounded]="true"
+                severity="success"
+                [text]="true"
+                (onClick)="onRowEditSave(guest); table.saveRowEdit(guest, ri)"
+                pTooltip="Save Changes"
+                tooltipPosition="top">
+              </p-button>
+
+              <p-button
+                icon="pi pi-times"
+                [rounded]="true"
+                severity="danger"
+                [text]="true"
+                (onClick)="table.cancelRowEdit(guest)"
+                pTooltip="Cancel Edit"
+                tooltipPosition="top">
+              </p-button>
+            }
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

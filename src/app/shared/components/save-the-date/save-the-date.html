@@ -1,42 +1,78 @@
 <div class="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] py-8 px-4">
-  <div class="bg-white shadow-xl rounded-xl overflow-hidden max-w-4xl w-full p-6 md:p-10 lg:p-12 text-center border border-gray-100">
 
-    <!-- Hero Image Section -->
-    <div class="mb-8 rounded-lg overflow-hidden shadow-md">
-      <!-- Image is responsive and uses a placeholder. An onerror handler provides a fallback image. -->
-      <img [src]="imageUrl" alt="Save the Date Photo" class="w-full h-auto object-cover rounded-lg"
-           onerror="this.onerror=null;this.src='https://placehold.co/1200x600/D0D0D0/999999?text=Placeholder+Image';">
-    </div>
+  <p-card class="max-w-4xl w-full text-center shadow-xl rounded-xl border-none">
 
-    <!-- Main Title: "SAVE THE DATE" -->
+    <ng-template pTemplate="header">
+      <div class="flex justify-center">
+        <div class="w-3/4 p-6 md:p-10 pb-0 w-1/2">
+          <p-image
+            [src]="imageUrl"
+            alt="Save the Date Photo"
+            imageClass="w-full h-auto object-cover rounded-lg shadow-md"
+            [preview]="true">
+          </p-image>
+        </div>
+      </div>
+    </ng-template>
+
     <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4 tracking-tight leading-tight">
       SAVE THE DATE
     </h1>
-    <!-- Couple's Names: Styled with a serif font (if configured) or italic sans-serif for elegance -->
     <h2 class="text-2xl md:text-3xl text-gray-700 font-serif italic mb-6">
       {{ coupleNames }}
     </h2>
 
-    <!-- Sub-heading and Wedding Date -->
     <p class="text-xl md:text-2xl text-gray-600 mb-2 font-medium">
       Are getting married!
     </p>
-    <p class="text-2xl md:text-3xl font-semibold text-gray-700 mb-2">
-      {{ weddingDate }}
-    </p>
-    <!-- Approximate Location -->
-    <p class="text-lg md:text-xl text-gray-500 mb-8">
-      Approximately in <span class="font-semibold">{{ approxLocation }}</span>
-    </p>
 
-    <!-- Call to Action for guests -->
-    <div class="mt-8">
-      <p class="text-gray-600 text-lg mb-4">Formal invitations to follow.</p>
-      <!-- Button to "Add to Calendar" with elegant styling and hover effect -->
-      <button class="bg-gray-800 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
-        Add to Calendar
-      </button>
+    <div class="flex justify-center my-4">
+      <p-tag [value]="weddingDate" severity="info" class="text-2xl md:text-3xl font-semibold px-4 py-2"></p-tag>
     </div>
 
-  </div>
+    <p class="text-lg md:text-xl text-gray-500 mb-8">
+      at <span class="font-semibold">{{ venueName }}</span>
+      <br>
+      {{ venueLocation }}
+    </p>
+
+    <div class="countdown-timer">
+      @if (countdownFinished) {
+        <p class="text-3xl font-serif text-gold-400">The day is here!</p>
+      } @else {
+        <div class="flex justify-center items-center space-x-4 md:space-x-8">
+          <div class="text-center">
+            <span class="text-4xl md:text-5xl font-bold text-gray-800">{{ days }}</span>
+            <p class="text-sm text-gray-500 tracking-wider">DAYS</p>
+          </div>
+          <div class="text-center">
+            <span class="text-4xl md:text-5xl font-bold text-gray-800">{{ hours }}</span>
+            <p class="text-sm text-gray-500 tracking-wider">HOURS</p>
+          </div>
+          <div class="text-center">
+            <span class="text-4xl md:text-5xl font-bold text-gray-800">{{ minutes }}</span>
+            <p class="text-sm text-gray-500 tracking-wider">MINUTES</p>
+          </div>
+          <div class="text-center">
+            <span class="text-4xl md:text-5xl font-bold text-gray-800">{{ seconds }}</span>
+            <p class="text-sm text-gray-500 tracking-wider">SECONDS</p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="mt-8">
+      <p class="text-gray-600 text-lg mb-4">Formal invitations to follow.</p>
+      <p-button
+        label="Add to Calendar"
+        icon="pi pi-calendar-plus"
+        size="large"
+        raised="true"
+        rounded="true"
+        styleClass="shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+        (onClick)="addToCalendar()">
+      </p-button>
+    </div>
+
+  </p-card>
 </div>

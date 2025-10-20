@@ -1,0 +1,20 @@
+<p-toolbar class="bg-white shadow-lg py-3 px-4 md:px-12 sticky top-0 z-50">
+  <ng-template pTemplate="start">
+    <div class="text-xl md:text-3xl font-serif font-bold text-gray-800 tracking-wide">
+      Our Wedding Journey
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="end">
+    <p-menubar [model]="navItems" class="bg-white shadow-lg py-1 px-4 md:px-12 sticky top-0 z-50">
+    </p-menubar>
+  </ng-template>
+</p-toolbar>
+
+<main class="container mx-auto p-6 md:p-10 lg:p-12">
+  <router-outlet></router-outlet>
+</main>
+
+<footer class="bg-white shadow-inner py-6 mt-16 text-center text-gray-500">
+  &copy; {{ currentYear }} The Couple's Wedding. All rights reserved.
+</footer>

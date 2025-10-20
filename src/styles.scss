@@ -1,0 +1,34 @@
+@use "primeicons/primeicons.css";
+@use "tailwindcss";
+
+
+html, body, app-root {
+  height: 100%;
+}
+
+body {
+  background-image: url('assets/images/background.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  @apply min-h-screen font-sans antialiased text-gray-700;
+}
+
+.p-menubar-root-list {
+  min-width: max-content !important;
+  left: auto !important;
+  right: 0 !important;
+}
+
+
+
+//main {
+//  background-image: url('assets/images/background.jpg');
+//
+//  /* Optional: Add properties to control how the image displays */
+//  background-size: cover; /* Scales the image to cover the element */
+//  background-position: center; /* Centers the image */
+//  background-repeat: no-repeat; /* Prevents the image from tiling */
+//}

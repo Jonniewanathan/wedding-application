@@ -1,0 +1,29 @@
+<div class="p-fluid">
+  <form [formGroup]="guestForm" (ngSubmit)="onSubmit()">
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="field">
+        <label for="firstName" class="font-semibold">First Name</label>
+        <input id="firstName" type="text" pInputText formControlName="firstName" />
+      </div>
+      <div class="field">
+        <label for="lastName" class="font-semibold">Last Name</label>
+        <input id="lastName" type="text" pInputText formControlName="lastName" />
+      </div>
+    </div>
+
+    <div class="field mb-4">
+      <label for="country" class="font-semibold">Country of Residence</label>
+      <input id="country" type="text" pInputText formControlName="countryOfResidence" />
+    </div>
+
+    <div class="field mb-4">
+      <label for="notes" class="font-semibold">Notes</label>
+      <textarea id="notes" pInputTextarea formControlName="notes" rows="3"></textarea>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-6">
+      <p-button severity="secondary" label="Cancel" (click)="onCancel()"></p-button>
+      <p-button type="submit" label="Update Details" [disabled]="guestForm.invalid"></p-button>
+    </div>
+  </form>
+</div>

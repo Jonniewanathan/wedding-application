@@ -1,14 +1,24 @@
 import { Component } from '@angular/core';
 import {RouterLink} from '@angular/router';
+import {Fieldset} from 'primeng/fieldset';
+import {Card} from 'primeng/card';
+import {Divider} from 'primeng/divider';
+import {Panel} from 'primeng/panel';
+import {Button} from 'primeng/button';
 
 @Component({
   selector: 'app-invitation',
   imports: [
-    RouterLink
+    RouterLink,
+    Fieldset,
+    Card,
+    Divider,
+    Panel,
+    Button
   ],
   standalone: true,
   templateUrl: './invitation.html',
-  styleUrl: './invitation.css'
+  styleUrl: './invitation.scss'
 })
 export class Invitation {
   // Wedding details

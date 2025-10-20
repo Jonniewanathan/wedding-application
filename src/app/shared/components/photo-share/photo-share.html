@@ -1,8 +1,9 @@
-<!-- This template creates a mock photo sharing interface with elegant styling. -->
-<div class="flex flex-col items-center py-8 px-4">
-  <div class="bg-white shadow-xl rounded-xl max-w-4xl w-full p-6 md:p-10 lg:p-12 border border-gray-100 text-center">
+<p-toast></p-toast>
 
-    <!-- Page Title -->
+<div class="flex flex-col items-center py-8 px-4">
+
+  <p-card class="max-w-4xl w-full shadow-xl rounded-xl border-none text-center">
+
     <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-6 tracking-tight">
       {{ pageTitle }}
     </h1>
@@ -10,42 +11,40 @@
       {{ introText }}
     </p>
 
-    <!-- Mock Photo Upload Section -->
-    <div class="bg-cream-50 p-8 rounded-lg shadow-md border border-cream-100 mb-10">
-      <div class="flex flex-col items-center justify-center space-y-4">
-        <!-- Icon (using an inline SVG for simplicity and elegance) -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-        <p class="text-xl font-semibold text-gray-700">Drag & Drop Your Photos Here</p>
-        <p class="text-gray-500">or</p>
-        <button
-                class="bg-gray-800 text-white px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">
-          Browse Files
-        </button>
-      </div>
-      <p class="text-md text-gray-500 mt-6 italic">
-        {{ disclaimerText }}
-      </p>
-    </div>
+    <p-fileUpload
+      name="weddingPhotos[]"
+      (onUpload)="onUpload($event)"
+      [multiple]="true"
+      accept="image/*"
+      [maxFileSize]="10000000"
+      [customUpload]="true"
+      styleClass="bg-cream-50 p-8 rounded-lg shadow-md border border-cream-100">
 
-    <!-- Mock Recently Uploaded Photos Section -->
+      <ng-template pTemplate="content">
+        <div class="flex flex-col items-center justify-center space-y-4">
+          <i class="pi pi-cloud-upload text-gold-400 text-6xl"></i>
+          <p class="text-xl font-semibold text-gray-700">Drag & Drop Your Photos Here</p>
+          <p class="text-gray-500">or click to browse</p>
+        </div>
+      </ng-template>
+    </p-fileUpload>
+    <p class="text-md text-gray-500 mt-6 italic">
+      {{ disclaimerText }}
+    </p>
+
     <section class="mt-12 text-left">
       <h2 class="text-3xl font-serif text-gray-700 mb-8 text-center">A Sneak Peek of Shared Moments</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        @for (photo of mockPhotos; track photo){
-          <div class="rounded-lg overflow-hidden shadow-sm border border-gray-100">
-            <img [src]="photo" alt="Wedding Moment" class="w-full h-auto object-cover"
-                 onerror="this.onerror=null;this.src='https://placehold.co/300x200/D0D0D0/999999?text=Image+Loading+Error';">
-          </div>
-        }
-
-      </div>
+      <p-galleria [value]="mockPhotos" [numVisible]="5" [circular]="true" [showThumbnails]="false"
+                  [showItemNavigators]="true" [showItemNavigatorsOnHover]="true"
+                  [containerStyle]="{ 'max-width': '100%' }">
+        <ng-template pTemplate="item" let-item>
+          <img [src]="item.itemImageSrc" [alt]="item.alt" style="width: 100%; display: block;" class="rounded-lg"/>
+        </ng-template>
+      </p-galleria>
       <p class="text-md text-gray-500 italic mt-8 text-center">
         Actual photos will appear here once the feature is live after the wedding.
       </p>
     </section>
 
-  </div>
+  </p-card>
 </div>

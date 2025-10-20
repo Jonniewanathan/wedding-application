@@ -1,0 +1,110 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="p-4 md:p-8">
+  <header class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Guest & Invitation Management</h1>
+    <p-button label="Logout" icon="pi pi-sign-out" (onClick)="logout()" severity="secondary"></p-button>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    <p-panel header="Unassigned Guests">
+      <p-table [value]="(unassignedGuests$ | async)!" [(selection)]="selectedGuests" dataKey="id"
+               [paginator]="true" [rows]="10">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Country</th>
+            <th style="width: 5rem">Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-guest>
+          <tr>
+            <td><p-tableCheckbox [value]="guest"></p-tableCheckbox></td>
+            <td>{{ guest.firstName }}</td>
+            <td>{{ guest.lastName }}</td>
+            <td>{{ guest.countryOfResidence }}</td>
+            <td>
+              <p-button icon="pi pi-trash"
+                        severity="danger"
+                        rounded="true"
+                        text="true"
+                        (click)="onDeleteUnassignedGuest(guest)" pTooltip="Delete Guest"></p-button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+      <ng-template pTemplate="footer">
+        <div class="flex justify-between items-center">
+          <p-button label="Create Invitation from Selected" icon="pi pi-arrow-right"
+                    (click)="openInvitationForm()" [disabled]="selectedGuests.length === 0"></p-button>
+          <p-button label="Add New Guest" icon="pi pi-plus" (onClick)="openAddGuestForm()" severity="success"></p-button>
+        </div>
+      </ng-template>
+    </p-panel>
+
+    <p-panel header="Finalized Invitations">
+      <p-table [value]="(invitations$ | async)!" [paginator]="true" [rows]="10" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Display Name</th>
+            <th>Code</th>
+            <th>Responded</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-invitation>
+          <tr>
+            <td>{{ invitation.displayName }}</td>
+            <td><code>{{ invitation.invitationCode }}</code></td>
+            <td>
+              <i class="pi" [ngClass]="{'pi-check-circle text-green-500': invitation.hasResponded, 'pi-times-circle text-gray-400': !invitation.hasResponded}"></i>
+            </td>
+            <td>
+              <div class="flex items-center justify-center gap-1">
+                <p-button
+                  icon="pi pi-user-plus"
+                  styleClass="mr-1"
+                  rounded="true"
+                  severity="success"
+                  (click)="onAddGuestsToInvitation(invitation)"
+                  pTooltip="Add Selected Guests to this Invitation"
+                  tooltipPosition="top"
+                  [disabled]="selectedGuests.length === 0">
+                </p-button>
+                <p-button
+                  icon="pi pi-users"
+                  styleClass="mr-1"
+                  rounded="true"
+                  severity="info"
+                  (click)="openViewGuests(invitation)"
+                  pTooltip="View/Edit Guests">
+                </p-button>
+
+                <p-button
+                  icon="pi pi-trash"
+                  rounded="true"
+                  severity="danger"
+                  (click)="onDeleteInvitation(invitation)"
+                  pTooltip="Delete Invitation">
+                </p-button>
+
+                <p-button
+                  icon="pi pi-eye"
+                  rounded="true"
+                  severity="info"
+                  (click)="showQrCodeDialog(invitation.invitationCode)"
+                  pTooltip="Show Qr code">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-panel>
+
+  </div>
+</div>

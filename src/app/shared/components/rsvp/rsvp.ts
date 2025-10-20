@@ -1,48 +1,67 @@
 import { Component } from '@angular/core';
-import {FormsModule} from '@angular/forms';
+import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
+import {Button} from 'primeng/button';
+import {Card} from 'primeng/card';
+import {InputText} from 'primeng/inputtext';
+import {RadioButton} from 'primeng/radiobutton';
+import {Textarea} from 'primeng/textarea';
+import {ToggleSwitch} from 'primeng/toggleswitch';
 
 @Component({
   selector: 'app-rsvp',
   imports: [
-    FormsModule
+    FormsModule,
+    Button,
+    ReactiveFormsModule,
+    Card,
+    InputText,
+    RadioButton,
+    Textarea,
+    ToggleSwitch
   ],
   standalone: true,
   templateUrl: './rsvp.html',
-  styleUrl: './rsvp.css'
+  styleUrl: './rsvp.scss'
 })
 export class Rsvp {
-  pageTitle = 'Kindly RSVP';
-  introText = 'Please let us know if you can join us on our special day by filling out the form below. We kindly request that you RSVP by [Your RSVP Date, e.g., July 1st, 2026].';
+  pageTitle = 'Kindly Respond';
+  introText = 'We are so excited to celebrate with you! Please let us know your plans by August 1st, 2026.';
 
-  // Mock form data (will be replaced by actual data model for backend integration)
-  guestName: string = '';
-  attending: string = ''; // 'yes' or 'no'
-  plusOne: boolean = false;
-  plusOneName: string = '';
-  dietaryRestrictions: string = '';
-  message: string = '';
+  rsvpForm!: FormGroup;
 
-  constructor() { }
+  constructor(private fb: FormBuilder) {}
 
-  // Mock method for form submission (no actual backend call)
-  submitRsvp(): void {
-    console.log('Mock RSVP Submitted:', {
-      guestName: this.guestName,
-      attending: this.attending,
-      plusOne: this.plusOne,
-      plusOneName: this.plusOneName,
-      dietaryRestrictions: this.dietaryRestrictions,
-      message: this.message
+  ngOnInit(): void {
+    this.rsvpForm = this.fb.group({
+      guestName: ['', Validators.required],
+      attending: [null, Validators.required],
+      plusOne: [false],
+      plusOneName: [''],
+      dietaryRestrictions: [''],
+      message: ['']
     });
-    // In a real application, this would send data to Firebase
-    alert('Thank you for your mock RSVP! We will be in touch with a confirmation.'); // Using alert for mock feedback
-    // Reset form for mock
-    this.guestName = '';
-    this.attending = '';
-    this.plusOne = false;
-    this.plusOneName = '';
-    this.dietaryRestrictions = '';
-    this.message = '';
+
+    // Add logic to make plusOneName required if plusOne is true
+    this.rsvpForm.get('plusOne')?.valueChanges.subscribe(isPlusOne => {
+      const plusOneNameControl = this.rsvpForm.get('plusOneName');
+      if (isPlusOne) {
+        plusOneNameControl?.setValidators([Validators.required]);
+      } else {
+        plusOneNameControl?.clearValidators();
+      }
+      plusOneNameControl?.updateValueAndValidity();
+    });
   }
 
+  submitRsvp(): void {
+    if (this.rsvpForm.valid) {
+      console.log('RSVP Submitted:', this.rsvpForm.value);
+      // Here you would send the data to your Firebase service
+      // e.g., this.firestoreService.submitRsvp(this.rsvpForm.value);
+    } else {
+      console.log('Form is invalid.');
+      // Mark all fields as touched to show validation errors
+      this.rsvpForm.markAllAsTouched();
+    }
+  }
 }
