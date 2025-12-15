@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { UnassignedGuest } from '../../models/unassigned-guest.model';
+import { Guest } from '../../models/guest.model';
 
 // PrimeNG Modules
 import { InputTextModule } from 'primeng/inputtext';
@@ -21,23 +21,21 @@ export class InvitationFormComponent implements OnInit {
   public config = inject(DynamicDialogConfig);
 
   invitationForm!: FormGroup;
-  guestsToAssign: UnassignedGuest[] = [];
+  guestsToAssign: Guest[] = [];
 
   ngOnInit(): void {
     this.guestsToAssign = this.config.data?.guests || [];
 
     this.invitationForm = this.fb.group({
-      displayName: ['', Validators.required],
-      invitationCode: ['', [Validators.required, Validators.pattern(/^[a-z0-9-]+$/)]],
+      displayName: ['', Validators.required]
+      // Removed invitationCode field - it is now auto-generated in the service
     });
-    console.log(this.guestsToAssign);
   }
 
   onSubmit(): void {
     if (this.invitationForm.invalid) {
       return;
     }
-    // Close the dialog and pass the form data back to the admin component
     this.dialogRef.close(this.invitationForm.value);
   }
 

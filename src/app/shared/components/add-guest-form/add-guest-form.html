@@ -1,29 +1,37 @@
-<div class="p-fluid">
-  <form [formGroup]="addGuestForm" (ngSubmit)="onSubmit()">
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <div class="field">
-        <label for="firstName" class="font-semibold">First Name</label>
-        <input id="firstName" type="text" pInputText formControlName="firstName" />
+<div class="bg-white p-2">
+
+  <div class="text-center mb-8">
+    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Management</span>
+    <h2 class="text-3xl font-serif font-medium italic text-slate-900">Add New Guest</h2>
+  </div>
+
+  <form [formGroup]="addGuestForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+
+    <div class="grid grid-cols-2 gap-6">
+      <div class="flex flex-col gap-2">
+        <label for="firstName" class="text-xs font-sans uppercase tracking-widest text-slate-500">First Name</label>
+        <input id="firstName" type="text" pInputText formControlName="firstName" class="w-full" placeholder="e.g. Jane"/>
       </div>
-      <div class="field">
-        <label for="lastName" class="font-semibold">Last Name</label>
-        <input id="lastName" type="text" pInputText formControlName="lastName" />
-      </div>
-      <div class="field mb-4">
-        <label for="notes" class="font-semibold">Notes (optional)</label>
-        <textarea id="notes" pInputTextarea formControlName="notes" rows="3" placeholder="e.g., Work friend, plus one needed..."></textarea>
-      </div>
-      <div class="field mb-4">
-        <label for="country" class="font-semibold">Country of Residence</label>
-        <input id="country" type="text" pInputText formControlName="countryOfResidence" />
+      <div class="flex flex-col gap-2">
+        <label for="lastName" class="text-xs font-sans uppercase tracking-widest text-slate-500">Last Name</label>
+        <input id="lastName" type="text" pInputText formControlName="lastName" class="w-full" placeholder="e.g. Doe"/>
       </div>
     </div>
 
-
-
-    <div class="flex justify-end gap-2 mt-6">
-      <p-button severity="secondary" label="Cancel" (click)="onCancel()"></p-button>
-      <p-button type="submit" label="Add Guest" [disabled]="addGuestForm.invalid"></p-button>
+    <div class="flex flex-col gap-2">
+      <label for="country" class="text-xs font-sans uppercase tracking-widest text-slate-500">Country of Residence</label>
+      <input id="country" type="text" pInputText formControlName="countryOfResidence" class="w-full" placeholder="e.g. Ireland"/>
     </div>
+
+    <div class="flex flex-col gap-2">
+      <label for="notes" class="text-xs font-sans uppercase tracking-widest text-slate-500">Notes (Optional)</label>
+      <textarea id="notes" pInputTextarea formControlName="notes" rows="3" class="w-full" placeholder="Plus one details, etc..."></textarea>
+    </div>
+
+    <div class="flex items-center justify-between mt-6 pt-6 border-t border-slate-100">
+      <button type="button" (click)="onCancel()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">Cancel</button>
+      <button type="submit" [disabled]="addGuestForm.invalid" class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50">Add Guest</button>
+    </div>
+
   </form>
 </div>

@@ -1,20 +1,70 @@
-<p-toolbar class="bg-white shadow-lg py-3 px-4 md:px-12 sticky top-0 z-50">
-  <ng-template pTemplate="start">
-    <div class="text-xl md:text-3xl font-serif font-bold text-gray-800 tracking-wide">
-      Our Wedding Journey
+<nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-all duration-300">
+
+  <div class="hidden md:flex flex-col items-center py-6">
+    <div class="mb-5">
+      <a routerLink="/" class="text-4xl lg:text-5xl font-serif italic text-slate-900 tracking-tight hover:text-slate-600 transition-colors cursor-pointer">
+        {{ coupleNames }}
+      </a>
     </div>
-  </ng-template>
 
-  <ng-template pTemplate="end">
-    <p-menubar [model]="navItems" class="bg-white shadow-lg py-1 px-4 md:px-12 sticky top-0 z-50">
-    </p-menubar>
-  </ng-template>
-</p-toolbar>
+    <ul class="flex gap-8 lg:gap-12 items-center">
+      @for (item of navItems; track item.label) {
+        <li>
+          <a [routerLink]="item.routerLink"
+             routerLinkActive="text-slate-900 border-slate-900"
+             class="text-xs lg:text-sm uppercase tracking-[0.2em] text-slate-500 font-medium hover:text-slate-900 border-b border-transparent hover:border-slate-300 pb-1 transition-all duration-300">
+            {{ item.label }}
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
 
-<main class="container mx-auto p-6 md:p-10 lg:p-12">
+  <div class="md:hidden flex justify-between items-center px-6 py-4">
+    <a routerLink="/" class="text-2xl font-serif text-slate-900">
+      {{ coupleNames }}
+    </a>
+
+    <button (click)="toggleMobileMenu()" class="text-slate-900 focus:outline-none p-2">
+      @if (!isMobileMenuOpen) {
+        <i class="pi pi-bars text-xl"></i>
+      } @else {
+        <i class="pi pi-times text-xl"></i>
+      }
+    </button>
+  </div>
+</nav>
+
+@if (isMobileMenuOpen) {
+  <div class="fixed inset-0 z-40 bg-white flex flex-col items-center justify-center md:hidden animate-fade-in">
+    <ul class="flex flex-col gap-8 text-center">
+      @for (item of navItems; track item.label) {
+        <li>
+          <a [routerLink]="item.routerLink"
+             (click)="closeMobileMenu()"
+             class="text-xl font-serif text-slate-800 hover:text-slate-500 transition-colors">
+            {{ item.label }}
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
+}
+
+<main class="min-h-screen">
   <router-outlet></router-outlet>
 </main>
 
-<footer class="bg-white shadow-inner py-6 mt-16 text-center text-gray-500">
-  &copy; {{ currentYear }} The Couple's Wedding. All rights reserved.
+<footer class="bg-white border-t border-gray-100 py-12 md:py-10 mt-6">
+  <div class="container mx-auto px-6 text-center">
+    <h2 class="text-3xl font-serif text-slate-800 mb-6">{{ coupleNames }}</h2>
+
+    <div class="flex justify-center gap-6 mb-8">
+      <span class="text-slate-400 text-sm tracking-widest uppercase">Est. {{ currentYear }}</span>
+    </div>
+
+    <p class="text-slate-400 text-xs font-sans tracking-wide">
+      Designed with love for our guests.
+    </p>
+  </div>
 </footer>

@@ -1,27 +1,40 @@
-<div class="p-fluid">
-  <h3 class="font-semibold text-lg mb-4">Create New Invitation</h3>
-  <p class="mb-4 text-gray-600">You are creating an invitation for:</p>
-  <div class="flex flex-wrap gap-2 mb-6">
-    @for(guest of guestsToAssign; track guest.id){
-      <p-chip [label]="guest.firstName + ' ' + guest.lastName" icon="pi pi-user"></p-chip>
-    }
+<div class="bg-white p-2">
+
+  <div class="text-center mb-8">
+    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Creation</span>
+    <h2 class="text-3xl font-serif font-medium italic text-slate-900">New Invitation</h2>
   </div>
 
-  <form [formGroup]="invitationForm" (ngSubmit)="onSubmit()">
-    <div class="field mb-4">
-      <label for="displayName" class="font-semibold">Display Name</label>
-      <input id="displayName" type="text" pInputText formControlName="displayName" placeholder="e.g., The Smith Family" />
+  <div class="mb-8 p-4 bg-slate-50 border border-slate-100">
+    <p class="text-xs uppercase tracking-widest text-slate-500 mb-3 text-center">Grouping These Guests</p>
+    <div class="flex flex-wrap justify-center gap-2">
+      @for(guest of guestsToAssign; track guest.id){
+        <div class="bg-white border border-slate-200 px-3 py-1 text-sm text-slate-700 shadow-sm">
+          {{ guest.firstName }} {{ guest.lastName }}
+        </div>
+      }
+    </div>
+  </div>
+
+  <form [formGroup]="invitationForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
+
+    <div class="flex flex-col gap-2">
+      <label for="displayName" class="text-xs font-sans uppercase tracking-widest text-slate-500">Group Display Name</label>
+      <input
+        id="displayName"
+        type="text"
+        pInputText
+        formControlName="displayName"
+        class="w-full text-center font-serif text-xl placeholder:italic placeholder:text-slate-300"
+        placeholder="e.g. The Smith Family"
+      />
+      <small class="text-center text-slate-400 text-xs mt-1">This is the name they will see on the welcome screen.</small>
     </div>
 
-    <div class="field mb-4">
-      <label for="invitationCode" class="font-semibold">Invitation Code (URL)</label>
-      <input id="invitationCode" type="text" pInputText formControlName="invitationCode" placeholder="e.g., the-smiths" />
-      <small class="block mt-1 text-gray-500">Use lowercase letters, numbers, and hyphens only.</small>
+    <div class="flex items-center justify-between mt-6 pt-6 border-t border-slate-100">
+      <button type="button" (click)="onCancel()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">Cancel</button>
+      <button type="submit" [disabled]="invitationForm.invalid" class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50">Generate Invitation</button>
     </div>
 
-    <div class="flex justify-end gap-2 mt-6">
-      <p-button label="Cancel" (click)="onCancel()" severity="secondary"></p-button>
-      <p-button type="submit" label="Create Invitation" [disabled]="invitationForm.invalid"></p-button>
-    </div>
   </form>
 </div>

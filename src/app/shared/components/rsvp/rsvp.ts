@@ -1,67 +1,125 @@
-import { Component } from '@angular/core';
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Button} from 'primeng/button';
-import {Card} from 'primeng/card';
-import {InputText} from 'primeng/inputtext';
-import {RadioButton} from 'primeng/radiobutton';
-import {Textarea} from 'primeng/textarea';
-import {ToggleSwitch} from 'primeng/toggleswitch';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FirestoreService } from '../../../core/services/firestore/firestore'; // Check path
+import { Invitation } from '../../models/invitation.model';
+import { Guest } from '../../models/guest.model';
+
+// PrimeNG
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
+import { CheckboxModule } from 'primeng/checkbox'; // We will style these as chips
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 @Component({
   selector: 'app-rsvp',
   imports: [
-    FormsModule,
-    Button,
+    CommonModule,
     ReactiveFormsModule,
-    Card,
-    InputText,
-    RadioButton,
+    ButtonModule,
+    InputTextModule,
     Textarea,
-    ToggleSwitch
+    CheckboxModule,
+    RadioButtonModule
   ],
   standalone: true,
   templateUrl: './rsvp.html',
   styleUrl: './rsvp.scss'
 })
-export class Rsvp {
-  pageTitle = 'Kindly Respond';
-  introText = 'We are so excited to celebrate with you! Please let us know your plans by August 1st, 2026.';
+export class Rsvp implements OnInit {
+  private route = inject(ActivatedRoute);
+  private fb = inject(FormBuilder);
+  private firestoreService = inject(FirestoreService);
 
+  invitation: Invitation | null = null;
+  guests: Guest[] = [];
   rsvpForm!: FormGroup;
+  isLoading = true;
+  submitted = false;
 
-  constructor(private fb: FormBuilder) {}
+  // Options for the chips
+  dietaryOptions = [
+    { label: 'Vegetarian', value: 'Vegetarian' },
+    { label: 'Vegan', value: 'Vegan' },
+    { label: 'Pescatarian', value: 'Pescatarian' },
+    { label: 'Gluten Free', value: 'Gluten Free' },
+    { label: 'Dairy Free', value: 'Dairy Free' }
+  ];
+
+  allergyOptions = [
+    { label: 'Peanuts', value: 'Peanuts' },
+    { label: 'Tree Nuts', value: 'Tree Nuts' },
+    { label: 'Shellfish', value: 'Shellfish' },
+    { label: 'Eggs', value: 'Eggs' }
+  ];
 
   ngOnInit(): void {
-    this.rsvpForm = this.fb.group({
-      guestName: ['', Validators.required],
-      attending: [null, Validators.required],
-      plusOne: [false],
-      plusOneName: [''],
-      dietaryRestrictions: [''],
-      message: ['']
-    });
+    const code = this.route.snapshot.paramMap.get('code');
+    if (code) {
+      this.loadInvitation(code);
+    } else {
+      // Handle missing code error
+      this.isLoading = false;
+    }
+  }
 
-    // Add logic to make plusOneName required if plusOne is true
-    this.rsvpForm.get('plusOne')?.valueChanges.subscribe(isPlusOne => {
-      const plusOneNameControl = this.rsvpForm.get('plusOneName');
-      if (isPlusOne) {
-        plusOneNameControl?.setValidators([Validators.required]);
+  async loadInvitation(code: string) {
+    try {
+      const invite = await this.firestoreService.getInvitationByCode(code);
+      if (invite) {
+        this.invitation = invite;
+        // Fetch the guests associated with this invite
+        this.firestoreService.getGuestsForInvitation(invite.id).subscribe(guests => {
+          this.guests = guests;
+          this.initForm();
+          this.isLoading = false;
+        });
       } else {
-        plusOneNameControl?.clearValidators();
+        // Handle invalid code
+        this.isLoading = false;
       }
-      plusOneNameControl?.updateValueAndValidity();
+    } catch (err) {
+      console.error(err);
+      this.isLoading = false;
+    }
+  }
+
+  initForm() {
+    this.rsvpForm = this.fb.group({
+      guests: this.fb.array(this.guests.map(guest => this.createGuestGroup(guest))),
+      message: [''] // Message for the couple
     });
   }
 
-  submitRsvp(): void {
-    if (this.rsvpForm.valid) {
-      console.log('RSVP Submitted:', this.rsvpForm.value);
-      // Here you would send the data to your Firebase service
-      // e.g., this.firestoreService.submitRsvp(this.rsvpForm.value);
-    } else {
-      console.log('Form is invalid.');
-      // Mark all fields as touched to show validation errors
-      this.rsvpForm.markAllAsTouched();
+  createGuestGroup(guest: Guest): FormGroup {
+    return this.fb.group({
+      id: [guest.id],
+      firstName: [guest.firstName], // Read-only mostly
+      lastName: [guest.lastName],
+      isAttending: [guest.isAttending, Validators.required],
+      dietaryPreferences: [guest.dietaryPreferences || []],
+      allergies: [guest.allergies || []],
+      dietaryNotes: [guest.dietaryNotes || '']
+    });
+  }
+
+  get guestControls() {
+    return (this.rsvpForm.get('guests') as FormArray).controls;
+  }
+
+  async onSubmit() {
+    if (this.rsvpForm.invalid || !this.invitation) return;
+
+    const formValue = this.rsvpForm.value;
+    const guestsToUpdate = formValue.guests as Guest[]; // Cast to Guest array
+
+    try {
+      await this.firestoreService.submitRsvpForGuests(this.invitation.id, guestsToUpdate);
+      this.submitted = true;
+    } catch (err) {
+      console.error('RSVP Failed', err);
     }
   }
 }

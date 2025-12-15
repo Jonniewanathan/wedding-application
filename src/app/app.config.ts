@@ -1,5 +1,5 @@
 import {ApplicationConfig, provideZoneChangeDetection} from '@angular/core';
-import { provideRouter } from '@angular/router';
+import {provideRouter, withInMemoryScrolling} from '@angular/router';
 import { routes } from './app.routes';
 import { environment } from '../environments/environent';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
@@ -14,7 +14,13 @@ import {StonePrimengPreset} from './theme-preset-stone';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withInMemoryScrolling({
+        scrollPositionRestoration: 'top', // Scrolls to top on navigation
+        anchorScrolling: 'enabled'        // Allows anchor links (like #details) to work
+      })
+      ),
     provideAnimationsAsync(),
     providePrimeNG({
       theme: {

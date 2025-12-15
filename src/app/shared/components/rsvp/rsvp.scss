@@ -1,0 +1,29 @@
+/* Hide the default PrimeNG checkbox square */
+:host ::ng-deep .chip-checkbox .p-checkbox-box {
+  display: none;
+}
+
+/* Style the label to look like a chip */
+:host ::ng-deep .chip-checkbox {
+  display: inline-flex;
+}
+
+:host ::ng-deep .chip-checkbox .p-checkbox-label {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0; /* Slate-200 */
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.75rem; /* Text-xs */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b; /* Slate-500 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0 !important; /* Reset PrimeNG margin */
+}
+
+/* Selected State (When checkbox is checked) */
+:host ::ng-deep .chip-checkbox.p-checkbox-checked .p-checkbox-label {
+  background-color: #0f172a; /* Slate-900 */
+  border-color: #0f172a;
+  color: white;
+}

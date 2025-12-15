@@ -1,83 +1,83 @@
-import {Component, inject} from '@angular/core';
-import {Card} from 'primeng/card';
-import {Image} from 'primeng/image';
-import {Button} from 'primeng/button';
-import {PrimeTemplate} from 'primeng/api';
-import {GoogleMap} from '@angular/google-maps';
-import {MapLoaderService} from '../../../core/services/map-loader/map-loader';
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { GoogleMap } from '@angular/google-maps';
+import { MapLoaderService } from '../../../core/services/map-loader/map-loader';
+import { ScrollRevealDirective } from '../../../core/directives/scroll-reveal';
 
 @Component({
   selector: 'app-local-attractions',
-  imports: [
-    Button,
-    Image,
-    Card,
-    PrimeTemplate,
-    GoogleMap
-  ],
   standalone: true,
+  imports: [
+    CommonModule,
+    GoogleMap,
+    ScrollRevealDirective
+  ],
   templateUrl: './local-attractions.html',
   styleUrl: './local-attractions.scss'
 })
-export class LocalAttractions {
+export class LocalAttractions implements OnInit {
   private mapLoader = inject(MapLoaderService);
 
   mapReady = false;
 
-  pageTitle = 'Explore Punta Umbría & Huelva';
-  introText = 'While you\'re here for our wedding, we hope you get a chance to enjoy the beautiful coast and rich history of the Huelva province. Here are some of our recommendations.';
+  pageTitle = 'The Local Area';
+  introText = 'Huelva Province offers a perfect blend of golden coastlines and rich Andalusian history. Here are a few of our favourite spots to explore while you are here.';
+
   mapCenter: google.maps.LatLngLiteral = { lat: 37.2185, lng: -6.9585 };
   mapZoom = 12;
 
+  mapOptions: google.maps.MapOptions = {
+    disableDefaultUI: true,
+    zoomControl: true,
+    scrollwheel: false,
+    mapTypeId: 'roadmap',
+  };
+
   attractions = [
     {
-      name: 'Playa de Punta Umbría',
-      description: 'The town\'s main attraction! A long, beautiful golden sand beach perfect for a relaxing walk, sunbathing, or enjoying the Atlantic breeze.',
-      image: 'assets/images/playa-de-punta-umbria.jpg', // Corrected path
+      name: 'Town of Punta Umbria',
+      description: 'Experience the electric energy of Punta Umbría, where golden sands are lined with lively chiringuitos perfect for sunset drinks and fresh seafood. As night falls, this coastal paradise transforms into a premier nightlife destination, boasting pulsating nightclubs and an atmosphere that invites you to dance until dawn.',
+      image: 'assets/images/playa-de-punta-umbria.jpg',
       link: 'https://maps.app.goo.gl/y2F3gYfSExjRz3kR7'
     },
     {
-      name: 'Marismas del Odiel',
-      description: 'A stunning UNESCO Biosphere Reserve just a short drive away. It\'s a paradise for nature lovers and bird watchers, with beautiful trails.',
-      image: 'assets/images/marismas-del-odiel.jpg', // Corrected path
-      link: 'https://www.andalucia.org/en/natural-spaces/paraje-natural/marismas-del-odiel'
+      name: 'Valverde Del Camino',
+      description: 'Immerse yourself in the artisan heart of Huelva at Valverde del Camino, a town world-renowned for its exquisite leatherwork and the iconic boto riding boot. This welcoming destination offers a unique mix of master craftsmanship, rich British railway history, and authentic Andalusian gastronomy.',
+      image: 'assets/images/valverde-square.jpeg',
+      link: 'https://maps.app.goo.gl/y2F3gYfSExjRz3kR7'
     },
     {
-      name: 'Muelle de las Carabelas',
-      description: 'Discover history where it happened! See life-size replicas of Columbus\'s ships near Huelva city.',
-      image: 'assets/images/muelle-de-las-carabelas.jpg', // Corrected path
-      link: 'https://maps.app.goo.gl/34g7wT8oDsqrMhsm6'
+      name: 'Monument Fe Descubridora',
+      description: 'Stand in awe beneath the towering Monumento a la Fe Descubridora, a colossal Cubist tribute at the water\'s edge that immortalizes Huelva’s pivotal role in the discovery of the New World. This historic port city blends maritime grandeur with deep heritage, serving as the majestic gateway where the Odiel and Tinto rivers meet',
+      image: 'assets/images/monument.jpeg',
+      link: 'https://maps.app.goo.gl/rNqPGrJq7Gv3o7tq9'
     },
     {
-      name: 'Huelva City Centre',
-      description: 'Explore the nearby provincial capital. Stroll through the Plaza de las Monjas and enjoy the local atmosphere, shops, and tapas bars.',
-      image: 'assets/images/huelva-city-centre.jpg', // Corrected path
-      link: 'https://www.andalucia.org/en/huelva'
-    },
-    {
-      name: 'Enjoy a Chiringuito',
-      description: 'You can\'t visit the coast without trying fresh seafood at a chiringuito (beachfront restaurant).',
-      image: 'assets/images/enjoy-a-chiringuito.jpg', // Corrected path
+      name: 'Rio Tinto',
+      description: 'Discover the otherworldly beauty of the Rio Tinto, where striking crimson waters flow through a surreal, Mars-like landscape shaped by five thousand years of mining history. This unique geological wonder offers an unforgettable visual experience and a fascinating glimpse into Spain\'s ancient industrial past.',
+      image: 'assets/images/Rio-Tinto.jpg',
       link: 'https://maps.app.goo.gl/M4gL2Xk6cE49KzUq9'
     },
     {
-      name: 'Monumento a la Fe Descubridora',
-      description: 'An impressive, massive statue dedicated to Christopher Columbus, located at the confluence of the Tinto and Odiel rivers.',
-      image: 'assets/images/monumento-fe-descubridora.jpg', // Corrected path
-      link: 'https://maps.app.goo.gl/rNqPGrJq7Gv3o7tq9'
-    }
+      name: 'Muelle de las Carabelas',
+      description: 'Step back into 1492 at the Muelle de las Carabelas, where you can board full-scale replicas of the Niña, Pinta, and Santa María to relive the voyage that changed the world. This immersive open-air museum offers a tangible connection to history, allowing you to walk the decks of the legendary fleet right where the adventure began.',
+      image: 'assets/images/muelle-de-las-carabelas.jpg',
+      link: 'https://maps.app.goo.gl/34g7wT8oDsqrMhsm6'
+    },
+    {
+      name: 'Sevilla City',
+      description: 'Lose yourself in the soulful magic of Sevilla, where the scent of orange blossoms mingles with the passion of flamenco and world-class tapas culture. Home to the majestic Real Alcázar and the vibrant Plaza de España, the Andalusian capital offers a dazzling blend of Moorish heritage and lively modern energy.',
+      image: 'assets/images/Sevilla.jpeg',
+      link: 'https://www.andalucia.org/en/huelva'
+    },
   ];
 
   ngOnInit(): void {
     this.mapLoader.load().then(() => {
-      // This code only runs AFTER the script is loaded
       this.mapReady = true;
-    }).catch(error => {
-      console.error('Failed to load Google Maps script', error);
     });
   }
 
-  // --- Component Methods ---
   navigateTo(url: string): void {
     window.open(url, '_blank');
   }

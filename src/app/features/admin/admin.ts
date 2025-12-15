@@ -14,7 +14,6 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 // Components
 import { InvitationFormComponent } from '../../shared/components/invitation-form/invitation-form';
-import { AddGuestFormComponent } from '../../shared/components/add-guest-form/add-guest-form';
 import { ViewGuests } from '../../shared/components/view-guests/view-guests';
 
 // PrimeNG Modules
@@ -28,6 +27,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import {getDoc} from '@angular/fire/firestore'; // Correct import for TooltipModule
 import QRCode from 'qrcode';
 import {QrCodeDisplay} from '../../shared/components/qr-code-display/qr-code-display';
+import {TabsModule} from 'primeng/tabs';
+import {StyleClass} from 'primeng/styleclass';
+import {GuestFormComponent} from '../../shared/components/guest-form/guest-form';
 
 @Component({
   selector: 'app-admin',
@@ -35,7 +37,7 @@ import {QrCodeDisplay} from '../../shared/components/qr-code-display/qr-code-dis
   imports: [
     CommonModule, TableModule, ButtonModule,
     ToastModule, ConfirmDialogModule, DynamicDialogModule,
-    PanelModule, TooltipModule // Use TooltipModule here
+    PanelModule, TooltipModule, TabsModule, StyleClass, // Use TooltipModule here
   ],
   providers: [DialogService, ConfirmationService, MessageService],
   templateUrl: './admin.html',
@@ -63,22 +65,17 @@ export class AdminComponent implements OnInit {
   // --- Guest Management ---
 
   openAddGuestForm(): void {
-    this.dialogRef = this.dialogService.open(AddGuestFormComponent, {
-      header: 'Add New Guest', // Changed header slightly
+    this.dialogRef = this.dialogService.open(GuestFormComponent, {
+      header: ' ', // Empty header (we use our custom one in HTML)
       width: '40%',
+      styleClass: 'editorial-dialog', // Optional: if you added the global styles
+      contentStyle: { "padding": "0", "border-radius": "0" }, // Removes default padding
+      data: { guest: null } // Explicitly null for Add Mode
     });
 
-    this.dialogRef?.onClose.subscribe((guestData) => {
-      if (guestData) {
-        // Use the refactored addGuest method
-        this.firestoreService.addGuest(
-          guestData.firstName,
-          guestData.lastName,
-          guestData.countryOfResidence,
-          guestData.notes
-        )
-          .then(() => this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Guest added!' }))
-          .catch(err => this.handleError(err, 'Could not add guest.'));
+    this.dialogRef?.onClose.subscribe((success) => {
+      if (success) {
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Guest added successfully' });
       }
     });
   }

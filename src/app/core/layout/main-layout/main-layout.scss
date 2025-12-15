@@ -1,8 +1,20 @@
+// Import PrimeIcons if you haven't globally, or rely on global styles
+// @import "primeicons/primeicons.css";
+
 :host {
   display: block;
-  height: 100%;
+  width: 100%;
 }
 
-.p-menubar-root-list {
-  min-width: max-content !important;
+// Simple fade animation for the mobile menu
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// Ensure the serif font is applied (Use your global font import or import here)
+// .font-serif { font-family: 'Playfair Display', serif; }

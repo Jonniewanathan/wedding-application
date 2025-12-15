@@ -6,12 +6,11 @@ import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import {Tooltip} from 'primeng/tooltip';
-import {InputGroup} from 'primeng/inputgroup'; // For easy copying
 
 @Component({
   selector: 'app-qr-code-display',
   standalone: true,
-  imports: [CommonModule, ButtonModule, InputTextModule, Tooltip, InputGroup],
+  imports: [CommonModule, ButtonModule, InputTextModule, Tooltip],
   templateUrl: './qr-code-display.html',
 })
 export class QrCodeDisplay implements OnInit {

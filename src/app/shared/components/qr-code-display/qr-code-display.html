@@ -1,23 +1,38 @@
-<div class="flex flex-col items-center p-4">
+<div class="flex flex-col items-center p-2">
 
-  <p class="text-lg font-semibold mb-4 text-center">Invitation Link & QR Code</p>
+  <div class="text-center mb-8">
+    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Digital Access</span>
+    <h2 class="text-3xl font-serif font-medium italic text-slate-900">Invitation Link</h2>
+  </div>
 
-  <div class="mb-6">
+  <div class="mb-10 p-4 bg-white border border-slate-200 shadow-xl shadow-slate-100/50">
     @if (qrCodeDataUrl) {
-      <img [src]="qrCodeDataUrl" alt="Invitation QR Code" class="w-48 h-48 md:w-64 md:h-64 border rounded-md shadow-sm">
+      <img [src]="qrCodeDataUrl" alt="QR Code" class="w-48 h-48 md:w-56 md:h-56 object-contain">
+      <p class="text-[10px] uppercase tracking-widest text-center text-slate-400 mt-4">Scan to RSVP</p>
     } @else {
-      <p class="text-red-500">QR Code could not be generated.</p>
+      <p class="text-red-500 text-xs">Error generating code</p>
     }
   </div>
 
-  <div class="w-full max-w-md mb-6">
-    <label for="invitationUrl" class="block text-sm font-medium text-gray-700 mb-1">Invitation URL:</label>
-    <p-input-group>
-      <input #urlInput id="invitationUrl" type="text" pInputText [value]="invitationUrl" readonly class="p-inputtext-sm">
-      <p-button type="button" icon="pi pi-copy" (click)="copyUrl(urlInput)" pTooltip="Copy URL" tooltipPosition="top"></p-button>
-    </p-input-group>
+  <div class="w-full max-w-md mb-8">
+    <label class="block text-xs font-sans uppercase tracking-widest text-slate-500 mb-2 text-center">Unique URL</label>
+    <div class="flex">
+      <input
+        #urlInput
+        type="text"
+        [value]="invitationUrl"
+        readonly
+        class="flex-1 bg-slate-50 border border-slate-200 text-slate-600 text-xs font-mono px-4 py-3 outline-none focus:border-slate-400">
+      <button
+        (click)="copyUrl(urlInput)"
+        class="bg-slate-900 text-white px-4 hover:bg-slate-700 transition-colors"
+        pTooltip="Copy to Clipboard"
+        tooltipPosition="top">
+        <i class="pi pi-copy"></i>
+      </button>
+    </div>
   </div>
 
-  <p-button label="Close" (onClick)="closeDialog()" severity="secondary"></p-button>
+  <button (click)="closeDialog()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors border-b border-transparent hover:border-slate-800 pb-1">Close Window</button>
 
 </div>

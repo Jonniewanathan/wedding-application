@@ -1,120 +1,102 @@
 <p-toast></p-toast>
+<p-confirmDialog [style]="{width: '40vw'}"></p-confirmDialog>
 
-<div class="p-fluid">
-  <p-table #table [value]="(guests$ | async)!" dataKey="id" editMode="row">
+<div class="flex flex-col h-full bg-white p-2">
+
+  <div class="text-center mb-8">
+    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Members</span>
+    <h2 class="text-3xl font-serif font-medium italic text-slate-900">Guest List</h2>
+  </div>
+
+  <p-table [value]="(guests$ | async)!" styleClass="editorial-table" [rowHover]="true">
+
     <ng-template pTemplate="header">
       <tr>
-        <th>First Name</th>
-        <th>Last Name</th>
-        <th>Country</th>
-        <th>Dietary</th>
-        <th>Type</th>
-        <th style="width:10rem">Actions</th>
+        <th>Guest Name</th>
+        <th>RSVP Status</th>
+        <th>Dietary Needs</th>
+        <th class="text-right">Actions</th>
       </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-guest let-editing="editing" let-ri="rowIndex">
-      <tr [pEditableRow]="guest">
-        <td pEditableColumn>
-          <p-cellEditor>
-            <ng-template pTemplate="input">
-              <input pInputText type="text" [(ngModel)]="guest.firstName" class="w-full">
-            </ng-template>
-            <ng-template pTemplate="output">
-              {{ guest.firstName }}
-            </ng-template>
-          </p-cellEditor>
-        </td>
 
-        <td pEditableColumn>
-          <p-cellEditor>
-            <ng-template pTemplate="input">
-              <input pInputText type="text" [(ngModel)]="guest.lastName" class="w-full">
-            </ng-template>
-            <ng-template pTemplate="output">
-              {{ guest.lastName }}
-            </ng-template>
-          </p-cellEditor>
-        </td>
+    <ng-template pTemplate="body" let-guest>
+      <tr class="hover:bg-slate-50 transition-colors">
 
-        <td pEditableColumn>
-          <p-cellEditor>
-            <ng-template pTemplate="input">
-              <input pInputText type="text" [(ngModel)]="guest.countryOfResidence" class="w-full">
-            </ng-template>
-            <ng-template pTemplate="output">
-              {{ guest.countryOfResidence || 'N/A' }}
-            </ng-template>
-          </p-cellEditor>
-        </td>
-
-        <td pEditableColumn>
-          <p-cellEditor>
-            <ng-template pTemplate="input">
-              <input pInputText type="text" [(ngModel)]="guest.dietaryRestrictions" class="w-full">
-            </ng-template>
-            <ng-template pTemplate="output">
-              {{ guest.dietaryRestrictions || 'None' }}
-            </ng-template>
-          </p-cellEditor>
-        </td>
-
-        <td pEditableColumn>
-          <p-cellEditor>
-            <ng-template pTemplate="input">
-              <input pInputText type="text" [(ngModel)]="guest.type" class="w-full">
-            </ng-template>
-            <ng-template pTemplate="output">
-              {{ guest.type }}
-            </ng-template>
-          </p-cellEditor>
+        <td class="font-medium text-slate-900">
+          {{ guest.firstName }} {{ guest.lastName }}
         </td>
 
         <td>
-          <div class="flex items-center justify-center gap-1">
-            @if (!editing) {
-              <p-button
-                icon="pi pi-pencil"
-                [rounded]="true"
-                severity="info"
-                [text]="true"
-                (onClick)="table.initRowEdit(guest)"
-                pTooltip="Edit Guest"
-                tooltipPosition="top">
-              </p-button>
+          @if (guest.isAttending === true) {
+            <span class="inline-flex items-center px-2 py-1 bg-green-50 border border-green-100 text-green-700 text-[10px] uppercase tracking-widest">
+              Attending
+            </span>
+          } @else if (guest.isAttending === false) {
+            <span class="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 text-red-700 text-[10px] uppercase tracking-widest">
+              Declined
+            </span>
+          } @else {
+            <span class="inline-flex items-center px-2 py-1 bg-slate-50 border border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest">
+              Pending
+            </span>
+          }
+        </td>
 
-              <p-button
-                icon="pi pi-sign-out"
-                [rounded]="true"
-                severity="warn"
-                [text]="true"
-                (onClick)="onUnassignGuest(guest)"
-                pTooltip="Unassign Guest"
-                tooltipPosition="top">
-              </p-button>
-            } @else {
-              <p-button
-                icon="pi pi-check"
-                [rounded]="true"
-                severity="success"
-                [text]="true"
-                (onClick)="onRowEditSave(guest); table.saveRowEdit(guest, ri)"
-                pTooltip="Save Changes"
-                tooltipPosition="top">
-              </p-button>
-
-              <p-button
-                icon="pi pi-times"
-                [rounded]="true"
-                severity="danger"
-                [text]="true"
-                (onClick)="table.cancelRowEdit(guest)"
-                pTooltip="Cancel Edit"
-                tooltipPosition="top">
-              </p-button>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            @for (pref of guest.dietaryPreferences; track pref) {
+              <span class="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-100 text-[10px] uppercase tracking-wide">
+                {{ pref }}
+              </span>
+            }
+            @for (allergy of guest.allergies; track allergy) {
+              <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] uppercase tracking-wide">
+                {{ allergy }}
+              </span>
+            }
+            @if ((!guest.dietaryPreferences?.length) && (!guest.allergies?.length)) {
+              <span class="text-slate-300 text-xs italic">-</span>
             }
           </div>
+          @if (guest.dietaryNotes) {
+            <div class="mt-1 text-[10px] text-slate-400 italic">
+              Note: "{{ guest.dietaryNotes }}"
+            </div>
+          }
+        </td>
+        <td class="text-right">
+          <div class="flex items-center justify-end gap-2">
+
+            <button
+              pButton
+              icon="pi pi-pencil"
+              class="p-button-text p-button-rounded p-button-secondary hover:text-slate-900 transition-colors"
+              (click)="onEditGuest(guest)"
+              pTooltip="Edit Details">
+            </button>
+
+            <button
+              pButton
+              icon="pi pi-sign-out"
+              class="p-button-text p-button-rounded p-button-secondary hover:text-red-600 transition-colors"
+              (click)="onUnassignGuest(guest)"
+              pTooltip="Remove from Group">
+            </button>
+
+          </div>
+        </td>
+
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="4" class="text-center p-8 text-slate-400 italic">
+          No guests currently assigned to this invitation.
         </td>
       </tr>
     </ng-template>
+
   </p-table>
+
 </div>

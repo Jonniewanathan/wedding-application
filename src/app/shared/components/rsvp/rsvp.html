@@ -1,69 +1,120 @@
-<div class="flex flex-col items-center py-8 px-4">
+<div class="min-h-screen bg-white text-slate-900 pb-24">
 
-  <p-card class="max-w-3xl w-full shadow-xl rounded-xl border-none">
-    <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-6 text-center tracking-tight">
-      {{ pageTitle }}
-    </h1>
-    <p class="text-lg md:text-xl text-gray-600 mb-10 text-center max-w-2xl mx-auto leading-relaxed">
-      {{ introText }}
-    </p>
+  @if (isLoading) {
+    <div class="flex h-screen items-center justify-center">
+      <i class="pi pi-spin pi-spinner text-2xl text-slate-300"></i>
+    </div>
+  }
 
-    <form [formGroup]="rsvpForm" (ngSubmit)="submitRsvp()" class="space-y-8">
+  @else if (submitted) {
+    <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
+      <h1 class="text-5xl md:text-7xl font-serif italic mb-6">Thank You</h1>
+      <p class="text-lg text-slate-600 font-light max-w-md">
+        Your response has been recorded. We can't wait to celebrate with you!
+      </p>
+      <button routerLink="/" class="mt-8 text-xs uppercase tracking-widest border-b border-slate-900 pb-1">Back to Home</button>
+    </div>
+  }
 
-      <div>
-        <label for="guestName" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Your Name(s)</label>
-        <input id="guestName" type="text" pInputText formControlName="guestName" class="w-full"
-               placeholder="e.g., John & Jane Doe"/>
-        <small class="block mt-2 text-gray-500">Please include all names in your party.</small>
-      </div>
+  @else if (invitation) {
+    <header class="pt-20 pb-12 px-6 text-center max-w-4xl mx-auto animate-fade-in">
+      <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">RSVP</span>
+      <h1 class="text-5xl md:text-7xl font-serif font-medium italic text-slate-900 mb-4 leading-none tracking-tight">
+        {{ invitation.displayName }}
+      </h1>
+      <p class="text-slate-500 font-light italic">Please respond by August 1st, 2026</p>
+    </header>
 
-      <div>
-        <span class="block text-xl font-semibold text-gray-700 mb-4 font-serif">Will you be able to join us?</span>
-        <div class="flex flex-wrap gap-6 mt-2">
-          <div class="flex items-center">
-            <p-radioButton id="accepts" name="attending" value="yes" formControlName="attending" inputId="accepts"></p-radioButton>
-            <label for="accepts" class="ml-2 text-lg">Joyfully Accepts</label>
-          </div>
-          <div class="flex items-center">
-            <p-radioButton id="declines" name="attending" value="no" formControlName="attending" inputId="declines"></p-radioButton>
-            <label for="declines" class="ml-2 text-lg">Regretfully Declines</label>
-          </div>
+    <div class="max-w-3xl mx-auto px-6">
+      <form [formGroup]="rsvpForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-12">
+
+        <div formArrayName="guests" class="flex flex-col gap-12">
+          @for (control of guestControls; track $index) {
+            <div [formGroupName]="$index" class="border-b border-slate-100 pb-12 animate-slide-up" [style.animation-delay]="$index * 100 + 'ms'">
+
+              <div class="flex justify-between items-baseline mb-8">
+                <h3 class="text-3xl font-serif text-slate-800">
+                  {{ control.get('firstName')?.value }} {{ control.get('lastName')?.value }}
+                </h3>
+              </div>
+
+              <div class="flex gap-8 mb-10">
+                <div class="flex items-center gap-3 cursor-pointer">
+                  <p-radioButton value="true" [value]="true" formControlName="isAttending" inputId="attending-{{$index}}"></p-radioButton>
+                  <label for="attending-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">Joyfully Accepts</label>
+                </div>
+                <div class="flex items-center gap-3 cursor-pointer">
+                  <p-radioButton value="false" [value]="false" formControlName="isAttending" inputId="declining-{{$index}}"></p-radioButton>
+                  <label for="declining-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">Regretfully Declines</label>
+                </div>
+              </div>
+
+              @if (control.get('isAttending')?.value === true) {
+                <div class="bg-slate-50 p-6 md:p-8 animate-fade-in">
+
+                  <div class="mb-6">
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">Dietary Preferences</p>
+                    <div class="flex flex-wrap gap-2">
+                      @for (opt of dietaryOptions; track opt.label) {
+                        <p-checkbox name="dietaryPreferences"
+                                    [value]="opt.value"
+                                    formControlName="dietaryPreferences"
+                                    class="chip-checkbox"
+                                    id="{{opt.label + '_' + $index}}"
+                        >
+                        </p-checkbox>
+                        <label for="{{opt.label + '_' + $index}}" class="ml-2">{{opt.label}}</label>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="mb-6">
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">Allergies</p>
+                    <div class="flex flex-wrap gap-2">
+                      @for (opt of allergyOptions; track opt.label) {
+                        <p-checkbox name="allergies"
+                                    [value]="opt.value"
+                                    formControlName="allergies"
+                                    class="chip-checkbox"
+                                    id="{{opt.label + '_' + $index}}"
+                        >
+                        </p-checkbox>
+                        <label for="{{opt.label + '_' + $index}}" class="ml-2">{{opt.label}}</label>
+                      }
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-xs uppercase tracking-widest text-slate-400 mb-2 block">Specific Notes</label>
+                    <textarea pInputTextarea formControlName="dietaryNotes" rows="2" class="w-full bg-white border-slate-200 text-sm placeholder:text-slate-300" placeholder="e.g. Severe nut allergy..."></textarea>
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
         </div>
-      </div>
 
-      @if (rsvpForm.get('attending')?.value === 'yes') {
-        <div class="flex items-center justify-between p-4 rounded-lg bg-cream-50 border">
-          <span class="text-xl font-semibold text-gray-700 font-serif">Will you be bringing a plus one?</span>
-          <p-toggleswitch formControlName="plusOne" />
+        <div class="pt-4">
+          <label class="text-xs uppercase tracking-widest text-slate-500 mb-4 block text-center">Message for the Couple</label>
+          <textarea pInputTextarea formControlName="message" rows="4" class="w-full border-slate-200 focus:border-slate-800 text-center text-lg font-serif italic placeholder:text-slate-300 placeholder:italic" placeholder="Leave a note..."></textarea>
         </div>
 
-        @if (rsvpForm.get('plusOne')?.value) {
-          <div>
-            <label for="plusOneName" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Plus One's Name</label>
-            <input id="plusOneName" type="text" pInputText formControlName="plusOneName" class="w-full" />
-          </div>
-        }
-      }
+        <div class="text-center pb-24">
+          <button type="submit" [disabled]="rsvpForm.invalid" class="bg-slate-900 text-white px-12 py-4 text-sm uppercase tracking-[0.2em] hover:bg-slate-700 transition-colors disabled:opacity-50">
+            Confirm RSVP
+          </button>
+        </div>
 
-      <div>
-        <label for="dietary" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">Dietary Restrictions or Special Requests</label>
-        <textarea id="dietary" pInputTextarea formControlName="dietaryRestrictions" rows="4" class="w-full"
-                  placeholder="e.g., allergies, dietary needs..."></textarea>
-      </div>
+      </form>
+    </div>
+  }
 
-      <div>
-        <label for="message" class="block text-xl font-semibold text-gray-700 mb-3 font-serif">A message for the couple (optional)</label>
-        <textarea id="message" pInputTextarea formControlName="message" rows="4" class="w-full"></textarea>
-      </div>
+  @else {
+    <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+      <h1 class="text-4xl font-serif italic mb-4">Invitation Not Found</h1>
+      <p class="text-slate-500 mb-8">Please check your link and try again.</p>
+    </div>
+  }
 
-      <div class="text-center pt-4">
-        <p-button type="submit" label="Submit RSVP" [disabled]="rsvpForm.invalid"
-                  size="large"
-                  raised="true"
-                  rounded="true"
-                  styleClass="shadow-lg bg-rose-400 hover:bg-rose-500 transition duration-300 ease-in-out transform hover:scale-105">
-        </p-button>
-      </div>
-    </form>
-  </p-card>
 </div>
