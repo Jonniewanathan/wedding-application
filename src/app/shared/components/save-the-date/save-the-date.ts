@@ -19,7 +19,7 @@ export class SaveTheDate implements OnInit, OnDestroy {
   venueName = 'Convento de la Luz';
 
   // Images
-  heroImage = 'assets/images/our-photo-v2.jpeg'; // Portrait prefered
+  heroImage = 'assets/images/our-photo-v5.jpeg'; // Portrait prefered
   venueImage = 'assets/images/convento_de_la_luz_courtyard.jpg'; // Wide landscape preferred
 
   // --- Countdown Logic ---
