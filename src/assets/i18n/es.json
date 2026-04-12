@@ -1,0 +1,142 @@
+{
+  "NAV": {
+    "SAVE_THE_DATE": "Reserva la Fecha",
+    "TRAVEL_INFO": "Información de Viaje",
+    "LOCAL_GUIDE": "Guía Local",
+    "MY_INVITATION": "Mi Invitación"
+  },
+  "FOOTER": {
+    "EST": "Est. {{year}}",
+    "DESIGNED_WITH_LOVE": "Diseñado con cariño para nuestros invitados.",
+    "CONTACT_INFO": "Información de Contacto"
+  },
+  "SAVE_THE_DATE": {
+    "SUBTITLE": "Nos Casamos",
+    "DATE": "22 de Agosto, 2026",
+    "LOCATION": "Huelva, España",
+    "WELCOME_TITLE": "Una celebración de amor en el corazón de Andalucía.",
+    "WELCOME_TEXT": "Estamos encantados de invitarte a acompañarnos en Huelva. Hemos planeado un fin de semana lleno de sol, comida deliciosa y gran compañía.",
+    "THE_VENUE": "El Lugar",
+    "VENUE_NAME": "Convento de la Luz",
+    "THE_COUNTDOWN": "La Cuenta Atrás",
+    "DAYS": "Días",
+    "HOURS": "Horas",
+    "MINS": "Mins",
+    "HAPPENING_NOW": "¡Ocurriendo Ahora!"
+  },
+  "TRAVEL_INFO": {
+    "SUBTITLE": "Logística",
+    "TITLE": "Viaje y Estancia",
+    "INTRO": "Estamos muy emocionados de que viajes para celebrar con nosotros. Aquí tienes todo lo que necesitas saber sobre cómo llegar a Huelva y dónde alojarte.",
+    "GETTING_HERE": "Cómo Llegar",
+    "WHERE_TO_STAY": {
+      "TITLE": "Dónde Alojarse",
+      "TEXT": "Nuestra boda se celebrará en Lucena Del Puerto. <br class=\"hidden md:block\"> Tienes tres maravillosas opciones de alojamiento, cada una ofreciendo una experiencia diferente."
+    },
+    "PUNTA_UMBRIA": {
+      "TITLE": "Punta Umbría",
+      "DESC": "Nuestra principal recomendación. Un hermoso pueblo costero perfecto para un ambiente de vacaciones. Te esperan playas doradas, marisco fresco y un ambiente relajado. Es el punto principal de recogida para el autobús de la boda."
+    },
+    "VALVERDE": {
+      "TITLE": "Valverde Del Camino",
+      "DESC": "Para una experiencia andaluza de interior verdaderamente auténtica. Este es el pueblo natal de Marta—tranquilo, tradicional y lleno de encanto local. Un autobús también saldrá de aquí."
+    },
+    "HUELVA_CITY": {
+      "TITLE": "Huelva Ciudad",
+      "DESC": "La capital de la provincia. Perfecta si prefieres las comodidades de la ciudad, compras y lugares históricos. Explora la Plaza de las Monjas y disfruta de los vibrantes bares de tapas por la noche."
+    },
+    "HOTEL_OFFER": {
+      "SUBTITLE": "Oferta Exclusiva",
+      "TITLE": "Recomendación Hoteles Pato",
+      "INTRO": "Para aquellos que elijan alojarse en Punta Umbría, hemos organizado una oferta especial.",
+      "DISCOUNT_CODE": "Código de Descuento",
+      "CONDITION": "Se requiere una estancia mínima de 3 noches.",
+      "CONTACT_TO_BOOK": "Contactar Directamente para Reservar",
+      "HOTEL_AMARILLO_TAG": "Ideal para Familias",
+      "HOTEL_AMARILLO_DESC": "Ideal para estancias con niños. Equipado con dos piscinas y un club infantil dedicado.",
+      "HOTEL_ROJO_TAG": "Solo Adultos",
+      "HOTEL_ROJO_DESC": "Una opción económica. No tiene piscina, pero los huéspedes tienen acceso gratuito a la piscina del Pato Amarillo a solo 200m."
+    },
+    "OTHER_INFO": {
+      "HEADING": "Alquiler de Coches, Transporte Público y Lugar de Celebración",
+      "CAR_RENTAL": "Recomendamos encarecidamente alquilar un coche en el aeropuerto para mayor flexibilidad.",
+      "PUBLIC_TRANSPORT": "Si usas el aeropuerto de Sevilla, los autobuses van desde la estación de autobuses de Sevilla a la ciudad de Huelva y luego desde la ciudad de Huelva salen varios autobuses a Punta Umbría.",
+      "VENUE_ADDRESS": "Convento de la Luz, Carretera A-494, s/n, 21820 Lucena del Puerto, Huelva"
+    },
+    "TRANSPORT": {
+      "HEADING": "Autobús de Boda",
+      "TEXT": "Estamos organizando transporte privado de ida y vuelta al lugar de celebración para asegurarnos de que todos puedan relajarse.<br> Podríamos añadir paradas en la ruta si es necesario para la Ciudad de Huelva.",
+      "DEPARTING_FROM": "Saliendo Desde",
+      "NOTE": "Los autobuses de regreso funcionarán al final de la noche."
+    },
+    "AIRPORT_FAO": {
+      "CITY": "Faro, Portugal",
+      "DRIVE_TIME": "1h 20min en coche",
+      "DESC": "A menudo la opción más conveniente desde Irlanda. Un viaje directo cruzando la frontera hacia España."
+    },
+    "AIRPORT_SVQ": {
+      "CITY": "Sevilla, España",
+      "DRIVE_TIME": "1h 30min en coche",
+      "DESC": "Perfecto si deseas combinar la boda con una escapada urbana a la capital de Andalucía."
+    }
+  },
+  "LOCAL_GUIDE": {
+    "SUBTITLE": "Guía",
+    "TITLE": "La Zona Local",
+    "INTRO": "La provincia de Huelva ofrece una mezcla perfecta de costas doradas y rica historia andaluza. Aquí tienes algunos de nuestros lugares favoritos para explorar mientras estás aquí.",
+    "EXPLORE": "Explora la Región",
+    "PUNTA_UMBRIA": {
+      "TITLE": "Pueblo de Punta Umbría",
+      "DESC": "Experimenta la energía eléctrica de Punta Umbría, donde las arenas doradas están bordeadas de animados chiringuitos perfectos para tomar algo al atardecer y disfrutar de marisco fresco. Al caer la noche, este paraíso costero se transforma en un destino principal de ocio nocturno, con discotecas vibrantes y un ambiente que invita a bailar hasta el amanecer."
+    },
+    "VALVERDE": {
+      "TITLE": "Valverde Del Camino",
+      "DESC": "Sumérgete en el corazón artesano de Huelva en Valverde del Camino, un pueblo mundialmente conocido por su exquisito trabajo en cuero y el icónico boto campero. Este acogedor destino ofrece una mezcla única de maestría artesanal, rica historia ferroviaria británica y auténtica gastronomía andaluza."
+    },
+    "MONUMENT": {
+      "TITLE": "Monumento Fe Descubridora",
+      "DESC": "Admira el imponente Monumento a la Fe Descubridora, un colosal tributo cubista a la orilla del agua que inmortaliza el papel fundamental de Huelva en el descubrimiento del Nuevo Mundo. Esta histórica ciudad portuaria mezcla grandeza marítima con un profundo patrimonio, sirviendo como la majestuosa puerta donde se unen los ríos Odiel y Tinto."
+    },
+    "RIO_TINTO": {
+      "TITLE": "Río Tinto",
+      "DESC": "Descubre la belleza de otro mundo del Río Tinto, donde aguas de un llamativo color carmesí fluyen a través de un paisaje surrealista, parecido a Marte, esculpido por cinco mil años de historia minera. Esta maravilla geológica única ofrece una experiencia visual inolvidable y un fascinante vistazo al antiguo pasado industrial de España."
+    },
+    "MUELLE": {
+      "TITLE": "Muelle de las Carabelas",
+      "DESC": "Retrocede a 1492 en el Muelle de las Carabelas, donde puedes subir a bordo de réplicas a tamaño real de la Niña, la Pinta y la Santa María para revivir el viaje que cambió el mundo. Este museo inmersivo al aire libre ofrece una conexión tangible con la historia, permitiéndote caminar por las cubiertas de la legendaria flota justo donde comenzó la aventura."
+    },
+    "SEVILLA": {
+      "TITLE": "Ciudad de Sevilla",
+      "DESC": "Piérdete en la mágica alma de Sevilla, donde el aroma a azahar se mezcla con la pasión del flamenco y la cultura de tapas de clase mundial. Hogar del majestuoso Real Alcázar y la vibrante Plaza de España, la capital andaluza ofrece una deslumbrante mezcla de herencia árabe y energía moderna y viva."
+    }
+  },
+  "INVITATION": {
+    "RSVP_NOW": "Confirmar Asistencia"
+  },
+  "RSVP": {
+    "LOADING": "Cargando tu invitación...",
+    "THANK_YOU_TITLE": "Gracias",
+    "THANK_YOU_DESC": "Tu respuesta ha sido registrada. ¡Estamos deseando celebrar contigo!",
+    "BACK_TO_HOME": "Volver al Inicio",
+    "SUBTITLE": "Asistencia",
+    "RESPOND_BY": "Por favor responde antes del 1 de Agosto de 2026",
+    "JOYFULLY_ACCEPTS": "Acepta con Alegría",
+    "REGRETFULLY_DECLINES": "Declina con Pesar",
+    "DIETARY_PREFS": "Preferencias Dietéticas",
+    "ALLERGIES": "Alergias",
+    "SPECIFIC_NOTES": "Notas Específicas",
+    "NOTES_PLACEHOLDER": "ej. Alergia severa a los frutos secos...",
+    "MESSAGE_COUPLE": "Mensaje para los Novios",
+    "MESSAGE_PLACEHOLDER": "Deja una nota...",
+    "CONFIRM_BTN": "Confirmar Asistencia",
+    "DIETARY_VEGETARIAN": "Vegetariano",
+    "DIETARY_VEGAN": "Vegano",
+    "DIETARY_PESCATARIAN": "Pescatariano",
+    "DIETARY_CHILDRENS": "Menú Infantil",
+    "ALLERGY_NUTS": "Frutos Secos",
+    "ALLERGY_SHELLFISH": "Marisco",
+    "ALLERGY_EGGS": "Huevos",
+    "ALLERGY_GLUTEN_FREE": "Sin Gluten",
+    "ALLERGY_DAIRY_FREE": "Sin Lácteos"
+  }
+}

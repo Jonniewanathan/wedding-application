@@ -1,0 +1,20 @@
+:host {
+  display: block;
+}
+
+// Fade animation for page load
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Ensure the google map element fills the container
+google-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

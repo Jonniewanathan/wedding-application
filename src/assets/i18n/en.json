@@ -1,0 +1,142 @@
+{
+  "NAV": {
+    "SAVE_THE_DATE": "Save the Date",
+    "TRAVEL_INFO": "Travel Info",
+    "LOCAL_GUIDE": "Local Guide",
+    "MY_INVITATION": "My Invitation"
+  },
+  "FOOTER": {
+    "EST": "Est. {{year}}",
+    "DESIGNED_WITH_LOVE": "Designed with love for our guests.",
+    "CONTACT_INFO": "Contact Info"
+  },
+  "SAVE_THE_DATE": {
+    "SUBTITLE": "We Are Getting Married",
+    "DATE": "August 22, 2026",
+    "LOCATION": "Huelva, Spain",
+    "WELCOME_TITLE": "A celebration of love in the heart of Andalusia.",
+    "WELCOME_TEXT": "We are overjoyed to invite you to join us in Huelva. We have planned a weekend filled with sunshine, delicious food, and great company.",
+    "THE_VENUE": "The Venue",
+    "VENUE_NAME": "Convento de la Luz",
+    "THE_COUNTDOWN": "The Countdown",
+    "DAYS": "Days",
+    "HOURS": "Hours",
+    "MINS": "Mins",
+    "HAPPENING_NOW": "Happening Now!"
+  },
+  "TRAVEL_INFO": {
+    "SUBTITLE": "Logistics",
+    "TITLE": "Travel & Stay",
+    "INTRO": "We are so excited you are traveling to celebrate with us. Here is everything you need to know about getting to Huelva and where to settle in.",
+    "GETTING_HERE": "Getting Here",
+    "WHERE_TO_STAY": {
+      "TITLE": "Where to Stay",
+      "TEXT": "Our wedding will take place in Lucena Del Puerto. <br class=\"hidden md:block\"> You have three wonderful options for accommodation, each offering a different experience."
+    },
+    "PUNTA_UMBRIA": {
+      "TITLE": "Punta Umbría",
+      "DESC": "Our top recommendation. A beautiful coastal town perfect for a holiday vibe. Expect golden beaches, fresh seafood, and a relaxed atmosphere. It is the main pick-up point for the wedding bus."
+    },
+    "VALVERDE": {
+      "TITLE": "Valverde Del Camino",
+      "DESC": "For a truly authentic inland Andalusian experience. This is Marta's hometown—quiet, traditional, and full of local charm. A bus will also depart from here."
+    },
+    "HUELVA_CITY": {
+      "TITLE": "Huelva City",
+      "DESC": "The provincial capital. Perfect if you prefer city conveniences, shopping, and historical sights. Explore the Plaza de las Monjas and enjoy vibrant evening tapas bars."
+    },
+    "HOTEL_OFFER": {
+      "SUBTITLE": "Exclusive Offer",
+      "TITLE": "Hoteles Pato Recommendation",
+      "INTRO": "For those choosing to stay in Punta Umbría, we have arranged a special offer.",
+      "DISCOUNT_CODE": "Discount Code",
+      "CONDITION": "Minimum 3 nights stay required.",
+      "CONTACT_TO_BOOK": "Contact Directly to Book",
+      "HOTEL_AMARILLO_TAG": "Family Friendly",
+      "HOTEL_AMARILLO_DESC": "Ideal for staying with kids. Equipped with two swimming pools and a dedicated kids club.",
+      "HOTEL_ROJO_TAG": "Adults Only",
+      "HOTEL_ROJO_DESC": "A budget-friendly option. It does not have a pool, but guests get free access to the Pato Amarillo pool just 200m away."
+    },
+    "OTHER_INFO": {
+      "HEADING": "Car Rental, Public Transport & Venue",
+      "CAR_RENTAL": "We highly recommend renting a car from the airport for the greatest flexibility.",
+      "PUBLIC_TRANSPORT": "If using Seville Airport, Buses run from Seville bus station to Huelva city and then from Huelva city various buses will depart to Punta Umbria",
+      "VENUE_ADDRESS": "Convento de la Luz, Carretera A-494, s/n, 21820 Lucena del Puerto, Huelva"
+    },
+    "TRANSPORT": {
+      "HEADING": "Wedding Day Shuttle",
+      "TEXT": "We are arranging private transport to and from the venue to ensure everyone can relax.<br> We may add stops on route if needed for Huelva City",
+      "DEPARTING_FROM": "Departing From",
+      "NOTE": "Return shuttles will run at the end of the night."
+    },
+    "AIRPORT_FAO": {
+      "CITY": "Faro, Portugal",
+      "DRIVE_TIME": "1hr 20min drive",
+      "DESC": "Often the most convenient option from Ireland. A straightforward drive across the border into Spain."
+    },
+    "AIRPORT_SVQ": {
+      "CITY": "Seville, Spain",
+      "DRIVE_TIME": "1hr 30min drive",
+      "DESC": "Perfect if you want to combine the wedding with a city break in the capital of Andalusia."
+    }
+  },
+  "LOCAL_GUIDE": {
+    "SUBTITLE": "Guide",
+    "TITLE": "The Local Area",
+    "INTRO": "Huelva Province offers a perfect blend of golden coastlines and rich Andalusian history. Here are a few of our favourite spots to explore while you are here.",
+    "EXPLORE": "Explore the Region",
+    "PUNTA_UMBRIA": {
+      "TITLE": "Town of Punta Umbria",
+      "DESC": "Experience the electric energy of Punta Umbría, where golden sands are lined with lively chiringuitos perfect for sunset drinks and fresh seafood. As night falls, this coastal paradise transforms into a premier nightlife destination, boasting pulsating nightclubs and an atmosphere that invites you to dance until dawn."
+    },
+    "VALVERDE": {
+      "TITLE": "Valverde Del Camino",
+      "DESC": "Immerse yourself in the artisan heart of Huelva at Valverde del Camino, a town world-renowned for its exquisite leatherwork and the iconic boto riding boot. This welcoming destination offers a unique mix of master craftsmanship, rich British railway history, and authentic Andalusian gastronomy."
+    },
+    "MONUMENT": {
+      "TITLE": "Monument Fe Descubridora",
+      "DESC": "Stand in awe beneath the towering Monumento a la Fe Descubridora, a colossal Cubist tribute at the water's edge that immortalizes Huelva’s pivotal role in the discovery of the New World. This historic port city blends maritime grandeur with deep heritage, serving as the majestic gateway where the Odiel and Tinto rivers meet"
+    },
+    "RIO_TINTO": {
+      "TITLE": "Rio Tinto",
+      "DESC": "Discover the otherworldly beauty of the Rio Tinto, where striking crimson waters flow through a surreal, Mars-like landscape shaped by five thousand years of mining history. This unique geological wonder offers an unforgettable visual experience and a fascinating glimpse into Spain's ancient industrial past."
+    },
+    "MUELLE": {
+      "TITLE": "Muelle de las Carabelas",
+      "DESC": "Step back into 1492 at the Muelle de las Carabelas, where you can board full-scale replicas of the Niña, Pinta, and Santa María to relive the voyage that changed the world. This immersive open-air museum offers a tangible connection to history, allowing you to walk the decks of the legendary fleet right where the adventure began."
+    },
+    "SEVILLA": {
+      "TITLE": "Sevilla City",
+      "DESC": "Lose yourself in the soulful magic of Sevilla, where the scent of orange blossoms mingles with the passion of flamenco and world-class tapas culture. Home to the majestic Real Alcázar and the vibrant Plaza de España, the Andalusian capital offers a dazzling blend of Moorish heritage and lively modern energy."
+    }
+  },
+  "INVITATION": {
+    "RSVP_NOW": "RSVP Now"
+  },
+  "RSVP": {
+    "LOADING": "Loading your invitation...",
+    "THANK_YOU_TITLE": "Thank You",
+    "THANK_YOU_DESC": "Your response has been recorded. We can't wait to celebrate with you!",
+    "BACK_TO_HOME": "Back to Home",
+    "SUBTITLE": "RSVP",
+    "RESPOND_BY": "Please respond by August 1st, 2026",
+    "JOYFULLY_ACCEPTS": "Joyfully Accepts",
+    "REGRETFULLY_DECLINES": "Regretfully Declines",
+    "DIETARY_PREFS": "Dietary Preferences",
+    "ALLERGIES": "Allergies",
+    "SPECIFIC_NOTES": "Specific Notes",
+    "NOTES_PLACEHOLDER": "e.g. Severe nut allergy...",
+    "MESSAGE_COUPLE": "Message for the Couple",
+    "MESSAGE_PLACEHOLDER": "Leave a note...",
+    "CONFIRM_BTN": "Confirm RSVP",
+    "DIETARY_VEGETARIAN": "Vegetarian",
+    "DIETARY_VEGAN": "Vegan",
+    "DIETARY_PESCATARIAN": "Pescatarian",
+    "DIETARY_CHILDRENS": "Children's Meal",
+    "ALLERGY_NUTS": "Nuts",
+    "ALLERGY_SHELLFISH": "Shellfish",
+    "ALLERGY_EGGS": "Eggs",
+    "ALLERGY_GLUTEN_FREE": "Gluten Free",
+    "ALLERGY_DAIRY_FREE": "Dairy Free"
+  }
+}

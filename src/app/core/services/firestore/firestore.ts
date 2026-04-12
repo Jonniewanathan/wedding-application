@@ -3,15 +3,11 @@ import {
   Firestore, collection, query, where,
   getDocs, collectionData, doc, setDoc,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
-  addDoc, DocumentReference, getDoc // Added getDoc
+  addDoc, DocumentReference, getDoc, arrayUnion, arrayRemove
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation } from '../../../shared/models/invitation.model'; // Keep Invitation model
 import { Guest } from '../../../shared/models/guest.model';      // Use the unified Guest model
-import { v4 as uuidv4 } from 'uuid';
-
-// Removed UnassignedGuest import
-// Removed firebase/compat import
 
 @Injectable({
   providedIn: 'root'
@@ -25,22 +21,34 @@ export class FirestoreService {
 
   /**
    * Adds a new guest to the main guests collection as 'unassigned'.
+   * UPDATED: Initializes the new dietary array fields.
    */
   addGuest(firstName: string, lastName: string, country: string, notes: string): Promise<void> {
     const collectionRef = collection(this.firestore, 'guests');
-    const newDocRef = doc(collectionRef); // Auto-generate ID
-    return setDoc(newDocRef, {
+    const newDocRef = doc(collectionRef);
+
+    const newGuestData = {
       firstName,
       lastName,
       countryOfResidence: country || '',
       notes: notes || '',
-      invitationId: null, // Explicitly set as unassigned
+
+      // Explicitly set null for unassigned
+      invitationId: null,
       isAttending: null,
-      dietaryRestrictions: '',
-      type: 'primary',    // Default type
+
+      // Initialize empty arrays for the new features
+      dietaryPreferences: [],
+      allergies: [],
+      dietaryNotes: '',
+
+      type: 'primary',
       createdAt: serverTimestamp(),
       updatedAt: null
-    } as Omit<Guest, 'id'>);
+    };
+
+    // FIX: Cast to unknown first to bypass the "Overlap" error
+    return setDoc(newDocRef, newGuestData as unknown as Omit<Guest, 'id'>);
   }
 
   /**
@@ -63,74 +71,113 @@ export class FirestoreService {
 
     if (docSnap.exists() && docSnap.data()['invitationId'] === null) {
       await deleteDoc(docRef);
-      return true; // Successfully deleted unassigned guest
-    } else {
-      console.warn(`Guest ${guestId} not found or is already assigned.`);
-      return false; // Did not delete (either not found or assigned)
+      return true;
     }
+    return false;
   }
 
-  /**
-   * Updates general details (name, country, notes) of any guest.
-   */
   updateGuestDetails(guest: Partial<Guest> & { id: string }): Promise<void> {
     const docRef = doc(this.firestore, `guests/${guest.id}`);
-    // Only update fields relevant to general details
-    return updateDoc(docRef, {
-      firstName: guest.firstName,
-      lastName: guest.lastName,
-      countryOfResidence: guest.countryOfResidence,
-      notes: guest.notes,
+
+    // We construct the update object dynamically to ensure we don't accidentally wipe data
+    // if we pass a partial object.
+    const updateData: any = {
       updatedAt: serverTimestamp()
-    });
+    };
+
+    // Helper to only add fields if they are defined in the incoming object
+    if (guest.firstName !== undefined) updateData.firstName = guest.firstName;
+    if (guest.lastName !== undefined) updateData.lastName = guest.lastName;
+    if (guest.countryOfResidence !== undefined) updateData.countryOfResidence = guest.countryOfResidence;
+    if (guest.notes !== undefined) updateData.notes = guest.notes;
+
+    // RSVP Fields
+    if (guest.isAttending !== undefined) updateData.isAttending = guest.isAttending;
+    if (guest.dietaryPreferences !== undefined) updateData.dietaryPreferences = guest.dietaryPreferences;
+    if (guest.allergies !== undefined) updateData.allergies = guest.allergies;
+    if (guest.dietaryNotes !== undefined) updateData.dietaryNotes = guest.dietaryNotes;
+
+    return updateDoc(docRef, updateData);
   }
 
   // --- Invitation Management ---
 
   /**
-   * Creates a new, empty invitation document.
+   * Creates a new, empty invitation document with a secure UUID.
    */
   createInvitation(details: { displayName: string; }): Promise<DocumentReference<Invitation>> {
     const collectionRef = collection(this.firestore, 'invitations');
-    const uniqueCode = uuidv4(); // Generate a unique ID
+
+    // Use native crypto UUID for security (no external library needed)
+    const uniqueCode = self.crypto.randomUUID();
 
     return addDoc(collectionRef, {
-      invitationCode: uniqueCode, // Use the generated GUID
+      invitationCode: uniqueCode, // Secure UUID
       displayName: details.displayName,
       hasResponded: false,
-      respondedAt: null
+      status: 'sent', // Default status
+      guestIds: [],   // Initialize empty array
+      createdAt: serverTimestamp(),
+      updatedAt: null
     }) as Promise<DocumentReference<Invitation>>;
   }
 
   /**
-   * Assigns multiple guests (by ID) to a specific invitation ID.
+   * Assigns guests to an invitation.
+   * UPDATED: Now updates BOTH the Guest documents (with invitationId)
+   * AND the Invitation document (with guestIds array).
    */
-  assignGuestsToInvitation(invitationId: string, guestIds: string[]): Promise<void> {
+  async assignGuestsToInvitation(invitationId: string, guestIds: string[]): Promise<void> {
     const batch = writeBatch(this.firestore);
+
+    // 1. Update each Guest Document
     guestIds.forEach(guestId => {
       const guestRef = doc(this.firestore, `guests/${guestId}`);
       batch.update(guestRef, {
         invitationId: invitationId,
-        isAttending: null,
+        isAttending: null, // Reset RSVP status if they are moved
         updatedAt: serverTimestamp()
       });
     });
+
+    // 2. Update the Invitation Document (Add these IDs to the array)
+    // We use arrayUnion to prevent duplicates
+    const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
+    batch.update(invitationRef, {
+      guestIds: arrayUnion(...guestIds),
+      updatedAt: serverTimestamp()
+    });
+
     return batch.commit();
   }
 
   /**
-   * Unassigns a single guest, moving them back to the 'pool'.
-   * Clears their RSVP-specific details.
+   * Unassigns a single guest.
+   * UPDATED: Clears new dietary fields and removes ID from Invitation array.
    */
-  unassignGuest(guestId: string): Promise<void> {
+  async unassignGuest(guestId: string, currentInvitationId: string): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    // 1. Reset Guest Data
     const guestRef = doc(this.firestore, `guests/${guestId}`);
-    return updateDoc(guestRef, {
+    batch.update(guestRef, {
       invitationId: null,
       isAttending: null,
-      dietaryRestrictions: '',
-      type: 'primary', // Reset type
+      dietaryPreferences: [],
+      allergies: [],
+      dietaryNotes: '',
       updatedAt: serverTimestamp()
     });
+
+    // 2. Remove Guest ID from the Invitation's array
+    if (currentInvitationId) {
+      const invitationRef = doc(this.firestore, `invitations/${currentInvitationId}`);
+      batch.update(invitationRef, {
+        guestIds: arrayRemove(guestId)
+      });
+    }
+
+    return batch.commit();
   }
 
   /**
@@ -142,7 +189,22 @@ export class FirestoreService {
   }
 
   /**
-   * Deletes an invitation document AND unassigns all its associated guests.
+   * Finds a single invitation document by its unique code.
+   */
+  async getInvitationByCode(code: string): Promise<(Invitation & { id: string }) | null> {
+    const invitationsCollection = collection(this.firestore, 'invitations');
+    const q = query(invitationsCollection, where('invitationCode', '==', code));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) return null;
+
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as (Invitation & { id: string });
+  }
+
+  /**
+   * Deletes an invitation.
+   * UPDATED: Clears new dietary fields on guests.
    */
   async deleteInvitationAndUnassignGuests(invitationId: string): Promise<void> {
     const batch = writeBatch(this.firestore);
@@ -152,22 +214,22 @@ export class FirestoreService {
     const q = query(guestsCollectionRef, where('invitationId', '==', invitationId));
     const guestsSnapshot = await getDocs(q);
 
-    // 2. Add an update operation for each guest to unassign them
+    // 2. Unassign them
     guestsSnapshot.forEach(guestDoc => {
       batch.update(guestDoc.ref, {
         invitationId: null,
         isAttending: null,
-        dietaryRestrictions: '',
-        type: 'primary',
+        dietaryPreferences: [], // Clear data
+        allergies: [],         // Clear data
+        dietaryNotes: '',
         updatedAt: serverTimestamp()
       });
     });
 
-    // 3. Add the delete operation for the invitation document
+    // 3. Delete the invitation
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.delete(invitationRef);
 
-    // 4. Commit all operations
     return batch.commit();
   }
 
@@ -185,48 +247,37 @@ export class FirestoreService {
 
   /**
    * Updates RSVP-specific details for an assigned guest.
-   * Can also update name/country if needed (e.g., for plus ones).
+   * UPDATED: Now handles the new dietary arrays instead of the old string.
    */
   updateGuestRsvpDetails(guest: Guest): Promise<void> {
     if (!guest.invitationId) {
       return Promise.reject("Cannot update RSVP for an unassigned guest.");
     }
+
     const docRef = doc(this.firestore, `guests/${guest.id}`);
-    // Update relevant fields
+
     return updateDoc(docRef, {
-      firstName: guest.firstName, // Allow updating names, e.g. for plus ones
+      firstName: guest.firstName,
       lastName: guest.lastName,
-      countryOfResidence: guest.countryOfResidence,
+      countryOfResidence: guest.countryOfResidence || '',
       isAttending: guest.isAttending,
-      dietaryRestrictions: guest.dietaryRestrictions,
-      type: guest.type, // Allow changing type if needed
+
+      // --- FIXED: Use new dietary fields ---
+      dietaryPreferences: guest.dietaryPreferences || [],
+      allergies: guest.allergies || [],
+      dietaryNotes: guest.dietaryNotes || '',
+      // -------------------------------------
+
+      type: guest.type || 'primary',
       updatedAt: serverTimestamp()
     });
   }
 
-  /**
-   * Assigns multiple guests (by ID) to a specific invitation ID.
-   */
+  // --- RSVP Actions ---
 
   /**
-   * Finds a single invitation document by its unique code.
-   */
-  async getInvitationByCode(code: string): Promise<(Invitation & { id: string }) | null> {
-    const invitationsCollection = collection(this.firestore, 'invitations');
-    const q = query(invitationsCollection, where('invitationCode', '==', code));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      console.log('No matching invitation found.');
-      return null;
-    }
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as (Invitation & { id: string });
-  }
-
-  /**
-   * Submits RSVP details for multiple guests belonging to one invitation.
-   * Also updates the main invitation's 'hasResponded' status.
+   * Submits RSVP.
+   * UPDATED: Saves the new array fields (Preferences & Allergies).
    */
   submitRsvpForGuests(invitationId: string, guests: Guest[]): Promise<void> {
     const batch = writeBatch(this.firestore);
@@ -235,19 +286,25 @@ export class FirestoreService {
     guests.forEach(guest => {
       const guestRef = doc(this.firestore, `guests/${guest.id}`);
       batch.update(guestRef, {
-        firstName: guest.firstName, // Allow updating names (e.g., for plus ones)
+        firstName: guest.firstName,
         lastName: guest.lastName,
         isAttending: guest.isAttending,
-        dietaryRestrictions: guest.dietaryRestrictions,
+
+        // Save the chips data
+        dietaryPreferences: guest.dietaryPreferences || [],
+        allergies: guest.allergies || [],
+        dietaryNotes: guest.dietaryNotes || '',
+
         updatedAt: serverTimestamp()
       });
     });
 
-    // Update the parent invitation document
+    // Update Invitation Status
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.update(invitationRef, {
       hasResponded: true,
-      respondedAt: serverTimestamp()
+      status: 'responded',
+      updatedAt: serverTimestamp()
     });
 
     return batch.commit();

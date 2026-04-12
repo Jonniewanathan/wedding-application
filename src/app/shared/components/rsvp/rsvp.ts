@@ -1,67 +1,138 @@
-import { Component } from '@angular/core';
-import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Button} from 'primeng/button';
-import {Card} from 'primeng/card';
-import {InputText} from 'primeng/inputtext';
-import {RadioButton} from 'primeng/radiobutton';
-import {Textarea} from 'primeng/textarea';
-import {ToggleSwitch} from 'primeng/toggleswitch';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FirestoreService } from '../../../core/services/firestore/firestore';
+import { GuestSessionService } from '../../../core/services/auth/guest-session/guest-session';
+import { Invitation } from '../../models/invitation.model';
+import { Guest } from '../../models/guest.model';
+
+// PrimeNG
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+import { CheckboxModule } from 'primeng/checkbox';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-rsvp',
-  imports: [
-    FormsModule,
-    Button,
-    ReactiveFormsModule,
-    Card,
-    InputText,
-    RadioButton,
-    Textarea,
-    ToggleSwitch
-  ],
   standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    ButtonModule,
+    InputTextModule,
+    TextareaModule,
+    CheckboxModule,
+    RadioButtonModule,
+    ProgressSpinnerModule,
+    TranslateModule
+  ],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp.scss'
 })
-export class Rsvp {
-  pageTitle = 'Kindly Respond';
-  introText = 'We are so excited to celebrate with you! Please let us know your plans by August 1st, 2026.';
+export class Rsvp implements OnInit {
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private firestoreService = inject(FirestoreService);
+  private guestSession = inject(GuestSessionService);
+  public translate = inject(TranslateService);
 
+  invitation: Invitation | null = null;
   rsvpForm!: FormGroup;
 
-  constructor(private fb: FormBuilder) {}
+  isLoading = true;
+  submitted = false;
+
+  // Options for the chips
+  dietaryOptions = [
+    { labelKey: 'RSVP.DIETARY_VEGETARIAN', value: 'Vegetarian' },
+    { labelKey: 'RSVP.DIETARY_VEGAN', value: 'Vegan' },
+    { labelKey: 'RSVP.DIETARY_PESCATARIAN', value: 'Pescatarian' },
+    { labelKey: 'RSVP.DIETARY_CHILDRENS', value: 'Children\'s Meal' },
+  ];
+
+  allergyOptions = [
+    { labelKey: 'RSVP.ALLERGY_NUTS', value: 'Nuts' },
+    { labelKey: 'RSVP.ALLERGY_SHELLFISH', value: 'Shellfish' },
+    { labelKey: 'RSVP.ALLERGY_EGGS', value: 'Eggs' },
+    { labelKey: 'RSVP.ALLERGY_GLUTEN_FREE', value: 'Gluten Free' },
+    { labelKey: 'RSVP.ALLERGY_DAIRY_FREE', value: 'Dairy Free' }
+  ];
 
   ngOnInit(): void {
-    this.rsvpForm = this.fb.group({
-      guestName: ['', Validators.required],
-      attending: [null, Validators.required],
-      plusOne: [false],
-      plusOneName: [''],
-      dietaryRestrictions: [''],
-      message: ['']
-    });
+    // 1. Get the logged-in invitation from the session
+    this.invitation = this.guestSession.currentInvitationValue;
 
-    // Add logic to make plusOneName required if plusOne is true
-    this.rsvpForm.get('plusOne')?.valueChanges.subscribe(isPlusOne => {
-      const plusOneNameControl = this.rsvpForm.get('plusOneName');
-      if (isPlusOne) {
-        plusOneNameControl?.setValidators([Validators.required]);
-      } else {
-        plusOneNameControl?.clearValidators();
+    if (!this.invitation) {
+      // If they somehow got here without logging in (guard should prevent this), redirect
+      this.router.navigate(['/']);
+      return;
+    }
+
+    // 2. Load the guests for this invitation
+    this.loadGuests(this.invitation.id);
+  }
+
+  loadGuests(invitationId: string) {
+    this.firestoreService.getGuestsForInvitation(invitationId).subscribe({
+      next: (guests) => {
+        this.initForm(guests);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading guests', err);
+        this.isLoading = false;
       }
-      plusOneNameControl?.updateValueAndValidity();
     });
   }
 
-  submitRsvp(): void {
-    if (this.rsvpForm.valid) {
-      console.log('RSVP Submitted:', this.rsvpForm.value);
-      // Here you would send the data to your Firebase service
-      // e.g., this.firestoreService.submitRsvp(this.rsvpForm.value);
-    } else {
-      console.log('Form is invalid.');
-      // Mark all fields as touched to show validation errors
-      this.rsvpForm.markAllAsTouched();
+  initForm(guests: Guest[]) {
+    this.rsvpForm = this.fb.group({
+      // Create a form group for EACH guest
+      guests: this.fb.array(guests.map(guest => this.createGuestGroup(guest))),
+      message: [''] // General message for the couple
+    });
+  }
+
+  createGuestGroup(guest: Guest): FormGroup {
+    return this.fb.group({
+      id: [guest.id],
+      firstName: [guest.firstName],
+      lastName: [guest.lastName],
+
+      // RSVP Logic
+      isAttending: [guest.isAttending, Validators.required],
+
+      // Chips (Arrays)
+      dietaryPreferences: [guest.dietaryPreferences || []],
+      allergies: [guest.allergies || []],
+      dietaryNotes: [guest.dietaryNotes || '']
+    });
+  }
+
+  // Helper to access the FormArray in HTML
+  get guestControls() {
+    return (this.rsvpForm.get('guests') as FormArray).controls;
+  }
+
+  async onSubmit() {
+    if (this.rsvpForm.invalid || !this.invitation) return;
+
+    this.isLoading = true;
+    const formValue = this.rsvpForm.value;
+    const guestsToUpdate = formValue.guests as Guest[];
+
+    try {
+      await this.firestoreService.submitRsvpForGuests(this.invitation.id, guestsToUpdate);
+      this.submitted = true;
+      this.isLoading = false;
+    } catch (err) {
+      console.error('RSVP Failed', err);
+      this.isLoading = false;
     }
   }
 }

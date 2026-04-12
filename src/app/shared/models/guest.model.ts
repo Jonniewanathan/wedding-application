@@ -4,16 +4,22 @@ export interface Guest {
   id: string;
   firstName: string;
   lastName: string;
+
+  // FIX: Explicitly allow null
+  invitationId?: string | null;
+
+  // FIX: Explicitly allow null
+  isAttending?: boolean | null;
+
+  dietaryPreferences?: string[];
+  allergies?: string[];
+  dietaryNotes?: string;
+
   countryOfResidence?: string;
   notes?: string;
 
-  invitationId?: string | null;
+  type?: string; // Added this to satisfy the overlap check
 
-  isAttending?: boolean | null;
-  dietaryRestrictions?: string;
-  type?: 'primary' | 'plus_one';
-
-  // Timestamps
   createdAt: Timestamp;
   updatedAt?: Timestamp | null;
 }

@@ -1,0 +1,33 @@
+/* 1. Hide the PrimeNG checkbox square visually */
+:host ::ng-deep .hidden-checkbox-input .p-checkbox-box {
+  display: none !important;
+}
+
+/* 2. Base Chip Style (The Label) */
+.chip-label {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border: 1px solid #cbd5e1; /* slate-300 */
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.75rem; /* text-xs */
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748b; /* slate-500 */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none; /* Prevent text selection on rapid clicks */
+}
+
+/* Hover State */
+.chip-label:hover {
+  border-color: #94a3b8; /* slate-400 */
+  background-color: #f8fafc; /* slate-50 */
+}
+
+/* 3. Active State (When Selected) */
+.chip-active {
+  background-color: #0f172a !important; /* slate-900 */
+  border-color: #0f172a !important;
+  color: white !important;
+}

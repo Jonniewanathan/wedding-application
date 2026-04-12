@@ -1,54 +1,88 @@
-import { Component } from '@angular/core';
-import {RouterLink} from '@angular/router';
-import {Fieldset} from 'primeng/fieldset';
-import {Card} from 'primeng/card';
-import {Divider} from 'primeng/divider';
-import {Panel} from 'primeng/panel';
-import {Button} from 'primeng/button';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+
+// Services
+import { FirestoreService } from '../../../core/services/firestore/firestore';
+import { GuestSessionService } from '../../../core/services/auth/guest-session/guest-session';
+
+// PrimeNG
+import { FieldsetModule } from 'primeng/fieldset';
+import { CardModule } from 'primeng/card';
+import { DividerModule } from 'primeng/divider';
+import { PanelModule } from 'primeng/panel';
+import { ButtonModule } from 'primeng/button';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import {Image} from 'primeng/image';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-invitation',
-  imports: [
-    RouterLink,
-    Fieldset,
-    Card,
-    Divider,
-    Panel,
-    Button
-  ],
   standalone: true,
+  imports: [
+    CommonModule,
+    RouterLink,
+    FieldsetModule,
+    CardModule,
+    DividerModule,
+    PanelModule,
+    ButtonModule,
+    ProgressSpinnerModule,
+    Image,
+    TranslateModule
+  ],
   templateUrl: './invitation.html',
   styleUrl: './invitation.scss'
 })
-export class Invitation {
-  // Wedding details
-  coupleNames = 'Marta and Jonathan';
-  weddingDate = 'Saturday, September 15th, 2026';
-  weddingTime = '2:00 PM';
-  ceremonyLocation = 'Finca La Concepcion, Marbella, Spain';
-  receptionLocation = 'Finca La Concepcion, Marbella, Spain'; // Often same as ceremony
-  dressCode = 'Formal / Black Tie Optional';
+export class Invitation implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private firestore = inject(FirestoreService);
+  private guestSession = inject(GuestSessionService);
+  private translate = inject(TranslateService);
 
-  // Specific travel information for guests from Ireland
-  irelandTravelDetails = {
-    heading: 'For Our Wonderful Guests from Ireland',
-    message: 'We are so excited to celebrate our special day with you in sunny Spain! Below is some information specifically tailored to help you plan your journey.',
-    passportReminder: 'Please ensure your passport is valid for travel to Spain (Schengen Area) and has at least 6 months validity from your return date.',
-    currency: 'The local currency in Spain is the Euro (€).',
-    language: 'The official language is Spanish, but English is widely spoken in tourist areas.',
-    driving: 'Driving is on the right-hand side of the road in Spain. An International Driving Permit is recommended if you plan to hire a car.'
-  };
+  // State
+  isLoading = true;
+  hasError = false;
+  errorMessage = '';
 
-  // General invitation text
-  invitationMessage = `
-    The honour of your presence
-    is requested at the marriage of
-  `;
-  invitationClosing = `
-    Reception to follow immediately at the same location.
-    We would be absolutely delighted if you could join us.
-  `;
+  ngOnInit() {
+    const code = this.route.snapshot.paramMap.get('code');
 
-  constructor() { }
+    if (code) {
+      // 1. URL has a code -> Attempt Login
+      this.handleLogin(code);
+    } else {
+      // 2. No code -> Check if already logged in from previous visit
+      if (this.guestSession.currentInvitationValue) {
+        this.isLoading = false;
+      } else {
+        // 3. No code & No session -> Error (User just typed /invitations manually)
+        this.showError('No invitation code found. Please scan your QR code or use the link provided.');
+      }
+    }
+  }
 
+  async handleLogin(code: string) {
+    try {
+      const invitation = await this.firestore.getInvitationByCode(code);
+
+      if (invitation) {
+        // SUCCESS: Log them in
+        this.guestSession.login(invitation);
+        this.isLoading = false;
+      } else {
+        this.showError('We could not find an invitation with this code. Please check your link.');
+      }
+    } catch (e) {
+      console.error(e);
+      this.showError('Something went wrong loading your invitation. Please try again.');
+    }
+  }
+
+  showError(msg: string) {
+    this.hasError = true;
+    this.errorMessage = msg;
+    this.isLoading = false;
+  }
 }

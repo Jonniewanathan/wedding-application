@@ -1,63 +1,193 @@
-<div class="flex flex-col items-center py-8 px-4">
-  <p-card class="max-w-5xl w-full shadow-xl rounded-xl border-none text-left">
-    <h1 class="text-5xl md:text-6xl font-serif text-gray-800 font-bold mb-10 text-center tracking-tight">
-      Travel Information
+<div class="w-full bg-white text-slate-900 pb-6">
+
+  <header class="pt-16 pb-8 px-6 text-center max-w-4xl mx-auto" appScrollReveal>
+    <span class="block text-xs md:text-sm font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">
+      {{ 'TRAVEL_INFO.SUBTITLE' | translate }}
+    </span>
+    <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif font-medium italic text-slate-900 mb-8 leading-none tracking-tight">
+      {{ 'TRAVEL_INFO.TITLE' | translate }}
     </h1>
+    <p class="text-lg text-slate-600 font-light leading-relaxed max-w-2xl mx-auto reveal-delay-100">
+      {{ 'TRAVEL_INFO.INTRO' | translate }}
+    </p>
+  </header>
 
-    <p-panel [header]="introInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
-      <p class="text-lg text-gray-700 mb-4 leading-relaxed">{{ introInfo.location }}</p>
-      <p class="text-lg text-gray-600 mb-4 leading-relaxed">{{ introInfo.recommendation }}</p>
-      <p class="text-lg text-gray-600 leading-relaxed">{{ introInfo.alternative }}</p>
-    </p-panel>
+  <section class="container mx-auto px-6 mt-6 md:px-12 mb-20">
+    <div class="text-center mb-6" appScrollReveal>
+      <h2 class="text-3xl md:text-4xl font-serif text-slate-900">{{ 'TRAVEL_INFO.GETTING_HERE' | translate }}</h2>
+    </div>
 
-    <p-panel [header]="busInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
-      <p class="text-lg text-gray-700 mb-4 leading-relaxed">{{ busInfo.details }}</p>
-      <p class="text-lg text-gray-600 mb-4 leading-relaxed">{{ busInfo.routes }}</p>
-      <p class="text-lg text-gray-600 font-semibold leading-relaxed">{{ busInfo.rsvp }}</p>
-    </p-panel>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+      @for(airport of airports; track airport.code) {
+        <div class="flex flex-col" appScrollReveal>
+          <div class="editorial-image-hover">
+            <img [src]="airport.image" class="mx-auto w-1/2 pt-2 object-cover opacity-90" />
+          </div>
 
-    <p-panel [header]="airportInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
-      <p class="text-lg text-gray-600 mb-6 leading-relaxed">{{ airportInfo.intro }}</p>
-      <div class="mb-4 p-4 bg-white rounded border border-gray-100">
-        <h3 class="font-semibold text-xl text-gray-800">{{ airportInfo.faro.name }}</h3>
-        <p class="text-gray-700">{{ airportInfo.faro.details }}</p>
-      </div>
-      <div class="p-4 bg-white rounded border border-gray-100">
-        <h3 class="font-semibold text-xl text-gray-800">{{ airportInfo.sevilla.name }}</h3>
-        <p class="text-gray-700">{{ airportInfo.sevilla.details }}</p>
-      </div>
-    </p-panel>
+          <div class="flex items-baseline justify-between mb-2">
+            <h3 class="text-2xl font-serif text-slate-900">{{ airport.cityKey | translate }}</h3>
+            <span class="text-3xl font-sans font-bold text-slate-400 select-none">{{ airport.code }}</span>
+          </div>
 
-    <p-panel [header]="otherInfo.heading" class="mb-8 bg-cream-50 rounded-lg shadow-md border border-cream-100">
-      <p class="text-lg text-gray-600 mb-4 leading-relaxed">
-        {{ otherInfo.carRental }}
+          <span class="text-xs uppercase tracking-widest text-slate-500 mb-4 bg-slate-50 inline-block py-1 px-2 w-fit">
+            {{ airport.driveTimeKey | translate }}
+          </span>
+
+          <p class="text-slate-600 font-light leading-relaxed">
+            {{ airport.descriptionKey | translate }}
+          </p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="container max-w-7xl mx-auto relative md:overflow-visible">
+
+    <div class="sticky top-0 h-screen w-full z-0 md:hidden pointer-events-none">
+      <img
+        [src]="activeLocation.mobileImage ?? activeLocation.image"
+        alt=""
+        class="h-full w-full object-cover object-center opacity-80 transition-all duration-700 ease-in-out animate-image-fade"
+      />
+      <div class="absolute inset-0 bg-gradient-to-b from-white/50 via-white/60 to-white/50"></div>
+    </div>
+
+
+    <div class="relative z-10 text-center max-w-3xl mx-auto mb-20 md:mb-24 px-6 md:px-12 -mt-[100vh] md:mt-0" appScrollReveal>
+      <h2 class="text-3xl md:text-4xl font-serif mb-6 text-slate-800">{{ 'TRAVEL_INFO.WHERE_TO_STAY.TITLE' | translate }}</h2>
+      <p class="text-slate-600 font-light leading-relaxed px-4" [innerHTML]="'TRAVEL_INFO.WHERE_TO_STAY.TEXT' | translate">
       </p>
-      <div class="p-4 bg-white rounded-lg border">
-        <p class="font-semibold text-lg text-gray-800">Wedding Venue Address:</p>
-        <p class="text-gray-600">{{ otherInfo.venueAddress }}</p>
-      </div>
-    </p-panel>
+    </div>
 
-    <p-panel header="Locations at a Glance 📸" class="bg-cream-50 rounded-lg shadow-md border border-cream-100">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @for(photo of locationPhotos; track photo.name) {
-          <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
-            <p-image
-              [src]="photo.imageUrl"
-              [alt]="photo.name"
-              imageClass="w-full object-cover"
-              [preview]="true">
-              <ng-template pTemplate="indicator">
-                <i class="pi pi-image text-4xl text-gray-400"></i>
-              </ng-template>
-            </p-image>
-            <div class="p-4">
-              <h3 class="font-semibold text-lg text-gray-800">{{ photo.name }}</h3>
-              <p class="text-sm text-gray-600">{{ photo.description }}</p>
+
+    <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24 items-start px-6 md:px-12">
+
+      <div class="flex flex-col">
+        <div class="flex flex-col gap-[30vh] md:gap-[50vh]">
+
+          @for (loc of locations; track loc.id) {
+            <div #locationBlock [id]="loc.id" class="flex flex-col justify-center min-h-[30vh] transition-opacity duration-500"
+                 [class.opacity-100]="activeLocation.id === loc.id"
+                 [class.opacity-40]="activeLocation.id !== loc.id">
+
+              <h3 class="text-3xl font-serif text-slate-900 mb-4">{{ loc.titleKey | translate }}</h3>
+
+              <div class="w-12 h-px bg-slate-800 mb-6 transition-all duration-500"
+                   [class.w-12]="activeLocation.id === loc.id"
+                   [class.w-0]="activeLocation.id !== loc.id"></div>
+
+              <p class="text-lg text-slate-800 md:text-slate-700 leading-relaxed font-light">
+                {{ loc.descriptionKey | translate }}
+              </p>
             </div>
+          }
+
+          <div class="h-[5vh]"></div>
+        </div>
+      </div>
+
+
+      <div class="hidden md:flex sticky top-30 h-[80vh] items-center justify-center">
+        <div class="relative w-full max-w-md aspect-[3/4] max-h-[70vh] overflow-hidden shadow-2xl bg-slate-100">
+          <img
+            [src]="activeLocation.image"
+            [alt]="activeLocation.titleKey | translate"
+            class="w-full h-full object-cover transition-all duration-700 ease-in-out transform scale-100 animate-image-fade"
+          />
+          <div class="absolute bottom-6 left-6 bg-white/90 backdrop-blur px-4 py-2">
+            <span class="text-xs uppercase tracking-widest text-slate-900">{{ activeLocation.titleKey | translate }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <section class="w-full bg-slate-50 border-t border-slate-100 py-20 mt-12 mb-12" appScrollReveal>
+    <div class="container mx-auto px-6 md:px-12 max-w-5xl">
+
+      <div class="text-center mb-16">
+        <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-400 mb-4">
+          {{ 'TRAVEL_INFO.HOTEL_OFFER.SUBTITLE' | translate }}
+        </span>
+        <h2 class="text-3xl md:text-5xl font-serif text-slate-900 mb-6 italic">
+          {{ 'TRAVEL_INFO.HOTEL_OFFER.TITLE' | translate }}
+        </h2>
+        <p class="text-slate-600 font-light leading-relaxed max-w-2xl mx-auto">
+          {{ 'TRAVEL_INFO.HOTEL_OFFER.INTRO' | translate }}
+        </p>
+      </div>
+
+      <div class="bg-white p-8 md:p-12 shadow-sm border border-slate-100 text-center mb-16 max-w-3xl mx-auto">
+        <h3 class="text-lg font-serif italic text-slate-800 mb-2">{{ 'TRAVEL_INFO.HOTEL_OFFER.DISCOUNT_CODE' | translate }}</h3>
+        <p class="text-4xl md:text-5xl font-serif text-slate-900 mb-4 tracking-tight">
+          "{{ hotelOffer.code }}"
+        </p>
+        <p class="text-sm text-slate-500 font-light italic mb-8 border-b border-slate-100 pb-8 inline-block px-12">
+          {{ 'TRAVEL_INFO.HOTEL_OFFER.CONDITION' | translate }}
+        </p>
+
+        <p class="text-xs uppercase tracking-widest text-slate-400 mb-6">{{ 'TRAVEL_INFO.HOTEL_OFFER.CONTACT_TO_BOOK' | translate }}</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          @for (contact of hotelOffer.contacts; track contact.label) {
+            <div class="flex flex-col items-center group">
+              <a [href]="contact.link" class="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300 mb-3">
+                <i [class]="contact.icon + ' text-xl'"></i>
+              </a>
+              <span class="text-slate-800 text-sm font-medium">{{ contact.value }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+        @for (hotel of hotelOffer.hotels; track hotel.name) {
+          <div class="flex flex-col text-center md:text-left">
+            <div class="h-64 w-full bg-slate-200 mb-6 overflow-hidden relative group">
+              <img [src]="hotel.image" class="w-full h-full object-cover transition-all duration-700" alt="">
+            </div>
+
+            <h3 class="text-2xl font-serif text-slate-900 mb-2">{{ hotel.name }}</h3>
+            <span class="text-xs uppercase tracking-widest text-slate-500 mb-4 block">{{ hotel.tagKey | translate }}</span>
+            <p class="text-slate-600 font-light leading-relaxed">
+              {{ hotel.descriptionKey | translate }}
+            </p>
           </div>
         }
       </div>
-    </p-panel>
-  </p-card>
+
+    </div>
+  </section>
+
+  <section class="container mx-auto px-6 mt-[-20px] text-center border-t border-slate-100 py-16" appScrollReveal>
+    <div class="max-w-2xl mx-auto">
+      <h4 class="text-lg font-serif mb-4">{{ 'TRAVEL_INFO.OTHER_INFO.HEADING' | translate }}</h4>
+      <p class="text-slate-500 font-light mb-8">{{ 'TRAVEL_INFO.OTHER_INFO.CAR_RENTAL' | translate }}</p>
+      <p class="text-slate-500 font-light mb-8">{{ 'TRAVEL_INFO.OTHER_INFO.PUBLIC_TRANSPORT' | translate }}</p>
+      <div class="inline-block border border-slate-200 p-4">
+        <p class="text-slate-800 font-serif italic">{{ 'TRAVEL_INFO.OTHER_INFO.VENUE_ADDRESS' | translate }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-slate-50 py-10 mb-12" appScrollReveal>
+    <div class="container mx-auto px-6 text-center max-w-3xl">
+      <i class="pi pi-car text-3xl text-slate-400 mb-6"></i>
+      <h2 class="text-3xl font-serif text-slate-900 mb-6">{{ 'TRAVEL_INFO.TRANSPORT.HEADING' | translate }}</h2>
+      <p class="text-slate-600 mb-10 leading-relaxed font-light" [innerHTML]="'TRAVEL_INFO.TRANSPORT.TEXT' | translate"></p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @for(route of transport.routes; track route.from) {
+          <div class="bg-white p-6 border border-slate-100 shadow-sm">
+            <span class="block text-xs uppercase tracking-widest text-slate-400 mb-2">{{ 'TRAVEL_INFO.TRANSPORT.DEPARTING_FROM' | translate }}</span>
+            <span class="block text-xl font-serif text-slate-800">{{ route.from }}</span>
+          </div>
+        }
+      </div>
+      <p class="mt-8 text-xs text-slate-400 italic">{{ 'TRAVEL_INFO.TRANSPORT.NOTE' | translate }}</p>
+    </div>
+  </section>
+
 </div>

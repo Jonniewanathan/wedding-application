@@ -1,89 +1,145 @@
-import { Component } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  ViewChildren,
+  QueryList,
+  ElementRef,
+  OnDestroy,
+  ChangeDetectorRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ScrollRevealDirective } from '../../../core/directives/scroll-reveal';
+import { TranslateModule } from '@ngx-translate/core';
 
-// --- Import PrimeNG Modules ---
-import { PanelModule } from 'primeng/panel';
-import { CardModule } from 'primeng/card';
-import { DividerModule } from 'primeng/divider';
-import {Image} from 'primeng/image'; // Add DividerModule
+interface AccommodationLocation {
+  id: string;
+  titleKey: string;
+  descriptionKey: string;
+  image: string;
+  mobileImage: string | null;
+}
 
 @Component({
   selector: 'app-travel-info',
   standalone: true,
-  imports: [CommonModule, PanelModule, CardModule, DividerModule, Image], // Add DividerModule
+  imports: [CommonModule, ScrollRevealDirective, TranslateModule],
   templateUrl: './travel-info.html',
   styleUrl: './travel-info.scss'
 })
-export class TravelInfo {
+export class TravelInfo implements AfterViewInit, OnDestroy {
+  // We access the DOM elements to track when they scroll into view
+  @ViewChildren('locationBlock') locationBlocks!: QueryList<ElementRef>;
 
-  // --- Introduction Section ---
-  introInfo = {
-    heading: 'Welcome & Where to Stay',
-    location: "Our wedding will take place in the charming village of Lucena Del Puerto in the province of Huelva, Andalusia.",
-    recommendation: "Due to high summer temperatures, accessibility, transport options, and accommodation availability, we highly suggest staying near the beautiful coast of Huelva, particularly in the coastal town of Punta Umbría.",
-    alternative: "Another option is Marta's lovely hometown, Valverde Del Camino. It offers a different, more inland Andalusian experience.",
-  };
+  private observer: IntersectionObserver | undefined;
 
-  // --- Bus Information ---
-  busInfo = {
-    heading: 'Wedding Day Transportation 🚌',
-    details: "To make transportation to and from the wedding venue easier for everyone, we will arrange a private bus.",
-    routes: "The bus will depart from Punta Umbría and also from Valverde Del Camino, returning to both locations after the celebration.",
-    rsvp: "More specific details about timings and exact pickup points will follow closer to the date. An RSVP for the bus will be needed.",
-  };
-
-  // --- Airport Information ---
-  airportInfo = {
-    heading: 'Getting Here - Airports ✈️',
-    intro: "There are two main airport options we recommend for travelling from Ireland:",
-    faro: {
-      name: "Faro Airport, Portugal (FAO)",
-      details: "Often the most convenient and cost-effective option with many direct flights from Ireland. It is approximately a 1 hour 20 minute drive to Punta Umbría and Huelva city.",
-    },
-    sevilla: {
-      name: "Seville Airport, Spain (SVQ)",
-      details: "A great alternative, especially if you plan to explore the beautiful city of Seville. It is approximately a 1 hour 30 minute drive to Punta Umbría and Huelva city.",
-    },
-    searchTip: "Use the flight search tool below to find the best options for your dates."
-  };
-
-  // --- Getting Around & Venue Address ---
-  otherInfo = {
-    heading: 'Getting Around & Venue Address',
-    carRental: 'We highly recommend renting a car from the airport (Faro or Seville) for the greatest flexibility during your stay and for travelling between the airport, your accommodation, and potential sightseeing spots. All major rental companies operate at both airports.',
-    venueAddress: 'Convento de la Luz, Carretera A-494, s/n, 21820 Lucena del Puerto, Huelva, Spain'
-  };
-
-  locationPhotos = [
+  // --- ACCOMMODATION DATA ---
+  locations: AccommodationLocation[] = [
     {
-      name: 'Lucena Del Puerto',
-      description: 'The charming village where the wedding venue is located.',
-      imageUrl: 'assets/images/lucena-del-puerto-village.jpg'
+      id: 'punta',
+      titleKey: 'TRAVEL_INFO.PUNTA_UMBRIA.TITLE',
+      descriptionKey: 'TRAVEL_INFO.PUNTA_UMBRIA.DESC',
+      image: 'assets/images/punta-umbria-beach.jpg',
+      mobileImage: null
     },
     {
-      name: 'Punta Umbría',
-      description: 'Our recommended coastal town for accommodation, known for its beaches.',
-      imageUrl: 'assets/images/punta-umbria-beach.jpg'
+      id: 'valverde',
+      titleKey: 'TRAVEL_INFO.VALVERDE.TITLE',
+      descriptionKey: 'TRAVEL_INFO.VALVERDE.DESC',
+      image: 'assets/images/valverde.jpeg',
+      mobileImage: 'assets/images/valverde-del-camino-town.jpg'
     },
     {
-      name: 'Huelva City',
-      description: 'The nearby provincial capital with historical sites and local flavour.',
-      imageUrl: 'assets/images/huelva-city-image.jpg'
-    },
-    {
-      name: 'Valverde Del Camino',
-      description: 'Marta\'s hometown, offering an inland Andalusian experience.',
-      imageUrl: 'assets/images/valverde-del-camino-town.jpg'
-    },
-    {
-      name: 'Faro, Portugal',
-      description: 'A key arrival airport with a picturesque old town.',
-      imageUrl: 'assets/images/faro-portugal-old-town.jpg'
-    },
-    {
-      name: 'Seville, Spain',
-      description: 'A major city, easily accessible and rich in culture and history.',
-      imageUrl: 'assets/images/seville-spain-cathedral.jpg'
+      id: 'huelva',
+      titleKey: 'TRAVEL_INFO.HUELVA_CITY.TITLE',
+      descriptionKey: 'TRAVEL_INFO.HUELVA_CITY.DESC',
+      image: 'assets/images/huelva-city-centre.jpg',
+      mobileImage: null
     }
   ];
+
+  // Set default active location
+  activeLocation: AccommodationLocation = this.locations[0];
+
+  // --- TRANSPORT DATA ---
+  transport = {
+    routes: [
+      { from: 'Punta Umbría', to: 'Venue', time: 'TBA' },
+      { from: 'Valverde', to: 'Venue', time: 'TBA' }
+    ]
+  };
+
+  // --- AIRPORT DATA ---
+  airports = [
+    {
+      code: 'FAO',
+      cityKey: 'TRAVEL_INFO.AIRPORT_FAO.CITY',
+      driveTimeKey: 'TRAVEL_INFO.AIRPORT_FAO.DRIVE_TIME',
+      descriptionKey: 'TRAVEL_INFO.AIRPORT_FAO.DESC',
+      image: 'assets/images/aeroplane_taking_off.png'
+    },
+    {
+      code: 'SVQ',
+      cityKey: 'TRAVEL_INFO.AIRPORT_SVQ.CITY',
+      driveTimeKey: 'TRAVEL_INFO.AIRPORT_SVQ.DRIVE_TIME',
+      descriptionKey: 'TRAVEL_INFO.AIRPORT_SVQ.DESC',
+      image: 'assets/images/aeroplane_taking_off.png'
+    }
+  ];
+
+  // --- NEW: HOTEL OFFER DATA ---
+  hotelOffer = {
+    code: 'Boda Marta',
+    contacts: [
+      { label: 'Email', value: 'ventas@hotelespato.com', icon: 'pi pi-envelope', link: 'mailto:ventas@hotelespato.com' },
+      { label: 'Phone', value: '+34 959 31 12 50', icon: 'pi pi-phone', link: 'tel:+34959311250' },
+      { label: 'WhatsApp', value: '+34 682 666 310', icon: 'pi pi-whatsapp', link: 'https://wa.me/34682666310' }
+    ],
+    hotels: [
+      {
+        name: 'Hotel Pato Amarillo',
+        tagKey: 'TRAVEL_INFO.HOTEL_OFFER.HOTEL_AMARILLO_TAG',
+        descriptionKey: 'TRAVEL_INFO.HOTEL_OFFER.HOTEL_AMARILLO_DESC',
+        image: 'assets/images/hotel_pato_amarillo.jpg'
+      },
+      {
+        name: 'Hotel Pato Rojo',
+        tagKey: 'TRAVEL_INFO.HOTEL_OFFER.HOTEL_ROJO_TAG',
+        descriptionKey: 'TRAVEL_INFO.HOTEL_OFFER.HOTEL_ROJO_DESC',
+        image: 'assets/images/hotel_pato_rojo.jpg'
+      }
+    ]
+  };
+
+  constructor(private cdr: ChangeDetectorRef) {}
+
+  ngAfterViewInit() {
+    // SCROLL LOGIC:
+    const options = {
+      root: null,
+      rootMargin: '-50% 0px -50% 0px',
+      threshold: 0
+    };
+
+    this.observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          const found = this.locations.find(l => l.id === id);
+
+          if (found) {
+            this.activeLocation = found;
+            this.cdr.detectChanges();
+          }
+        }
+      });
+    }, options);
+
+    this.locationBlocks.forEach(block => {
+      this.observer?.observe(block.nativeElement);
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.observer) this.observer.disconnect();
+  }
 }

@@ -6,15 +6,7 @@ html, body, app-root {
   height: 100%;
 }
 
-body {
-  background-image: url('assets/images/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-
-  @apply min-h-screen font-sans antialiased text-gray-700;
-}
+/* src/styles.scss */
 
 .p-menubar-root-list {
   min-width: max-content !important;
@@ -22,13 +14,146 @@ body {
   right: 0 !important;
 }
 
+/* --- Global Scroll Reveal Animations --- */
 
+/* 1. The Starting State */
+.reveal-hidden {
+  opacity: 0 !important; /* Force override of any Tailwind classes */
+  will-change: opacity;  /* Performance hint */
+}
 
-//main {
-//  background-image: url('assets/images/background.jpg');
-//
-//  /* Optional: Add properties to control how the image displays */
-//  background-size: cover; /* Scales the image to cover the element */
-//  background-position: center; /* Centers the image */
-//  background-repeat: no-repeat; /* Prevents the image from tiling */
-//}
+/* 2. The Ending State */
+.reveal-visible {
+  opacity: 1 !important;
+
+  /* The transition MUST be here so it applies when the class is added */
+  transition: opacity 2.5s ease-in-out !important;
+}
+
+/* --- Delays --- */
+/* Use these if elements are appearing too fast */
+.reveal-delay-100 { transition-delay: 100ms; }
+.reveal-delay-200 { transition-delay: 200ms; }
+.reveal-delay-300 { transition-delay: 300ms; }
+.reveal-delay-500 { transition-delay: 500ms; }
+
+/* --- Editorial Hover Effect (Zoom) --- */
+.editorial-image-hover {
+  overflow: hidden;
+  display: block; /* Ensures overflow works */
+
+  img {
+    transition: transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+  }
+
+  &:hover img {
+    transform: scale(1.05);
+  }
+}
+
+/* --- EDITORIAL ADMIN THEME OVERRIDES --- */
+
+/* 1. Dialogs & Panels */
+.p-dialog .p-dialog-header,
+.p-dialog .p-dialog-content,
+.p-dialog .p-dialog-footer {
+  background-color: white !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.p-dialog {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25) !important; /* Deep shadow */
+  border: 1px solid #e2e8f0;
+}
+
+/* 2. Tables (Minimalist) */
+.p-datatable .p-datatable-thead > tr > th {
+  background: white !important;
+  color: #64748b !important; /* Slate-500 */
+  font-family: ui-sans-serif, system-ui;
+  font-size: 0.75rem; /* Text-xs */
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  border-bottom: 2px solid #0f172a !important; /* Slate-900 border */
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  padding-top: 1.5rem;
+  padding-bottom: 1rem;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9 !important; /* Slate-100 */
+  padding: 1.25rem 1rem;
+  color: #334155; /* Slate-700 */
+}
+
+/* 3. Inputs (Sharp & Clean) */
+.p-inputtext, .p-inputtextarea {
+  border-radius: 0 !important; /* Sharp edges */
+  padding: 0.75rem !important;
+  font-family: ui-sans-serif, system-ui;
+  border-color: #e2e8f0;
+}
+.p-inputtext:focus, .p-inputtextarea:focus {
+  border-color: #0f172a !important; /* Slate-900 */
+  box-shadow: none !important;
+}
+
+/* 4. Checkboxes */
+.p-checkbox .p-checkbox-box {
+  border-radius: 0 !important;
+  border-color: #cbd5e1;
+}
+.p-checkbox .p-checkbox-box.p-highlight {
+  background: #0f172a !important; /* Slate-900 */
+  border-color: #0f172a !important;
+}
+
+/* --- Global Print Styles --- */
+@media print {
+  body {
+    visibility: hidden;
+  }
+
+  #printable-invite, #printable-invite * {
+    visibility: visible !important;
+  }
+
+  #printable-invite {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 99999 !important;
+  }
+
+  .p-dialog-mask {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: white !important;
+    display: block !important;
+    z-index: 99998 !important;
+  }
+
+  .p-dialog {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+
+  .p-dialog .p-dialog-content {
+    padding: 0 !important;
+  }
+}

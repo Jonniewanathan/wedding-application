@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+/* Specific animation for the main cover photo */
+.animate-slide-up {
+  animation: slideUp 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+  transform: translateY(50px);
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 0.9; /* Slight opacity for editorial feel */
+    transform: translateY(0);
+  }
+}

@@ -1,14 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { FirestoreService } from '../../../core/services/firestore/firestore'; // Correct service import
+import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
-import { Guest } from '../../models/guest.model'; // Correct model import
+import { Guest } from '../../models/guest.model';
 
 // PrimeNG Modules
 import { InputTextModule } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
+import { TextareaModule } from 'primeng/textarea';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { CheckboxModule } from 'primeng/checkbox';
 
 @Component({
   selector: 'app-guest-form',
@@ -17,10 +19,13 @@ import { ButtonModule } from 'primeng/button';
     CommonModule,
     ReactiveFormsModule,
     InputTextModule,
-    Textarea,
-    ButtonModule
+    TextareaModule,
+    ButtonModule,
+    RadioButtonModule,
+    CheckboxModule
   ],
   templateUrl: './guest-form.html',
+  styleUrl: './guest-form.scss' // Ensure you have the chip styles here
 })
 export class GuestFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -29,53 +34,74 @@ export class GuestFormComponent implements OnInit {
   public config = inject(DynamicDialogConfig);
 
   guestForm!: FormGroup;
-  // This component is now only for EDITING existing guests' details
-  guestToEdit!: Guest; // Assuming it's always passed in for editing
+  guestToEdit: Guest | null = null;
+  isEditMode = false;
+  isLoading = false;
+
+  // Options matching the public RSVP page
+  dietaryOptions = [
+    { label: 'Vegetarian', value: 'Vegetarian' },
+    { label: 'Vegan', value: 'Vegan' },
+    { label: 'Pescatarian', value: 'Pescatarian' },
+    { label: 'Gluten Free', value: 'Gluten Free' },
+    { label: 'Dairy Free', value: 'Dairy Free' }
+  ];
+
+  allergyOptions = [
+    { label: 'Peanuts', value: 'Peanuts' },
+    { label: 'Tree Nuts', value: 'Tree Nuts' },
+    { label: 'Shellfish', value: 'Shellfish' },
+    { label: 'Eggs', value: 'Eggs' }
+  ];
 
   ngOnInit(): void {
-    this.guestToEdit = this.config.data?.guest;
-    if (!this.guestToEdit) {
-      console.error("GuestFormComponent requires a guest object in config data.");
-      this.dialogRef.close(); // Close if no guest is provided
-      return;
-    }
+    this.guestToEdit = this.config.data?.guest || null;
+    this.isEditMode = !!this.guestToEdit;
 
-    // Initialize the form with fields from the unified Guest model
     this.guestForm = this.fb.group({
-      firstName: [this.guestToEdit.firstName || '', Validators.required],
-      lastName: [this.guestToEdit.lastName || '', Validators.required],
-      countryOfResidence: [this.guestToEdit.countryOfResidence || ''],
-      notes: [this.guestToEdit.notes || '']
-      // Removed: name, invitationCode, isAttending, mealChoice, plusOneName
-      // These are handled elsewhere (RSVP form or invitation assignment)
+      // Basic Info
+      firstName: [this.guestToEdit?.firstName || '', Validators.required],
+      lastName: [this.guestToEdit?.lastName || '', Validators.required],
+      countryOfResidence: [this.guestToEdit?.countryOfResidence || ''],
+      notes: [this.guestToEdit?.notes || ''],
+
+      // RSVP Details (Only relevant if editing, but safe to init for adding too)
+      isAttending: [this.guestToEdit?.isAttending ?? null], // null = pending
+      dietaryPreferences: [this.guestToEdit?.dietaryPreferences || []],
+      allergies: [this.guestToEdit?.allergies || []],
+      dietaryNotes: [this.guestToEdit?.dietaryNotes || '']
     });
   }
 
-  onSubmit() {
-    if (this.guestForm.invalid || !this.guestToEdit) {
-      return;
-    }
+  async onSubmit() {
+    if (this.guestForm.invalid) return;
 
+    this.isLoading = true;
     const formValue = this.guestForm.value;
 
-    // Prepare the updated guest object, including the ID
-    const updatedGuestData: Partial<Guest> & { id: string } = {
-      id: this.guestToEdit.id, // Include the ID
-      firstName: formValue.firstName,
-      lastName: formValue.lastName,
-      countryOfResidence: formValue.countryOfResidence,
-      notes: formValue.notes
-    };
+    try {
+      if (this.isEditMode && this.guestToEdit) {
+        // --- EDIT MODE: Updates everything ---
+        await this.firestoreService.updateGuestDetails({
+          id: this.guestToEdit.id,
+          ...formValue
+        });
+      } else {
+        // --- ADD MODE: Adds basic info (RSVP usually null here) ---
+        await this.firestoreService.addGuest(
+          formValue.firstName,
+          formValue.lastName,
+          formValue.countryOfResidence,
+          formValue.notes
+        );
+      }
 
-    // Call the correct service method for updating general details
-    this.firestoreService.updateGuestDetails(updatedGuestData)
-      .then(() => {
-        this.dialogRef.close(true); // Signal success
-      })
-      .catch(error => {
-        console.error("Failed to update guest details:", error);
-        // Optionally show an error message within the form
-      });
+      this.dialogRef.close(true);
+    } catch (error) {
+      console.error("Operation failed:", error);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   onCancel() {
