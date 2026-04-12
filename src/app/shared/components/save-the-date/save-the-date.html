@@ -3,7 +3,7 @@
   <header class="pt-20 px-6 text-center max-w-5xl mx-auto" appScrollReveal>
 
     <span class="block text-xs md:text-sm font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">
-      We Are Getting Married
+      {{ 'SAVE_THE_DATE.SUBTITLE' | translate }}
     </span>
 
     <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif font-medium italic text-slate-900 mb-8 leading-none tracking-tight">
@@ -11,9 +11,9 @@
     </h1>
 
     <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6 text-lg md:text-2xl font-serif text-slate-600 font-light reveal-delay-100">
-      <span>{{ weddingDateFormatted }}</span>
+      <span>{{ 'SAVE_THE_DATE.DATE' | translate }}</span>
       <span class="hidden md:inline-block w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
-      <span>{{ location }}</span>
+      <span>{{ 'SAVE_THE_DATE.LOCATION' | translate }}</span>
     </div>
 
   </header>
@@ -42,11 +42,11 @@
       <img src="assets/images/flower-icon.png" class="w-40 md:w-60 mx-auto mb-6 opacity-50" />
 
       <h2 class="text-3xl md:text-5xl font-serif mb-8 leading-tight text-slate-800 italic">
-        A celebration of love in the heart of Andalusia.
+        {{ 'SAVE_THE_DATE.WELCOME_TITLE' | translate }}
       </h2>
 
       <p class="text-lg text-slate-600 font-light leading-relaxed mb-10 px-4">
-        We are overjoyed to invite you to join us in Huelva. We have planned a weekend filled with sunshine, delicious food, and great company.
+        {{ 'SAVE_THE_DATE.WELCOME_TEXT' | translate }}
       </p>
 
       <div class="w-24 h-px bg-slate-200 mx-auto"></div>
@@ -62,8 +62,8 @@
 
     <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
       <div class="text-center text-white p-6 backdrop-blur-sm bg-white/10 border border-white/20">
-        <p class="uppercase tracking-[0.3em] text-xs mb-2">The Venue</p>
-        <h3 class="text-4xl md:text-5xl font-serif italic">{{ venueName }}</h3>
+        <p class="uppercase tracking-[0.3em] text-xs mb-2">{{ 'SAVE_THE_DATE.THE_VENUE' | translate }}</p>
+        <h3 class="text-4xl md:text-5xl font-serif italic">{{ 'SAVE_THE_DATE.VENUE_NAME' | translate }}</h3>
       </div>
     </div>
   </section>
@@ -72,29 +72,29 @@
   <section class="py-24 bg-slate-50 border-t border-slate-100" appScrollReveal>
     <div class="container mx-auto px-6 text-center">
 
-      <p class="text-xs uppercase tracking-[0.3em] text-slate-400 mb-12">The Countdown</p>
+      <p class="text-xs uppercase tracking-[0.3em] text-slate-400 mb-12">{{ 'SAVE_THE_DATE.THE_COUNTDOWN' | translate }}</p>
 
       @if (!countdownFinished) {
         <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 lg:gap-24">
           <div class="flex flex-col items-center">
             <span class="text-5xl md:text-7xl font-serif font-light text-slate-800">{{ days }}</span>
-            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">Days</span>
+            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">{{ 'SAVE_THE_DATE.DAYS' | translate }}</span>
           </div>
           <div class="hidden md:block w-px h-12 bg-slate-300 rotate-12"></div>
 
           <div class="flex flex-col items-center">
             <span class="text-5xl md:text-7xl font-serif font-light text-slate-800">{{ hours }}</span>
-            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">Hours</span>
+            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">{{ 'SAVE_THE_DATE.HOURS' | translate }}</span>
           </div>
           <div class="hidden md:block w-px h-12 bg-slate-300 rotate-12"></div>
 
           <div class="flex flex-col items-center">
             <span class="text-5xl md:text-7xl font-serif font-light text-slate-800">{{ minutes }}</span>
-            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">Mins</span>
+            <span class="text-xs uppercase tracking-widest text-slate-400 mt-2">{{ 'SAVE_THE_DATE.MINS' | translate }}</span>
           </div>
         </div>
       } @else {
-        <p class="text-4xl font-serif italic text-slate-800">Happening Now!</p>
+        <p class="text-4xl font-serif italic text-slate-800">{{ 'SAVE_THE_DATE.HAPPENING_NOW' | translate }}</p>
       }
 
     </div>

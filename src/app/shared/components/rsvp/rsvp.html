@@ -1,28 +1,29 @@
 <div class="min-h-screen bg-white text-slate-900 pb-24">
 
   @if (isLoading) {
-    <div class="flex h-screen items-center justify-center">
-      <i class="pi pi-spin pi-spinner text-2xl text-slate-300"></i>
+    <div class="flex h-screen items-center justify-center flex-col gap-4">
+      <p-progressSpinner ariaLabel="loading" styleClass="w-12 h-12"></p-progressSpinner>
+      <p class="text-slate-500 font-serif italic">{{ 'RSVP.LOADING' | translate }}</p>
     </div>
   }
 
   @else if (submitted) {
     <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
-      <h1 class="text-5xl md:text-7xl font-serif italic mb-6">Thank You</h1>
+      <h1 class="text-5xl md:text-7xl font-serif italic mb-6">{{ 'RSVP.THANK_YOU_TITLE' | translate }}</h1>
       <p class="text-lg text-slate-600 font-light max-w-md">
-        Your response has been recorded. We can't wait to celebrate with you!
+        {{ 'RSVP.THANK_YOU_DESC' | translate }}
       </p>
-      <button routerLink="/" class="mt-8 text-xs uppercase tracking-widest border-b border-slate-900 pb-1">Back to Home</button>
+      <button routerLink="/" class="mt-8 text-xs uppercase tracking-widest border-b border-slate-900 pb-1">{{ 'RSVP.BACK_TO_HOME' | translate }}</button>
     </div>
   }
 
   @else if (invitation) {
     <header class="pt-20 pb-12 px-6 text-center max-w-4xl mx-auto animate-fade-in">
-      <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">RSVP</span>
+      <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">{{ 'RSVP.SUBTITLE' | translate }}</span>
       <h1 class="text-5xl md:text-7xl font-serif font-medium italic text-slate-900 mb-4 leading-none tracking-tight">
         {{ invitation.displayName }}
       </h1>
-      <p class="text-slate-500 font-light italic">Please respond by August 1st, 2026</p>
+      <p class="text-slate-500 font-light italic">{{ 'RSVP.RESPOND_BY' | translate }}</p>
     </header>
 
     <div class="max-w-3xl mx-auto px-6">
@@ -38,14 +39,14 @@
                 </h3>
               </div>
 
-              <div class="flex gap-8 mb-10">
+              <div class="flex flex-col sm:flex-row gap-6 mb-10">
                 <div class="flex items-center gap-3 cursor-pointer">
-                  <p-radioButton value="true" [value]="true" formControlName="isAttending" inputId="attending-{{$index}}"></p-radioButton>
-                  <label for="attending-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">Joyfully Accepts</label>
+                  <p-radioButton name="attendance_{{$index}}" [value]="true" formControlName="isAttending" inputId="attending-{{$index}}"></p-radioButton>
+                  <label for="attending-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.JOYFULLY_ACCEPTS' | translate }}</label>
                 </div>
                 <div class="flex items-center gap-3 cursor-pointer">
-                  <p-radioButton value="false" [value]="false" formControlName="isAttending" inputId="declining-{{$index}}"></p-radioButton>
-                  <label for="declining-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">Regretfully Declines</label>
+                  <p-radioButton name="attendance_{{$index}}" [value]="false" formControlName="isAttending" inputId="declining-{{$index}}"></p-radioButton>
+                  <label for="declining-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.REGRETFULLY_DECLINES' | translate }}</label>
                 </div>
               </div>
 
@@ -53,40 +54,40 @@
                 <div class="bg-slate-50 p-6 md:p-8 animate-fade-in">
 
                   <div class="mb-6">
-                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">Dietary Preferences</p>
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.DIETARY_PREFS' | translate }}</p>
                     <div class="flex flex-wrap gap-2">
-                      @for (opt of dietaryOptions; track opt.label) {
-                        <p-checkbox name="dietaryPreferences"
-                                    [value]="opt.value"
-                                    formControlName="dietaryPreferences"
-                                    class="chip-checkbox"
-                                    id="{{opt.label + '_' + $index}}"
-                        >
+                      @for (opt of dietaryOptions; track opt.value) {
+                        <p-checkbox
+                          name="dietary"
+                          [value]="opt.value"
+                          formControlName="dietaryPreferences"
+                          id="{{opt.labelKey + '_' + $index}}"
+                          class="chip-checkbox">
                         </p-checkbox>
-                        <label for="{{opt.label + '_' + $index}}" class="ml-2">{{opt.label}}</label>
+                        <label for="{{opt.labelKey + '_' + $index}}" class="ml-2">{{ opt.labelKey | translate }}</label>
                       }
                     </div>
                   </div>
 
                   <div class="mb-6">
-                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">Allergies</p>
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.ALLERGIES' | translate }}</p>
                     <div class="flex flex-wrap gap-2">
-                      @for (opt of allergyOptions; track opt.label) {
-                        <p-checkbox name="allergies"
-                                    [value]="opt.value"
-                                    formControlName="allergies"
-                                    class="chip-checkbox"
-                                    id="{{opt.label + '_' + $index}}"
-                        >
+                      @for (opt of allergyOptions; track opt.value) {
+                        <p-checkbox
+                          name="allergies"
+                          [value]="opt.value"
+                          id="{{opt.labelKey + '_' + $index}}"
+                          formControlName="allergies"
+                          class="chip-checkbox">
                         </p-checkbox>
-                        <label for="{{opt.label + '_' + $index}}" class="ml-2">{{opt.label}}</label>
+                        <label for="{{opt.labelKey + '_' + $index}}" class="ml-2">{{ opt.labelKey | translate }}</label>
                       }
                     </div>
                   </div>
 
                   <div>
-                    <label class="text-xs uppercase tracking-widest text-slate-400 mb-2 block">Specific Notes</label>
-                    <textarea pInputTextarea formControlName="dietaryNotes" rows="2" class="w-full bg-white border-slate-200 text-sm placeholder:text-slate-300" placeholder="e.g. Severe nut allergy..."></textarea>
+                    <label class="text-xs uppercase tracking-widest text-slate-400 mb-2 block">{{ 'RSVP.SPECIFIC_NOTES' | translate }}</label>
+                    <textarea pInputTextarea formControlName="dietaryNotes" rows="2" class="w-full bg-white border-slate-200 text-sm placeholder:text-slate-300" [placeholder]="'RSVP.NOTES_PLACEHOLDER' | translate"></textarea>
                   </div>
 
                 </div>
@@ -96,25 +97,17 @@
         </div>
 
         <div class="pt-4">
-          <label class="text-xs uppercase tracking-widest text-slate-500 mb-4 block text-center">Message for the Couple</label>
-          <textarea pInputTextarea formControlName="message" rows="4" class="w-full border-slate-200 focus:border-slate-800 text-center text-lg font-serif italic placeholder:text-slate-300 placeholder:italic" placeholder="Leave a note..."></textarea>
+          <label class="text-xs uppercase tracking-widest text-slate-500 mb-4 block text-center">{{ 'RSVP.MESSAGE_COUPLE' | translate }}</label>
+          <textarea pInputTextarea formControlName="message" rows="4" class="w-full border-slate-200 focus:border-slate-800 text-center text-lg font-serif italic placeholder:text-slate-300 placeholder:italic" [placeholder]="'RSVP.MESSAGE_PLACEHOLDER' | translate"></textarea>
         </div>
 
         <div class="text-center pb-24">
           <button type="submit" [disabled]="rsvpForm.invalid" class="bg-slate-900 text-white px-12 py-4 text-sm uppercase tracking-[0.2em] hover:bg-slate-700 transition-colors disabled:opacity-50">
-            Confirm RSVP
+            {{ 'RSVP.CONFIRM_BTN' | translate }}
           </button>
         </div>
 
       </form>
     </div>
   }
-
-  @else {
-    <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-      <h1 class="text-4xl font-serif italic mb-4">Invitation Not Found</h1>
-      <p class="text-slate-500 mb-8">Please check your link and try again.</p>
-    </div>
-  }
-
 </div>

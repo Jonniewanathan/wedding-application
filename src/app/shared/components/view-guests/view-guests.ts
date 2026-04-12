@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DynamicDialogConfig, DynamicDialogRef, DialogService } from 'primeng/dynamicdialog'; // Import DialogService
+import { DynamicDialogConfig, DynamicDialogRef, DialogService } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
 import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { Guest } from '../../models/guest.model';
@@ -12,8 +12,10 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
-import {GuestFormComponent} from '../guest-form/guest-form';
-import {ConfirmDialog} from 'primeng/confirmdialog';
+import { GuestFormComponent } from '../guest-form/guest-form';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { SelectModule } from 'primeng/select'; // Correct import for PrimeNG v18+
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-view-guests',
@@ -25,9 +27,11 @@ import {ConfirmDialog} from 'primeng/confirmdialog';
     ToastModule,
     TooltipModule,
     TagModule,
-    ConfirmDialog
+    ConfirmDialog,
+    SelectModule, // Update in imports array
+    FormsModule
   ],
-  providers: [MessageService, ConfirmationService, DialogService], // Provide DialogService
+  providers: [MessageService, ConfirmationService, DialogService],
   templateUrl: './view-guests.html',
 })
 export class ViewGuests implements OnInit {
@@ -36,24 +40,48 @@ export class ViewGuests implements OnInit {
   public dialogRef = inject(DynamicDialogRef);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
-  private dialogService = inject(DialogService); // Inject it
+  private dialogService = inject(DialogService);
 
   invitationId!: string;
   guests$!: Observable<Guest[]>;
+  unassignedGuests$!: Observable<Guest[]>;
+
+  showAddDropdown = false;
+  selectedUnassignedGuest: Guest | null = null;
 
   ngOnInit(): void {
     this.invitationId = this.config.data?.invitationId;
     if (this.invitationId) {
       this.guests$ = this.firestoreService.getGuestsForInvitation(this.invitationId);
+      this.unassignedGuests$ = this.firestoreService.getUnassignedGuests();
     }
   }
 
-  // --- NEW: Edit Functionality ---
+  toggleAddGuest(): void {
+    this.showAddDropdown = !this.showAddDropdown;
+    this.selectedUnassignedGuest = null; // Reset selection
+  }
+
+  async onAddGuest(): Promise<void> {
+    if (!this.selectedUnassignedGuest || !this.invitationId) return;
+
+    try {
+      await this.firestoreService.assignGuestsToInvitation(
+        this.invitationId,
+        [this.selectedUnassignedGuest.id]
+      );
+      this.messageService.add({ severity: 'success', summary: 'Added', detail: 'Guest added to group.' });
+      this.toggleAddGuest(); // Hide dropdown
+    } catch (err) {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not add guest.' });
+    }
+  }
+
   onEditGuest(guest: Guest): void {
     const ref = this.dialogService.open(GuestFormComponent, {
       header: 'Edit Guest Details',
       width: '40%',
-      data: { guest: guest } // Pass the guest to the form
+      data: { guest: guest }
     });
     if (ref) {
       ref.onClose.subscribe((updated) => {
@@ -62,8 +90,6 @@ export class ViewGuests implements OnInit {
         }
       });
     }
-
-
   }
 
   onUnassignGuest(guest: Guest): void {

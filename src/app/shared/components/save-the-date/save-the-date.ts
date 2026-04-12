@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {ScrollRevealDirective} from '../../../core/directives/scroll-reveal';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-save-the-date',
@@ -8,15 +9,13 @@ import {ScrollRevealDirective} from '../../../core/directives/scroll-reveal';
   imports: [
     CommonModule,
     ScrollRevealDirective,
+    TranslateModule
   ],
   templateUrl: './save-the-date.html',
   styleUrl: './save-the-date.scss'
 })
 export class SaveTheDate implements OnInit, OnDestroy {
   coupleNames = 'Marta & Jonathan';
-  weddingDateFormatted = 'August 22, 2026';
-  location = "Huelva, Spain";
-  venueName = 'Convento de la Luz';
 
   // Images
   heroImage = 'assets/images/our-photo-v5.jpeg'; // Portrait prefered

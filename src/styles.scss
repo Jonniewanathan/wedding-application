@@ -109,3 +109,51 @@ html, body, app-root {
   background: #0f172a !important; /* Slate-900 */
   border-color: #0f172a !important;
 }
+
+/* --- Global Print Styles --- */
+@media print {
+  body {
+    visibility: hidden;
+  }
+
+  #printable-invite, #printable-invite * {
+    visibility: visible !important;
+  }
+
+  #printable-invite {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    z-index: 99999 !important;
+  }
+
+  .p-dialog-mask {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: white !important;
+    display: block !important;
+    z-index: 99998 !important;
+  }
+
+  .p-dialog {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+
+  .p-dialog .p-dialog-content {
+    padding: 0 !important;
+  }
+}

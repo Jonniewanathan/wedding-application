@@ -26,9 +26,29 @@ export class InvitationFormComponent implements OnInit {
   ngOnInit(): void {
     this.guestsToAssign = this.config.data?.guests || [];
 
+    // Auto-suggest a display name based on the most common last name
+    let defaultName = '';
+    if (this.guestsToAssign.length > 0) {
+      const lastNames = this.guestsToAssign.map(g => g.lastName?.trim()).filter(Boolean);
+
+      if (lastNames.length > 0) {
+        // Count occurrences of each last name
+        const nameCounts = lastNames.reduce((acc, name) => {
+          acc[name] = (acc[name] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Find the most frequent last name
+        const mostCommon = Object.keys(nameCounts).reduce((a, b) =>
+          nameCounts[a] > nameCounts[b] ? a : b
+        );
+
+        defaultName = `The ${mostCommon} Family`;
+      }
+    }
+
     this.invitationForm = this.fb.group({
-      displayName: ['', Validators.required]
-      // Removed invitationCode field - it is now auto-generated in the service
+      displayName: [defaultName, Validators.required]
     });
   }
 

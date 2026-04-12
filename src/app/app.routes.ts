@@ -9,6 +9,7 @@ import {LoginComponent} from './features/login/login';
 import {AdminComponent} from './features/admin/admin';
 import {authGuard} from './core/guards/auth/auth-guard';
 import {MainLayout} from './core/layout/main-layout/main-layout';
+import {guestGuard} from './core/guards/guest/guest-guard';
 
 export const routes: Routes = [
   {
@@ -23,8 +24,12 @@ export const routes: Routes = [
       },
       {path: 'save-the-date', component: SaveTheDate},
       // Define routes for other components as they are implemented
-      {path: 'invitations', component: Invitation},
-      {path: 'rsvp', component: Rsvp},
+      {path: 'invite/:code', component: Invitation},
+      {
+        path: 'rsvp',
+        component: Rsvp,
+        canActivate: [guestGuard] // Only RSVP is protected
+      },
       {path: 'travel-info', component: TravelInfo},
       {path: 'local-attractions', component: LocalAttractions},
       {path: 'photo-share', component: PhotoShare},

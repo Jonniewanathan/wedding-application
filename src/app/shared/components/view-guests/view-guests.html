@@ -1,12 +1,58 @@
 <p-toast></p-toast>
 <p-confirmDialog [style]="{width: '40vw'}"></p-confirmDialog>
 
-<div class="flex flex-col h-full bg-white p-2">
+<div class="flex flex-col h-full bg-white p-6">
 
-  <div class="text-center mb-8">
+  <div class="text-center mb-8 relative">
     <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Members</span>
     <h2 class="text-3xl font-serif font-medium italic text-slate-900">Guest List</h2>
+
+    <!-- Add Guest Toggle Button -->
+    <button
+      (click)="toggleAddGuest()"
+      class="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 border border-slate-200 hover:border-slate-400 px-4 py-2 transition-colors">
+      {{ showAddDropdown ? 'Cancel' : '+ Add Guest' }}
+    </button>
   </div>
+
+  <!-- Inline Add Guest Form -->
+  @if(showAddDropdown) {
+    <div class="mb-6 p-4 bg-slate-50 border border-slate-100 flex items-end gap-4 animate-fade-in">
+      <div class="flex-grow flex flex-col gap-2">
+        <label class="text-xs font-sans uppercase tracking-widest text-slate-500">Select Unassigned Guest</label>
+        <!-- Use p-select instead of p-dropdown -->
+        <p-select
+          [options]="(unassignedGuests$ | async)!"
+          [(ngModel)]="selectedUnassignedGuest"
+          optionLabel="firstName"
+          [filter]="true"
+          filterBy="firstName,lastName"
+          [showClear]="true"
+          placeholder="Select a guest"
+          styleClass="w-full text-sm font-sans !border-slate-200">
+
+          <ng-template pTemplate="selectedItem" let-guest>
+            <div class="flex items-center gap-2" *ngIf="guest">
+              <div>{{ guest.firstName }} {{ guest.lastName }}</div>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="item" let-guest>
+            <div class="flex items-center gap-2">
+              <div>{{ guest.firstName }} {{ guest.lastName }}</div>
+            </div>
+          </ng-template>
+
+        </p-select>
+      </div>
+      <button
+        (click)="onAddGuest()"
+        [disabled]="!selectedUnassignedGuest"
+        class="bg-slate-900 text-white px-6 py-[11px] text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-50 h-[42px]">
+        Add to Group
+      </button>
+    </div>
+  }
 
   <p-table [value]="(guests$ | async)!" styleClass="editorial-table" [rowHover]="true">
 

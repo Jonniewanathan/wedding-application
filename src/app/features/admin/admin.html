@@ -20,145 +20,38 @@
     </button>
   </header>
 
-  <p-tabs pStyleClass="editorial-tabs">
-    <p-tablist>
-      <p-tab value="0">Guest Pool</p-tab>
-      <p-tab value="1">Invitation Groups</p-tab>
-    </p-tablist>
-    <p-tabpanels>
-      <p-tabpanel value="0">
-        <div class="py-6">
+  <!-- Custom Tabs for Eager Loading -->
+  <div class="editorial-tabs mb-4">
+    <div class="p-tablist flex space-x-4 border-b border-slate-200">
+      <button
+        (click)="activeTabIndex = 0"
+        [class.border-b-2]="activeTabIndex === 0"
+        [class.border-slate-900]="activeTabIndex === 0"
+        [class.text-slate-900]="activeTabIndex === 0"
+        [class.font-medium]="activeTabIndex === 0"
+        class="pb-2 text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">
+        Guest Pool
+      </button>
+      <button
+        (click)="activeTabIndex = 1"
+        [class.border-b-2]="activeTabIndex === 1"
+        [class.border-slate-900]="activeTabIndex === 1"
+        [class.text-slate-900]="activeTabIndex === 1"
+        [class.font-medium]="activeTabIndex === 1"
+        class="pb-2 text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">
+        Invitation Groups
+      </button>
+    </div>
+  </div>
 
-          <div class="flex justify-between items-center mb-6">
-            <p class="text-sm text-slate-500 font-light max-w-md">
-              Guests listed here are waiting to be grouped into an invitation. Select guests to create a new group.
-            </p>
-            <button
-              (click)="openAddGuestForm()"
-              class="bg-slate-900 text-white px-6 py-3 text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-colors shadow-lg shadow-slate-200">
-              + Add New Guest
-            </button>
-          </div>
-
-          <p-table [value]="(unassignedGuests$ | async)!" [(selection)]="selectedGuests" dataKey="id"
-                   [paginator]="true" [rows]="10" styleClass="editorial-table">
-
-            <ng-template pTemplate="header">
-              <tr>
-                <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
-                <th>Name</th>
-                <th>Country</th>
-                <th>Status</th>
-                <th class="text-right">Action</th>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-guest>
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td><p-tableCheckbox [value]="guest"></p-tableCheckbox></td>
-                <td>
-                  <span class="block font-semibold text-slate-900">{{ guest.firstName }} {{ guest.lastName }}</span>
-                  @if(guest.notes) { <span class="text-xs text-slate-400 italic">{{ guest.notes }}</span> }
-                </td>
-                <td>{{ guest.countryOfResidence || '-' }}</td>
-                <td><span class="text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1">Unassigned</span></td>
-                <td class="text-right">
-                  <button
-                    (click)="onDeleteUnassignedGuest(guest)"
-                    class="text-slate-300 hover:text-red-500 transition-colors p-2"
-                    pTooltip="Remove Guest">
-                    <i class="pi pi-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-
-          <div class="mt-4 p-4 bg-slate-50 border border-slate-100 flex justify-between items-center">
-          <span class="text-xs text-slate-500 uppercase tracking-widest">
-            {{ selectedGuests.length }} Guests Selected
-          </span>
-            <button
-              (click)="openInvitationForm()"
-              [disabled]="selectedGuests.length === 0"
-              [class.opacity-50]="selectedGuests.length === 0"
-              class="text-xs uppercase tracking-widest font-bold border-b-2 border-slate-900 pb-1 hover:text-slate-600 transition-colors">
-              Create Invitation Group &rarr;
-            </button>
-          </div>
-
-        </div>
-      </p-tabpanel>
-
-
-      <p-tabpanel value="1">
-        <div class="py-6">
-
-          <div class="flex justify-between items-center mb-6">
-            <p class="text-sm text-slate-500 font-light max-w-md">
-              Manage finalized invitations, track RSVPs, and view QR codes.
-            </p>
-          </div>
-
-          <p-table [value]="(invitations$ | async)!" [paginator]="true" [rows]="10" styleClass="editorial-table">
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Group Display Name</th>
-                <th>Access Code</th>
-                <th>RSVP Status</th>
-                <th class="text-right">Manage</th>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-invitation>
-              <tr class="hover:bg-slate-50 transition-colors">
-                <td>
-                  <span class="font-medium text-lg text-slate-900 font-serif italic">{{ invitation.displayName }}</span>
-                </td>
-                <td>
-                  <span class="font-mono text-xs bg-slate-100 px-3 py-1 text-slate-600 border border-slate-200">{{ invitation.invitationCode }}</span>
-                </td>
-                <td>
-                  @if(invitation.hasResponded) {
-                    <span class="text-[10px] uppercase tracking-widest bg-green-50 text-green-700 px-2 py-1 border border-green-100">Responded</span>
-                  } @else {
-                    <span class="text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1">Pending</span>
-                  }
-                </td>
-                <td class="text-right">
-                  <div class="flex items-center justify-end gap-4">
-
-                    <button
-                      (click)="onAddGuestsToInvitation(invitation)"
-                      [disabled]="selectedGuests.length === 0"
-                      [class.text-slate-200]="selectedGuests.length === 0"
-                      [class.hover:text-slate-900]="selectedGuests.length > 0"
-                      [class.text-slate-400]="selectedGuests.length > 0"
-                      class="transition-colors"
-                      pTooltip="Add Selected Guests from Pool">
-                      <i class="pi pi-user-plus"></i>
-                    </button>
-
-                    <button (click)="openViewGuests(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors" pTooltip="View Guests in Group">
-                      <i class="pi pi-users"></i>
-                    </button>
-
-                    <button (click)="showQrCodeDialog(invitation.invitationCode)" class="text-slate-400 hover:text-slate-900 transition-colors" pTooltip="Get QR Link">
-                      <i class="pi pi-qrcode"></i>
-                    </button>
-
-                    <button (click)="onDeleteInvitation(invitation)" class="text-slate-300 hover:text-red-500 transition-colors" pTooltip="Delete Group">
-                      <i class="pi pi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-
-        </div>
-      </p-tabpanel>
-    </p-tabpanels>
-  </p-tabs>
+  <div>
+    <!-- Render both, but hide the inactive one -->
+    <div [style.display]="activeTabIndex === 0 ? 'block' : 'none'">
+      <app-guest-pool></app-guest-pool>
+    </div>
+    <div [style.display]="activeTabIndex === 1 ? 'block' : 'none'">
+      <app-invitation-groups></app-invitation-groups>
+    </div>
+  </div>
 
 </div>
