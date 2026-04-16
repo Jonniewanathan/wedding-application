@@ -12,9 +12,10 @@ import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
 import { GuestFormComponent } from '../../../../shared/components/guest-form/guest-form';
 import { InvitationFormComponent } from '../../../../shared/components/invitation-form/invitation-form';
-import {InputText} from 'primeng/inputtext';
-import {InputGroup} from 'primeng/inputgroup';
-import {InputGroupAddon} from 'primeng/inputgroupaddon';
+import {InputTextModule} from 'primeng/inputtext';
+import {InputGroupModule} from 'primeng/inputgroup';
+import {InputGroupAddonModule} from 'primeng/inputgroupaddon';
+
 
 interface CsvGuestRow {
   FirstName: string;
@@ -23,10 +24,11 @@ interface CsvGuestRow {
   Notes?: string;   // Optional in CSV
 }
 
+
 @Component({
   selector: 'app-guest-pool',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, InputText, InputGroup, InputGroupAddon],
+  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, InputTextModule, InputGroupModule, InputGroupAddonModule],
   templateUrl: './guest-pool.component.html',
 })
 export class GuestPoolComponent implements OnInit {
@@ -37,13 +39,12 @@ export class GuestPoolComponent implements OnInit {
   public adminStateService = inject(AdminStateService);
 
   unassignedGuests$!: Observable<Guest[]>;
-  dialogRef: DynamicDialogRef<any> | null = null;
+  dialogRef: DynamicDialogRef | null = null;
 
   ngOnInit(): void {
     this.unassignedGuests$ = this.firestoreService.getUnassignedGuests();
   }
 
-  // --- FIX: Use simple getter/setter pointing to the signal ---
   get selectedGuests(): Guest[] {
     return this.adminStateService.selectedGuests();
   }
@@ -133,8 +134,8 @@ export class GuestPoolComponent implements OnInit {
   openAddGuestForm(): void {
     this.dialogRef = this.dialogService.open(GuestFormComponent, {
       header: ' ',
-      width: '40%',
-      styleClass: 'editorial-dialog',
+      width: '90vw',
+      styleClass: 'editorial-dialog max-w-[500px]',
       contentStyle: { "padding": "0", "border-radius": "0" },
       data: { guest: null }
     });
@@ -149,8 +150,8 @@ export class GuestPoolComponent implements OnInit {
   onEditGuest(guest: Guest): void {
     this.dialogRef = this.dialogService.open(GuestFormComponent, {
       header: ' ',
-      width: '40%',
-      styleClass: 'editorial-dialog',
+      width: '90vw',
+      styleClass: 'editorial-dialog max-w-[500px]',
       closable: true,
       closeOnEscape: true,
       contentStyle: { "padding": "0", "border-radius": "0" },
@@ -189,7 +190,8 @@ export class GuestPoolComponent implements OnInit {
 
     this.dialogRef = this.dialogService.open(InvitationFormComponent, {
       header: 'New Invitation Details',
-      width: '40%',
+      width: '90vw',
+      styleClass: 'max-w-[500px]',
       data: { guests: currentSelection }
     });
 

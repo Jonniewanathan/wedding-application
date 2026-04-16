@@ -9,6 +9,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 // Components
 import { GuestPoolComponent } from './components/guest-pool/guest-pool.component';
 import { InvitationGroupsComponent } from './components/invitation-groups/invitation-groups.component';
+import { StatsComponent } from './components/stats/stats.component';
 
 // PrimeNG Modules
 import { ToastModule } from 'primeng/toast';
@@ -19,7 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPoolComponent, InvitationGroupsComponent
+    GuestPoolComponent, InvitationGroupsComponent, StatsComponent
   ],
   providers: [
     DialogService, ConfirmationService, MessageService, AdminStateService
@@ -33,6 +34,8 @@ export class AdminComponent {
   activeTabIndex = 0;
 
   logout(): void {
-    this.authService.logout().then(() => this.router.navigate(['/login']));
+    this.authService.logout().then(() => {
+      this.router.navigate(['/login']).catch(err => console.error(err));
+    });
   }
 }

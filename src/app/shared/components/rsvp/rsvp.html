@@ -1,14 +1,14 @@
-<div class="min-h-screen bg-white text-slate-900 pb-24">
+<div class="bg-white text-slate-900 pb-24">
 
   @if (isLoading) {
     <div class="flex h-screen items-center justify-center flex-col gap-4">
-      <p-progressSpinner ariaLabel="loading" styleClass="w-12 h-12"></p-progressSpinner>
+      <p-progressSpinner ariaLabel="loading" class="w-12 h-12"></p-progressSpinner>
       <p class="text-slate-500 font-serif italic">{{ 'RSVP.LOADING' | translate }}</p>
     </div>
   }
 
   @else if (submitted) {
-    <div class="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
+    <div class="flex flex-col items-center justify-center min-h-[50vh] px-6 text-center animate-fade-in">
       <h1 class="text-5xl md:text-7xl font-serif italic mb-6">{{ 'RSVP.THANK_YOU_TITLE' | translate }}</h1>
       <p class="text-lg text-slate-600 font-light max-w-md">
         {{ 'RSVP.THANK_YOU_DESC' | translate }}
@@ -39,55 +39,121 @@
                 </h3>
               </div>
 
+              <!-- Attendance Selection -->
               <div class="flex flex-col sm:flex-row gap-6 mb-10">
-                <div class="flex items-center gap-3 cursor-pointer">
+                <label for="attending-{{$index}}" class="flex items-center gap-3 cursor-pointer p-2 -m-2 rounded hover:bg-slate-50 transition-colors">
                   <p-radioButton name="attendance_{{$index}}" [value]="true" formControlName="isAttending" inputId="attending-{{$index}}"></p-radioButton>
-                  <label for="attending-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.JOYFULLY_ACCEPTS' | translate }}</label>
-                </div>
-                <div class="flex items-center gap-3 cursor-pointer">
+                  <span class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.JOYFULLY_ACCEPTS' | translate }}</span>
+                </label>
+                <label for="declining-{{$index}}" class="flex items-center gap-3 cursor-pointer p-2 -m-2 rounded hover:bg-slate-50 transition-colors">
                   <p-radioButton name="attendance_{{$index}}" [value]="false" formControlName="isAttending" inputId="declining-{{$index}}"></p-radioButton>
-                  <label for="declining-{{$index}}" class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.REGRETFULLY_DECLINES' | translate }}</label>
-                </div>
+                  <span class="text-sm uppercase tracking-widest cursor-pointer">{{ 'RSVP.REGRETFULLY_DECLINES' | translate }}</span>
+                </label>
               </div>
 
+              <!-- Extra Options if Attending -->
               @if (control.get('isAttending')?.value === true) {
                 <div class="bg-slate-50 p-6 md:p-8 animate-fade-in">
 
+                  <!-- NEW: Bus Selection -->
+                  <div class="mb-10 pb-10 border-b border-slate-200">
+                    <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.BUS_QUESTION' | translate }}</p>
+                    <p class="text-xs text-slate-500 mb-4 font-light">{{ 'RSVP.BUS_DESC' | translate }}</p>
+
+                    <div class="flex flex-col gap-4">
+                      <label for="bus-yes-{{$index}}" class="flex items-start md:items-center gap-3 cursor-pointer">
+                        <div class="mt-0.5 md:mt-0">
+                          <p-radioButton name="bus_{{$index}}" [value]="true" formControlName="needsBus" inputId="bus-yes-{{$index}}"></p-radioButton>
+                        </div>
+                        <span class="text-sm cursor-pointer">{{ 'RSVP.BUS_YES' | translate }}</span>
+                      </label>
+
+                      <!-- Pickup Location Dropdown (Only shows if they selected Yes) -->
+                      @if (control.get('needsBus')?.value === true) {
+                        <div class="ml-8 mt-2 animate-fade-in w-full max-w-sm">
+                          <label class="text-xs text-slate-500 mb-2 block">{{ 'RSVP.BUS_PICKUP_LABEL' | translate }}</label>
+                          <p-select
+                            [options]="busPickupOptions"
+                            formControlName="busPickupLocation"
+                            optionLabel="label"
+                            optionValue="value"
+                            [placeholder]="'RSVP.BUS_PICKUP_PLACEHOLDER' | translate"
+                            class="w-full text-sm font-sans !border-slate-300 block">
+                          </p-select>
+
+                          <!-- Validation Error -->
+                          @if (control.get('busPickupLocation')?.invalid && control.get('busPickupLocation')?.touched) {
+                            <small class="text-red-500 mt-1 block">{{ 'RSVP.BUS_PICKUP_REQUIRED' | translate }}</small>
+                          }
+                        </div>
+                      }
+
+                      <label for="bus-no-{{$index}}" class="flex items-start md:items-center gap-3 cursor-pointer mt-2">
+                        <div class="mt-0.5 md:mt-0">
+                          <p-radioButton name="bus_{{$index}}" [value]="false" formControlName="needsBus" inputId="bus-no-{{$index}}"></p-radioButton>
+                        </div>
+                        <span class="text-sm cursor-pointer">{{ 'RSVP.BUS_NO' | translate }}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Dietary Preferences -->
                   <div class="mb-6">
                     <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.DIETARY_PREFS' | translate }}</p>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-x-6 gap-y-4">
                       @for (opt of dietaryOptions; track opt.value) {
-                        <p-checkbox
-                          name="dietary"
-                          [value]="opt.value"
-                          formControlName="dietaryPreferences"
-                          id="{{opt.labelKey + '_' + $index}}"
-                          class="chip-checkbox">
-                        </p-checkbox>
-                        <label for="{{opt.labelKey + '_' + $index}}" class="ml-2">{{ opt.labelKey | translate }}</label>
+                        <label for="{{opt.labelKey + '_' + $index}}" class="flex items-center cursor-pointer">
+                          <p-checkbox
+                            name="dietary"
+                            [value]="opt.value"
+                            formControlName="dietaryPreferences"
+                            inputId="{{opt.labelKey + '_' + $index}}"
+                            class="chip-checkbox mr-2">
+                          </p-checkbox>
+                          <span class="text-sm">{{ opt.labelKey | translate }}</span>
+                        </label>
                       }
                     </div>
                   </div>
 
+                  <!-- Allergies -->
                   <div class="mb-6">
                     <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.ALLERGIES' | translate }}</p>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-x-6 gap-y-4">
                       @for (opt of allergyOptions; track opt.value) {
-                        <p-checkbox
-                          name="allergies"
-                          [value]="opt.value"
-                          id="{{opt.labelKey + '_' + $index}}"
-                          formControlName="allergies"
-                          class="chip-checkbox">
-                        </p-checkbox>
-                        <label for="{{opt.labelKey + '_' + $index}}" class="ml-2">{{ opt.labelKey | translate }}</label>
+                        <label for="{{opt.labelKey + '_' + $index}}" class="flex items-center cursor-pointer">
+                          <p-checkbox
+                            name="allergies"
+                            [value]="opt.value"
+                            inputId="{{opt.labelKey + '_' + $index}}"
+                            formControlName="allergies"
+                            class="chip-checkbox mr-2">
+                          </p-checkbox>
+                          <span class="text-sm">{{ opt.labelKey | translate }}</span>
+                        </label>
                       }
                     </div>
                   </div>
 
+                  <!-- Specific Notes -->
                   <div>
-                    <label class="text-xs uppercase tracking-widest text-slate-400 mb-2 block">{{ 'RSVP.SPECIFIC_NOTES' | translate }}</label>
-                    <textarea pInputTextarea formControlName="dietaryNotes" rows="2" class="w-full bg-white border-slate-200 text-sm placeholder:text-slate-300" [placeholder]="'RSVP.NOTES_PLACEHOLDER' | translate"></textarea>
+                    <div class="flex justify-between items-baseline mb-2 px-1">
+                      <label class="text-xs uppercase tracking-widest text-slate-400">{{ 'RSVP.SPECIFIC_NOTES' | translate }}</label>
+                      <span class="text-[10px] text-slate-400" [class.text-red-400]="control.get('dietaryNotes')?.value?.length > 180">
+                        {{ control.get('dietaryNotes')?.value?.length || 0 }} / 200
+                      </span>
+                    </div>
+                    <textarea
+                      pInputTextarea
+                      formControlName="dietaryNotes"
+                      rows="2"
+                      maxlength="200"
+                      class="w-full bg-white border-slate-200 text-sm placeholder:text-slate-300"
+                      [placeholder]="'RSVP.NOTES_PLACEHOLDER' | translate">
+                    </textarea>
+                    @if (control.get('dietaryNotes')?.hasError('maxlength')) {
+                      <small class="text-red-500 mt-1 block">Note is too long. Please keep it under 200 characters.</small>
+                    }
                   </div>
 
                 </div>
@@ -97,8 +163,23 @@
         </div>
 
         <div class="pt-4">
-          <label class="text-xs uppercase tracking-widest text-slate-500 mb-4 block text-center">{{ 'RSVP.MESSAGE_COUPLE' | translate }}</label>
-          <textarea pInputTextarea formControlName="message" rows="4" class="w-full border-slate-200 focus:border-slate-800 text-center text-lg font-serif italic placeholder:text-slate-300 placeholder:italic" [placeholder]="'RSVP.MESSAGE_PLACEHOLDER' | translate"></textarea>
+          <div class="flex justify-between items-baseline mb-4 px-2">
+            <label class="text-xs uppercase tracking-widest text-slate-500">{{ 'RSVP.MESSAGE_COUPLE' | translate }}</label>
+            <span class="text-[10px] text-slate-400" [class.text-red-400]="rsvpForm.get('message')?.value?.length > 480">
+              {{ rsvpForm.get('message')?.value?.length || 0 }} / 500
+            </span>
+          </div>
+          <textarea
+            pInputTextarea
+            formControlName="message"
+            rows="4"
+            maxlength="500"
+            class="w-full border-slate-200 focus:border-slate-800 text-center text-lg font-serif italic placeholder:text-slate-300 placeholder:italic transition-colors"
+            [placeholder]="'RSVP.MESSAGE_PLACEHOLDER' | translate">
+          </textarea>
+          @if (rsvpForm.get('message')?.hasError('maxlength')) {
+            <small class="text-red-500 mt-2 block text-center">Message is too long. Please keep it under 500 characters.</small>
+          }
         </div>
 
         <div class="text-center pb-24">

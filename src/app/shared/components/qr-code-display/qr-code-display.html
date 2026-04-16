@@ -1,28 +1,28 @@
-<div class="flex flex-col items-center p-6 bg-white w-full">
+<div class="flex flex-col items-center p-4 md:p-6 bg-white w-full max-h-[85vh]">
 
-  <div class="text-center mb-8 w-full">
-    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Digital Access</span>
-    <h2 class="text-3xl font-serif font-medium italic text-slate-900">Share Invitation</h2>
+  <div class="text-center mb-6 md:mb-8 w-full">
+    <span class="block text-[10px] md:text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Digital Access</span>
+    <h2 class="text-2xl md:text-3xl font-serif font-medium italic text-slate-900">Share Invitation</h2>
   </div>
 
   <!-- Tabs for Sharing Methods -->
   <div class="w-full max-w-lg">
-    <div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="flex flex-col md:grid md:grid-cols-2 gap-4 mb-6">
 
       <!-- Copy Message Box -->
-      <div class="col-span-2 md:col-span-1 bg-slate-50 border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
+      <div class="bg-slate-50 border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
         <i class="pi pi-whatsapp text-2xl text-slate-400 mb-2"></i>
         <h3 class="text-xs uppercase tracking-widest text-slate-700 font-bold mb-1">Pre-Written Message</h3>
         <p class="text-[10px] text-slate-500 mb-4">A polite message ready to paste into WhatsApp, iMessage, or Email.</p>
         <button
           (click)="copyMessage()"
-          class="w-full bg-slate-900 text-white py-2 text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors">
+          class="w-full bg-slate-900 text-white py-3 md:py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors">
           <i class="pi pi-copy mr-2"></i> Copy Message
         </button>
       </div>
 
       <!-- Copy URL Box -->
-      <div class="col-span-2 md:col-span-1 bg-slate-50 border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
+      <div class="bg-slate-50 border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
         <i class="pi pi-link text-2xl text-slate-400 mb-2"></i>
         <h3 class="text-xs uppercase tracking-widest text-slate-700 font-bold mb-1">Direct Link</h3>
         <p class="text-[10px] text-slate-500 mb-4">Just the secure, unique URL for this specific invitation group.</p>
@@ -33,11 +33,11 @@
             type="text"
             [value]="invitationUrl"
             readonly
-            class="w-0 flex-1 bg-white border border-r-0 border-slate-300 text-slate-600 text-[10px] font-mono px-2 py-2 outline-none">
+            class="w-0 flex-1 bg-white border border-r-0 border-slate-300 text-slate-600 text-[10px] font-mono px-2 py-3 md:py-2 outline-none">
           <button
             (click)="copyUrl(urlInput)"
-            class="bg-slate-900 text-white px-3 hover:bg-slate-800 transition-colors shrink-0"
-            pTooltip="Copy Link">
+            class="bg-slate-900 text-white px-4 md:px-3 hover:bg-slate-800 transition-colors shrink-0"
+            pTooltip="Copy Link" tooltipPosition="top">
             <i class="pi pi-copy"></i>
           </button>
         </div>
@@ -46,31 +46,31 @@
     </div>
 
     <!-- Preview of the message so the user knows what they are copying -->
-    <div class="mb-8">
+    <div class="mb-6 md:mb-8">
       <label class="block text-[10px] font-sans uppercase tracking-widest text-slate-400 mb-2">Message Preview:</label>
-      <div class="bg-white border border-slate-200 p-4 rounded-sm text-sm text-slate-700 font-sans whitespace-pre-wrap shadow-inner inset-shadow-sm shadow-slate-100">
+      <div class="bg-white border border-slate-200 p-4 rounded-sm text-xs md:text-sm text-slate-700 font-sans whitespace-pre-wrap shadow-inner inset-shadow-sm shadow-slate-100 max-h-40 overflow-y-auto">
         <span [innerHTML]="whatsappMessage"></span>
       </div>
     </div>
   </div>
 
   <!-- QR Code Section & Guest List -->
-  <div class="w-full border-t border-slate-100 pt-8 flex flex-col items-center relative">
+  <div class="w-full border-t border-slate-100 pt-6 md:pt-8 flex flex-col items-center relative">
 
     <button
       (click)="printInvite()"
-      class="absolute right-0 top-8 text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 border border-slate-200 hover:border-slate-400 px-4 py-2 transition-colors">
-      <i class="pi pi-print mr-2"></i> Print Invite
+      class="w-full md:w-auto md:absolute md:right-0 md:top-8 mb-6 md:mb-0 text-[10px] uppercase tracking-widest text-slate-700 md:text-slate-400 hover:text-slate-900 border border-slate-200 hover:border-slate-400 px-4 py-3 md:py-2 transition-colors flex items-center justify-center gap-2">
+      <i class="pi pi-print"></i> Print Invite
     </button>
 
     <div class="w-full max-w-sm">
-      <label class="block text-xs font-sans uppercase tracking-widest text-slate-500 mb-4 text-center">Included Guests</label>
+      <label class="block text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500 mb-4 text-center">Included Guests</label>
 
       <!-- Display Guests inside the Modal -->
-      <div class="bg-slate-50 border border-slate-200 p-4 mb-6">
+      <div class="bg-slate-50 border border-slate-200 p-4 mb-6 max-h-40 overflow-y-auto">
         <ul class="list-none p-0 m-0 space-y-2">
           @for (guest of guests; track guest.id) {
-            <li class="flex items-center text-sm text-slate-700 font-sans">
+            <li class="flex items-center text-xs md:text-sm text-slate-700 font-sans">
               <i class="pi pi-user text-slate-400 mr-3 text-xs"></i>
               {{ guest.firstName }} {{ guest.lastName }}
             </li>
@@ -80,13 +80,13 @@
         </ul>
       </div>
 
-      <label class="block text-xs font-sans uppercase tracking-widest text-slate-500 mb-4 text-center">Or scan with a camera</label>
+      <label class="block text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500 mb-4 text-center">Or scan with a camera</label>
 
-      <div class="p-3 bg-white border border-slate-200 shadow-sm">
+      <div class="p-3 bg-white border border-slate-200 shadow-sm w-fit mx-auto">
         @if (qrCodeDataUrl) {
-          <img [src]="qrCodeDataUrl" alt="QR Code" class="w-32 h-32 object-contain mx-auto">
+          <img [src]="qrCodeDataUrl" alt="QR Code" class="w-24 h-24 md:w-32 md:h-32 object-contain mx-auto">
         } @else {
-          <p class="text-red-500 text-xs text-center">Error generating code</p>
+          <p class="text-red-500 text-xs text-center">Error</p>
         }
       </div>
     </div>

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Table, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, SelectItem } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
 import QRCode from 'qrcode';
@@ -14,11 +14,15 @@ import { Invitation } from '../../../../shared/models/invitation.model';
 import { ViewGuests } from '../../../../shared/components/view-guests/view-guests';
 import { QrCodeDisplay } from '../../../../shared/components/qr-code-display/qr-code-display';
 import { take } from 'rxjs/operators';
+import { SelectModule } from 'primeng/select';
+import { FormsModule } from '@angular/forms';
+import { InputTextModule } from 'primeng/inputtext'; // Keep InputText for the search bar
+// Note: In PrimeNG v18+, ColumnFilter is typically part of TableModule, but we can import it directly if needed, usually TableModule is enough.
 
 @Component({
   selector: 'app-invitation-groups',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TooltipModule],
+  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, SelectModule, FormsModule, InputTextModule],
   templateUrl: './invitation-groups.component.html',
 })
 export class InvitationGroupsComponent implements OnInit {
@@ -30,6 +34,12 @@ export class InvitationGroupsComponent implements OnInit {
 
   invitations$!: Observable<Invitation[]>;
   dialogRef: DynamicDialogRef | null = null;
+
+  // Filter options for the p-columnFilter dropdown
+  statusOptions: SelectItem[] = [
+    { label: 'Responded', value: true },
+    { label: 'Pending', value: false }
+  ];
 
   ngOnInit(): void {
     this.invitations$ = this.firestoreService.getInvitations();
@@ -91,6 +101,10 @@ export class InvitationGroupsComponent implements OnInit {
         this.dialogRef = this.dialogService.open(QrCodeDisplay, {
           header: 'Invitation Link',
           width: '40%',
+          breakpoints: {
+            '960px': '75vw', // Width on screens smaller than 960px (tablet)
+            '640px': '90vw'  // Width on screens smaller than 640px (mobile)
+          },
           closable: true,
           data: {
             url: url,

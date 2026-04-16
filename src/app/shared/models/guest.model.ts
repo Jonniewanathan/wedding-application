@@ -5,11 +5,12 @@ export interface Guest {
   firstName: string;
   lastName: string;
 
-  // FIX: Explicitly allow null
   invitationId?: string | null;
-
-  // FIX: Explicitly allow null
   isAttending?: boolean | null;
+
+  // New bus fields
+  needsBus?: boolean | null;
+  busPickupLocation?: string | null;
 
   dietaryPreferences?: string[];
   allergies?: string[];
@@ -18,7 +19,7 @@ export interface Guest {
   countryOfResidence?: string;
   notes?: string;
 
-  type?: string; // Added this to satisfy the overlap check
+  type?: string;
 
   createdAt: Timestamp;
   updatedAt?: Timestamp | null;

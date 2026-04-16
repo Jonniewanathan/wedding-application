@@ -12,6 +12,9 @@ export interface Invitation {
   status: 'sent' | 'viewed' | 'responded';
   guestIds: string[];
 
+  // Add message field
+  message?: string | null;
+
   createdAt: Timestamp;
   updatedAt?: Timestamp | null;
 }

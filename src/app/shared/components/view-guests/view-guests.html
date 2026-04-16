@@ -1,26 +1,27 @@
 <p-toast></p-toast>
-<p-confirmDialog [style]="{width: '40vw'}"></p-confirmDialog>
+<p-confirmDialog [style]="{width: '90vw', maxWidth: '400px'}"></p-confirmDialog>
 
-<div class="flex flex-col h-full bg-white p-6">
+<div class="flex flex-col h-full bg-white p-4 md:p-6 w-full overflow-y-auto max-h-[85vh]">
 
-  <div class="text-center mb-8 relative">
-    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Members</span>
-    <h2 class="text-3xl font-serif font-medium italic text-slate-900">Guest List</h2>
+  <div class="text-center mb-6 md:mb-8 relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="w-full md:w-auto text-center md:text-left flex-1 md:text-center">
+      <span class="block text-[10px] md:text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Members</span>
+      <h2 class="text-2xl md:text-3xl font-serif font-medium italic text-slate-900">Guest List</h2>
+    </div>
 
     <!-- Add Guest Toggle Button -->
     <button
       (click)="toggleAddGuest()"
-      class="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 border border-slate-200 hover:border-slate-400 px-4 py-2 transition-colors">
+      class="w-full md:w-auto md:absolute md:right-0 md:top-1/2 md:-translate-y-1/2 text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-900 border border-slate-200 hover:border-slate-400 px-4 py-3 md:py-2 transition-colors">
       {{ showAddDropdown ? 'Cancel' : '+ Add Guest' }}
     </button>
   </div>
 
   <!-- Inline Add Guest Form -->
   @if(showAddDropdown) {
-    <div class="mb-6 p-4 bg-slate-50 border border-slate-100 flex items-end gap-4 animate-fade-in">
-      <div class="flex-grow flex flex-col gap-2">
-        <label class="text-xs font-sans uppercase tracking-widest text-slate-500">Select Unassigned Guest</label>
-        <!-- Use p-select instead of p-dropdown -->
+    <div class="mb-6 p-4 bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-end gap-4 animate-fade-in w-full">
+      <div class="flex-grow flex flex-col gap-2 w-full">
+        <label class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Select Unassigned Guest</label>
         <p-select
           [options]="(unassignedGuests$ | async)!"
           [(ngModel)]="selectedUnassignedGuest"
@@ -33,13 +34,13 @@
 
           <ng-template pTemplate="selectedItem" let-guest>
             <div class="flex items-center gap-2" *ngIf="guest">
-              <div>{{ guest.firstName }} {{ guest.lastName }}</div>
+              <div class="truncate">{{ guest.firstName }} {{ guest.lastName }}</div>
             </div>
           </ng-template>
 
           <ng-template pTemplate="item" let-guest>
             <div class="flex items-center gap-2">
-              <div>{{ guest.firstName }} {{ guest.lastName }}</div>
+              <div class="truncate">{{ guest.firstName }} {{ guest.lastName }}</div>
             </div>
           </ng-template>
 
@@ -48,101 +49,104 @@
       <button
         (click)="onAddGuest()"
         [disabled]="!selectedUnassignedGuest"
-        class="bg-slate-900 text-white px-6 py-[11px] text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-50 h-[42px]">
+        class="w-full sm:w-auto bg-slate-900 text-white px-6 py-[11px] text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-50 h-[42px] mt-2 sm:mt-0">
         Add to Group
       </button>
     </div>
   }
 
-  <p-table [value]="(guests$ | async)!" styleClass="editorial-table" [rowHover]="true">
+  <!-- Wrap the table in a horizontal scrolling div for mobile -->
+  <div class="w-full overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+    <p-table [value]="(guests$ | async)!" styleClass="editorial-table min-w-[600px]" [rowHover]="true">
 
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Guest Name</th>
-        <th>RSVP Status</th>
-        <th>Dietary Needs</th>
-        <th class="text-right">Actions</th>
-      </tr>
-    </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Guest Name</th>
+          <th>RSVP Status</th>
+          <th>Dietary Needs</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </ng-template>
 
-    <ng-template pTemplate="body" let-guest>
-      <tr class="hover:bg-slate-50 transition-colors">
+      <ng-template pTemplate="body" let-guest>
+        <tr class="hover:bg-slate-50 transition-colors">
 
-        <td class="font-medium text-slate-900">
-          {{ guest.firstName }} {{ guest.lastName }}
-        </td>
+          <td class="font-medium text-slate-900">
+            {{ guest.firstName }} {{ guest.lastName }}
+          </td>
 
-        <td>
-          @if (guest.isAttending === true) {
-            <span class="inline-flex items-center px-2 py-1 bg-green-50 border border-green-100 text-green-700 text-[10px] uppercase tracking-widest">
-              Attending
-            </span>
-          } @else if (guest.isAttending === false) {
-            <span class="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 text-red-700 text-[10px] uppercase tracking-widest">
-              Declined
-            </span>
-          } @else {
-            <span class="inline-flex items-center px-2 py-1 bg-slate-50 border border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest">
-              Pending
-            </span>
-          }
-        </td>
-
-        <td>
-          <div class="flex flex-wrap gap-1">
-            @for (pref of guest.dietaryPreferences; track pref) {
-              <span class="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-100 text-[10px] uppercase tracking-wide">
-                {{ pref }}
+          <td>
+            @if (guest.isAttending === true) {
+              <span class="inline-flex items-center px-2 py-1 bg-green-50 border border-green-100 text-green-700 text-[10px] uppercase tracking-widest">
+                Attending
+              </span>
+            } @else if (guest.isAttending === false) {
+              <span class="inline-flex items-center px-2 py-1 bg-red-50 border border-red-100 text-red-700 text-[10px] uppercase tracking-widest">
+                Declined
+              </span>
+            } @else {
+              <span class="inline-flex items-center px-2 py-1 bg-slate-50 border border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest">
+                Pending
               </span>
             }
-            @for (allergy of guest.allergies; track allergy) {
-              <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] uppercase tracking-wide">
-                {{ allergy }}
-              </span>
-            }
-            @if ((!guest.dietaryPreferences?.length) && (!guest.allergies?.length)) {
-              <span class="text-slate-300 text-xs italic">-</span>
-            }
-          </div>
-          @if (guest.dietaryNotes) {
-            <div class="mt-1 text-[10px] text-slate-400 italic">
-              Note: "{{ guest.dietaryNotes }}"
+          </td>
+
+          <td>
+            <div class="flex flex-wrap gap-1">
+              @for (pref of guest.dietaryPreferences; track pref) {
+                <span class="px-2 py-0.5 bg-teal-50 text-teal-700 border border-teal-100 text-[10px] uppercase tracking-wide">
+                  {{ pref }}
+                </span>
+              }
+              @for (allergy of guest.allergies; track allergy) {
+                <span class="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] uppercase tracking-wide">
+                  {{ allergy }}
+                </span>
+              }
+              @if ((!guest.dietaryPreferences?.length) && (!guest.allergies?.length)) {
+                <span class="text-slate-300 text-xs italic">-</span>
+              }
             </div>
-          }
-        </td>
-        <td class="text-right">
-          <div class="flex items-center justify-end gap-2">
+            @if (guest.dietaryNotes) {
+              <div class="mt-1 text-[10px] text-slate-400 italic">
+                Note: "{{ guest.dietaryNotes }}"
+              </div>
+            }
+          </td>
+          <td class="text-right">
+            <div class="flex items-center justify-end gap-2">
 
-            <button
-              pButton
-              icon="pi pi-pencil"
-              class="p-button-text p-button-rounded p-button-secondary hover:text-slate-900 transition-colors"
-              (click)="onEditGuest(guest)"
-              pTooltip="Edit Details">
-            </button>
+              <button
+                pButton
+                icon="pi pi-pencil"
+                class="p-button-text p-button-rounded p-button-secondary hover:text-slate-900 transition-colors"
+                (click)="onEditGuest(guest)"
+                pTooltip="Edit Details" tooltipPosition="top">
+              </button>
 
-            <button
-              pButton
-              icon="pi pi-sign-out"
-              class="p-button-text p-button-rounded p-button-secondary hover:text-red-600 transition-colors"
-              (click)="onUnassignGuest(guest)"
-              pTooltip="Remove from Group">
-            </button>
+              <button
+                pButton
+                icon="pi pi-sign-out"
+                class="p-button-text p-button-rounded p-button-secondary hover:text-red-600 transition-colors"
+                (click)="onUnassignGuest(guest)"
+                pTooltip="Remove from Group" tooltipPosition="top">
+              </button>
 
-          </div>
-        </td>
+            </div>
+          </td>
 
-      </tr>
-    </ng-template>
+        </tr>
+      </ng-template>
 
-    <ng-template pTemplate="emptymessage">
-      <tr>
-        <td colspan="4" class="text-center p-8 text-slate-400 italic">
-          No guests currently assigned to this invitation.
-        </td>
-      </tr>
-    </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="text-center p-8 text-slate-400 italic">
+            No guests currently assigned to this invitation.
+          </td>
+        </tr>
+      </ng-template>
 
-  </p-table>
+    </p-table>
+  </div>
 
 </div>

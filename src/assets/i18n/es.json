@@ -122,6 +122,13 @@
     "RESPOND_BY": "Por favor responde antes del 1 de Agosto de 2026",
     "JOYFULLY_ACCEPTS": "Acepta con Alegría",
     "REGRETFULLY_DECLINES": "Declina con Pesar",
+    "BUS_QUESTION": "Transporte",
+    "BUS_DESC": "Estamos organizando autobuses para llevar a los invitados desde Punta Umbría, Huelva o Valverde al lugar de celebración, y de vuelta al final de la noche. ¿Necesitas un asiento?",
+    "BUS_YES": "Sí, necesito un asiento",
+    "BUS_NO": "No, iré por mi cuenta",
+    "BUS_PICKUP_LABEL": "Selecciona el Lugar de Recogida",
+    "BUS_PICKUP_PLACEHOLDER": "Selecciona un pueblo o ciudad",
+    "BUS_PICKUP_REQUIRED": "Por favor, selecciona una ubicación para asignarte un asiento.",
     "DIETARY_PREFS": "Preferencias Dietéticas",
     "ALLERGIES": "Alergias",
     "SPECIFIC_NOTES": "Notas Específicas",
@@ -136,7 +143,7 @@
     "ALLERGY_NUTS": "Frutos Secos",
     "ALLERGY_SHELLFISH": "Marisco",
     "ALLERGY_EGGS": "Huevos",
-    "ALLERGY_GLUTEN_FREE": "Sin Gluten",
-    "ALLERGY_DAIRY_FREE": "Sin Lácteos"
+    "ALLERGY_GLUTEN_FREE": "Gluten",
+    "ALLERGY_DAIRY_FREE": "Lácteos"
   }
 }

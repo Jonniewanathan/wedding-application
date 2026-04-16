@@ -122,6 +122,13 @@
     "RESPOND_BY": "Please respond by August 1st, 2026",
     "JOYFULLY_ACCEPTS": "Joyfully Accepts",
     "REGRETFULLY_DECLINES": "Regretfully Declines",
+    "BUS_QUESTION": "Transport Logistics",
+    "BUS_DESC": "We are organizing buses to take guests from Punta Umbría or Valverde to the venue, and back at the end of the night. Do you require a seat?",
+    "BUS_YES": "Yes, I need a seat on the bus",
+    "BUS_NO": "No, I'll make my own way",
+    "BUS_PICKUP_LABEL": "Select Pick-up Location",
+    "BUS_PICKUP_PLACEHOLDER": "Select a town",
+    "BUS_PICKUP_REQUIRED": "Please select a location so we can allocate your seat.",
     "DIETARY_PREFS": "Dietary Preferences",
     "ALLERGIES": "Allergies",
     "SPECIFIC_NOTES": "Specific Notes",
@@ -136,7 +143,7 @@
     "ALLERGY_NUTS": "Nuts",
     "ALLERGY_SHELLFISH": "Shellfish",
     "ALLERGY_EGGS": "Eggs",
-    "ALLERGY_GLUTEN_FREE": "Gluten Free",
-    "ALLERGY_DAIRY_FREE": "Dairy Free"
+    "ALLERGY_GLUTEN_FREE": "Gluten",
+    "ALLERGY_DAIRY_FREE": "Dairy"
   }
 }
