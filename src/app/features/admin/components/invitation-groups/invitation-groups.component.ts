@@ -16,13 +16,16 @@ import { QrCodeDisplay } from '../../../../shared/components/qr-code-display/qr-
 import { take } from 'rxjs/operators';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
-import { InputTextModule } from 'primeng/inputtext'; // Keep InputText for the search bar
-// Note: In PrimeNG v18+, ColumnFilter is typically part of TableModule, but we can import it directly if needed, usually TableModule is enough.
+import { InputTextModule } from 'primeng/inputtext';
+import { InvitationFormComponent } from '../../../../shared/components/invitation-form/invitation-form';
+import { Guest } from '../../../../shared/models/guest.model';
+import {InputGroupAddon} from 'primeng/inputgroupaddon';
+import {InputGroup} from 'primeng/inputgroup';
 
 @Component({
   selector: 'app-invitation-groups',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, SelectModule, FormsModule, InputTextModule],
+  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, SelectModule, FormsModule, InputTextModule, InputGroupAddon, InputGroup],
   templateUrl: './invitation-groups.component.html',
 })
 export class InvitationGroupsComponent implements OnInit {
@@ -35,8 +38,8 @@ export class InvitationGroupsComponent implements OnInit {
   invitations$!: Observable<Invitation[]>;
   dialogRef: DynamicDialogRef | null = null;
 
-  // Filter options for the p-columnFilter dropdown
   statusOptions: SelectItem[] = [
+    { label: 'All Statuses', value: null },
     { label: 'Responded', value: true },
     { label: 'Pending', value: false }
   ];
@@ -54,6 +57,10 @@ export class InvitationGroupsComponent implements OnInit {
     table.filterGlobal(value, 'contains');
   }
 
+  onStatusFilterChange(table: Table, event: any) {
+    table.filter(event.value, 'hasResponded', 'equals');
+  }
+
   onAddGuestsToInvitation(invitation: Invitation): void {
     if (this.selectedGuests.length === 0) {
       this.messageService.add({ severity: 'warn', summary: 'No Guests Selected', detail: 'Please select guests from the unassigned list first.' });
@@ -68,8 +75,11 @@ export class InvitationGroupsComponent implements OnInit {
       header: 'Confirm Assignment',
       icon: 'pi pi-user-plus',
       accept: () => {
-        const guestIds = this.selectedGuests.map(g => g.id);
-        this.firestoreService.assignGuestsToInvitation(invitation.id, guestIds)
+        const existingGuestIds = invitation.guestIds || [];
+        const newGuestIds = this.selectedGuests.map(g => g.id);
+        const combinedIds = [...existingGuestIds, ...newGuestIds];
+
+        this.firestoreService.assignGuestsToInvitation(invitation.id, combinedIds)
           .then(() => {
             this.messageService.add({ severity: 'success', summary: 'Success', detail: `${guestCount} guest(s) assigned to ${invitation.displayName}.` });
             this.adminStateService.clearSelection();
@@ -89,6 +99,49 @@ export class InvitationGroupsComponent implements OnInit {
     });
   }
 
+  editInvitation(invitation: Invitation): void {
+    this.firestoreService.getGuestsForInvitation(invitation.id).pipe(take(1)).subscribe(guests => {
+
+      const sortedGuests = guests.sort((a, b) => {
+        const indexA = invitation.guestIds.indexOf(a.id);
+        const indexB = invitation.guestIds.indexOf(b.id);
+        return indexA - indexB;
+      });
+
+      this.dialogRef = this.dialogService.open(InvitationFormComponent, {
+        header: ' ',
+        width: '90vw',
+        styleClass: 'editorial-dialog max-w-[500px]',
+        contentStyle: { "padding": "0", "border-radius": "0" },
+        data: {
+          guests: sortedGuests,
+          invitation: invitation
+        }
+      });
+
+      this.dialogRef?.onClose.subscribe(async (result) => {
+        if (result) {
+          try {
+            await this.firestoreService.updateInvitation(invitation.id, {
+              displayName: result.displayName
+            });
+
+            const newOrderIds = result.orderedGuests.map((g: Guest) => g.id);
+
+            if (JSON.stringify(newOrderIds) !== JSON.stringify(invitation.guestIds)) {
+               await this.firestoreService.assignGuestsToInvitation(invitation.id, newOrderIds);
+            }
+
+            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Invitation Updated' });
+
+          } catch (err) {
+            this.handleError(err, 'Could not update invitation.');
+          }
+        }
+      });
+    });
+  }
+
   async showQrCodeDialog(invitation: Invitation) {
     const url = `https://wedding.jonathanquirke.com/invite/${invitation.invitationCode}`;
     try {
@@ -96,21 +149,20 @@ export class InvitationGroupsComponent implements OnInit {
       await QRCode.toDataURL(url, { errorCorrectionLevel: 'H', width: 256 })
         .then((dataUrl) => {qrCodeDataUrl = dataUrl});
 
-      // Fetch the guests for this invitation to display in the modal/print
       this.firestoreService.getGuestsForInvitation(invitation.id).pipe(take(1)).subscribe((guests) => {
         this.dialogRef = this.dialogService.open(QrCodeDisplay, {
           header: 'Invitation Link',
           width: '40%',
           breakpoints: {
-            '960px': '75vw', // Width on screens smaller than 960px (tablet)
-            '640px': '90vw'  // Width on screens smaller than 640px (mobile)
+            '960px': '75vw',
+            '640px': '90vw'
           },
           closable: true,
           data: {
             url: url,
             qrCodeDataUrl: qrCodeDataUrl,
             invitationName: invitation.displayName,
-            guests: guests // Pass the guests array
+            guests: guests
           }
         });
       });

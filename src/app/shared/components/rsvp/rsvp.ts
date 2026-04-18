@@ -6,6 +6,7 @@ import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { GuestSessionService } from '../../../core/services/auth/guest-session/guest-session';
 import { Invitation } from '../../models/invitation.model';
 import { Guest } from '../../models/guest.model';
+import { take } from 'rxjs/operators';
 
 // PrimeNG
 import { ButtonModule } from 'primeng/button';
@@ -15,7 +16,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { SelectModule } from 'primeng/select'; // Fixed: Changed from DropdownModule
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-rsvp',
@@ -31,7 +32,7 @@ import { SelectModule } from 'primeng/select'; // Fixed: Changed from DropdownMo
     RadioButtonModule,
     ProgressSpinnerModule,
     TranslateModule,
-    SelectModule // Fixed: Changed from DropdownModule
+    SelectModule
   ],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp.scss'
@@ -77,17 +78,15 @@ export class Rsvp implements OnInit {
     this.invitation = this.guestSession.currentInvitationValue;
 
     if (!this.invitation) {
-      // If they somehow got here without logging in (guard should prevent this), redirect
-      this.router.navigate(['/']);
+      // If they somehow got here without logging in, redirect
+      this.router.navigate(['/']).catch(err => console.error(err));
       return;
     }
 
-    // IMPORTANT FIX: Re-fetch the invitation from Firestore to ensure we have the absolute latest data,
-    // including any newly saved messages, instead of relying on the potentially stale session data.
+    // IMPORTANT FIX: Re-fetch the invitation from Firestore to ensure we have the absolute latest data.
     this.firestoreService.getInvitationByCode(this.invitation.invitationCode).then(freshInvitation => {
         if(freshInvitation) {
             this.invitation = freshInvitation;
-            // Also update the session with the fresh data
             this.guestSession.login(freshInvitation);
         }
         // 2. Load the guests for this invitation
@@ -96,7 +95,8 @@ export class Rsvp implements OnInit {
   }
 
   loadGuests(invitationId: string) {
-    this.firestoreService.getGuestsForInvitation(invitationId).subscribe({
+    // FIX: Use take(1) to prevent the form from completely rebuilding if an admin edits a guest while the user is filling out the form
+    this.firestoreService.getGuestsForInvitation(invitationId).pipe(take(1)).subscribe({
       next: (guests) => {
         this.initForm(guests);
         this.isLoading = false;
@@ -109,10 +109,23 @@ export class Rsvp implements OnInit {
   }
 
   initForm(guests: Guest[]) {
+    // FIX: Safely map the guest order using the guestIds array, handling cases where a guest might not be in the array yet
+    const guestIds = this.invitation?.guestIds || [];
+    const orderedGuests = [...guests].sort((a, b) => {
+      let indexA = guestIds.indexOf(a.id);
+      let indexB = guestIds.indexOf(b.id);
+
+      // If a guest ID is missing from the array, put them at the end
+      if (indexA === -1) indexA = 9999;
+      if (indexB === -1) indexB = 9999;
+
+      return indexA - indexB;
+    });
+
     this.rsvpForm = this.fb.group({
-      // Create a form group for EACH guest
-      guests: this.fb.array(guests.map(guest => this.createGuestGroup(guest))),
-      message: [this.invitation?.message || '', [Validators.maxLength(500)]] // Populate with the fresh message
+      // Create a form group for EACH guest, matching the invitation's intended order
+      guests: this.fb.array(orderedGuests.map(guest => this.createGuestGroup(guest))),
+      message: [this.invitation?.message || '', [Validators.maxLength(500)]]
     });
   }
 
@@ -125,41 +138,58 @@ export class Rsvp implements OnInit {
       // RSVP Logic
       isAttending: [guest.isAttending, Validators.required],
 
-      // Bus Logic - populate with existing data!
       needsBus: [guest.needsBus ?? null],
       busPickupLocation: [guest.busPickupLocation ?? null],
 
       // Chips (Arrays)
       dietaryPreferences: [guest.dietaryPreferences || []],
       allergies: [guest.allergies || []],
-      dietaryNotes: [guest.dietaryNotes || '', [Validators.maxLength(200)]] // Added character limit
+      dietaryNotes: [guest.dietaryNotes || '', [Validators.maxLength(200)]]
     });
 
-    // Dynamically manage busPickupLocation validator based on needsBus
+    // 1. Logic for isAttending -> needsBus
+    group.get('isAttending')?.valueChanges.subscribe(isAttending => {
+      const needsBusControl = group.get('needsBus');
+      const pickupControl = group.get('busPickupLocation');
+      if (isAttending === true) {
+        needsBusControl?.setValidators(Validators.required);
+      } else {
+        needsBusControl?.clearValidators();
+        needsBusControl?.setValue(null, { emitEvent: false }); // Clear value if not attending
+
+        pickupControl?.clearValidators();
+        pickupControl?.setValue(null, { emitEvent: false });
+      }
+      needsBusControl?.updateValueAndValidity({ emitEvent: false });
+      pickupControl?.updateValueAndValidity({ emitEvent: false });
+    });
+
+    // 2. Logic for needsBus -> busPickupLocation
     group.get('needsBus')?.valueChanges.subscribe(needsBus => {
       const pickupControl = group.get('busPickupLocation');
       if (needsBus === true) {
         pickupControl?.setValidators(Validators.required);
       } else {
         pickupControl?.clearValidators();
-        // IMPORTANT FIX: Don't automatically clear the value when it changes to false if we are just initializing the form
-        // We only want to clear it if the user interactively changes it to false.
-        // pickupControl?.setValue(null);
+        pickupControl?.setValue(null, { emitEvent: false });
       }
-      pickupControl?.updateValueAndValidity({ emitEvent: false }); // Avoid infinite loops
+      pickupControl?.updateValueAndValidity({ emitEvent: false });
     });
 
-    // Trigger valueChanges once to set initial state correctly WITHOUT clearing the existing value
-    const needsBusVal = group.get('needsBus')?.value;
-    if (needsBusVal === true) {
-       group.get('busPickupLocation')?.setValidators(Validators.required);
-       group.get('busPickupLocation')?.updateValueAndValidity({ emitEvent: false });
+    // 3. Run initial checks to set state based on existing data
+    const initialAttending = group.get('isAttending')?.value;
+    if (initialAttending === true) {
+      group.get('needsBus')?.setValidators(Validators.required);
+    }
+
+    const initialNeedsBus = group.get('needsBus')?.value;
+    if (initialNeedsBus === true) {
+      group.get('busPickupLocation')?.setValidators(Validators.required);
     }
 
     return group;
   }
 
-  // Helper to access the FormArray in HTML
   get guestControls() {
     return (this.rsvpForm.get('guests') as FormArray).controls;
   }
@@ -170,7 +200,6 @@ export class Rsvp implements OnInit {
     this.isLoading = true;
     const formValue = this.rsvpForm.value;
 
-    // Cleanup data before saving: If they said they don't need a bus, ensure the location is saved as null
     const guestsToUpdate = (formValue.guests as Guest[]).map(guest => {
         if(guest.needsBus === false || guest.needsBus === null) {
             guest.busPickupLocation = null;
@@ -178,7 +207,7 @@ export class Rsvp implements OnInit {
         return guest;
     });
 
-    const message = formValue.message; // Extract message
+    const message = formValue.message;
 
     try {
       await this.firestoreService.submitRsvpForGuests(this.invitation.id, guestsToUpdate, message);

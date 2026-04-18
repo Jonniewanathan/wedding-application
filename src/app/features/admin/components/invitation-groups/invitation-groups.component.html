@@ -1,19 +1,36 @@
 <div class="py-4 md:py-6">
 
   <div class="flex flex-col md:flex-row justify-end items-start md:items-center gap-4 mb-6">
-    <div class="w-full md:w-auto relative">
-      <i class="pi pi-search absolute left-3 top-3 text-slate-400"></i>
-      <input
-        type="text"
-        (input)="filterInvitations(dtGroups, $event)"
-        placeholder="Search groups..."
-        class="pl-10 w-full md:w-64 text-sm border-slate-200 p-2"
-      />
+    <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+      <!-- Status Filter Dropdown -->
+      <p-select
+        [options]="statusOptions"
+        (onChange)="onStatusFilterChange(dtGroups, $event)"
+        placeholder="Filter by Status"
+        class="w-full sm:w-auto md:w-48 text-sm">
+      </p-select>
+
+      <!-- Global Search Input -->
+      <div class="w-full md:w-auto relative">
+        <p-inputgroup>
+          <input
+            pInputText
+            pButtonIcon="pi pi-search"
+            type="text"
+            (input)="filterInvitations(dtGroups, $event)"
+            placeholder="Search groups..."
+            class="pl-10 w-full md:w-64 text-sm border-slate-200 p-2"
+          />
+          <p-inputgroup-addon>
+            <i class="pi pi-search"></i>
+          </p-inputgroup-addon>
+        </p-inputgroup>
+      </div>
     </div>
   </div>
 
   <div class="w-full overflow-x-auto -mx-6 md:mx-0 px-6 md:px-0">
-    <p-table #dtGroups [value]="(invitations$ | async)!" [paginator]="true" [rows]="10" styleClass="editorial-table min-w-[600px]" [globalFilterFields]="['displayName', 'invitationCode']">
+    <p-table #dtGroups [value]="(invitations$ | async)!" [paginator]="true" [rows]="10" class="editorial-table min-w-[600px]" [globalFilterFields]="['displayName', 'invitationCode']">
       <ng-template pTemplate="header">
         <tr>
           <th pSortableColumn="displayName" class="cursor-pointer hover:text-slate-900 transition-colors">
@@ -23,12 +40,9 @@
             Access Code <p-sortIcon field="invitationCode"></p-sortIcon>
           </th>
           <th pSortableColumn="hasResponded" class="cursor-pointer hover:text-slate-900 transition-colors">
-            RSVP Status <p-sortIcon field="hasResponded"></p-sortIcon>
-            <p-columnFilter field="hasResponded" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
-              <ng-template pTemplate="filter" let-value let-filter="filterCallback">
-                <p-select [options]="statusOptions" [ngModel]="value" (onChange)="filter($event.value)" placeholder="Any" [showClear]="true"></p-select>
-              </ng-template>
-            </p-columnFilter>
+            RSVP Status
+            <!-- Keeping the column filter definition so the table knows it can filter this column, but hiding the menu icon -->
+            <p-columnFilter field="hasResponded" matchMode="equals" display="menu" [showMenu]="false"></p-columnFilter>
           </th>
           <th class="text-right">Manage</th>
         </tr>
@@ -50,7 +64,7 @@
             }
           </td>
           <td class="text-right">
-            <div class="flex items-center justify-end gap-4">
+            <div class="flex items-center justify-end gap-2">
 
               <button
                 (click)="onAddGuestsToInvitation(invitation)"
@@ -58,20 +72,24 @@
                 [class.text-slate-200]="selectedGuests.length === 0"
                 [class.hover:text-slate-900]="selectedGuests.length > 0"
                 [class.text-slate-400]="selectedGuests.length > 0"
-                class="transition-colors"
-                pTooltip="Add Selected Guests from Pool">
+                class="transition-colors p-2"
+                pTooltip="Add Selected Guests" tooltipPosition="top">
                 <i class="pi pi-user-plus"></i>
               </button>
 
-              <button (click)="openViewGuests(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors" tooltipPosition="top" pTooltip="View Guests in Group">
+              <button (click)="editInvitation(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors p-2" tooltipPosition="top" pTooltip="Edit Group Details">
+                <i class="pi pi-pencil"></i>
+              </button>
+
+              <button (click)="openViewGuests(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors p-2" tooltipPosition="top" pTooltip="View Guests">
                 <i class="pi pi-users"></i>
               </button>
 
-              <button (click)="showQrCodeDialog(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors" tooltipPosition="top" pTooltip="Get QR Link">
+              <button (click)="showQrCodeDialog(invitation)" class="text-slate-400 hover:text-slate-900 transition-colors p-2" tooltipPosition="top" pTooltip="Get QR Link">
                 <i class="pi pi-qrcode"></i>
               </button>
 
-              <button (click)="onDeleteInvitation(invitation)" class="text-slate-300 hover:text-red-500 transition-colors" tooltipPosition="top" pTooltip="Delete Group">
+              <button (click)="onDeleteInvitation(invitation)" class="text-slate-300 hover:text-red-500 transition-colors p-2" tooltipPosition="top" pTooltip="Delete Group">
                 <i class="pi pi-trash"></i>
               </button>
             </div>

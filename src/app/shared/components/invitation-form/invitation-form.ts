@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { Guest } from '../../models/guest.model';
+import { CdkDragDrop, moveItemInArray, DragDropModule } from '@angular/cdk/drag-drop';
 
 // PrimeNG Modules
 import { InputTextModule } from 'primeng/inputtext';
@@ -12,7 +13,7 @@ import { ChipModule } from 'primeng/chip';
 @Component({
   selector: 'app-invitation-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ChipModule],
+  imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ChipModule, DragDropModule],
   templateUrl: './invitation-form.html',
 })
 export class InvitationFormComponent implements OnInit {
@@ -22,28 +23,38 @@ export class InvitationFormComponent implements OnInit {
 
   invitationForm!: FormGroup;
   guestsToAssign: Guest[] = [];
+  isEditMode = false;
+  invitationId: string | null = null;
 
   ngOnInit(): void {
-    this.guestsToAssign = this.config.data?.guests || [];
+    this.guestsToAssign = this.config.data?.guests ? [...this.config.data.guests] : [];
 
-    // Auto-suggest a display name based on the most common last name
+    // Check if we were passed an existing invitation to edit
+    const existingInvitation = this.config.data?.invitation;
+
     let defaultName = '';
-    if (this.guestsToAssign.length > 0) {
-      const lastNames = this.guestsToAssign.map(g => g.lastName?.trim()).filter(Boolean);
 
-      if (lastNames.length > 0) {
-        // Count occurrences of each last name
-        const nameCounts = lastNames.reduce((acc, name) => {
-          acc[name] = (acc[name] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+    if (existingInvitation) {
+      this.isEditMode = true;
+      this.invitationId = existingInvitation.id;
+      defaultName = existingInvitation.displayName;
+    } else {
+      // Add Mode: Auto-suggest a display name based on the most common last name
+      if (this.guestsToAssign.length > 0) {
+        const lastNames = this.guestsToAssign.map(g => g.lastName?.trim()).filter(Boolean);
 
-        // Find the most frequent last name
-        const mostCommon = Object.keys(nameCounts).reduce((a, b) =>
-          nameCounts[a] > nameCounts[b] ? a : b
-        );
+        if (lastNames.length > 0) {
+          const nameCounts = lastNames.reduce((acc, name) => {
+            acc[name] = (acc[name] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
 
-        defaultName = `The ${mostCommon} Family`;
+          const mostCommon = Object.keys(nameCounts).reduce((a, b) =>
+            nameCounts[a] > nameCounts[b] ? a : b
+          );
+
+          defaultName = `The ${mostCommon} Family`;
+        }
       }
     }
 
@@ -52,11 +63,22 @@ export class InvitationFormComponent implements OnInit {
     });
   }
 
+  drop(event: CdkDragDrop<string[]>) {
+    // This method handles the re-ordering of the guestsToAssign array
+    // when a drag and drop event finishes
+    moveItemInArray(this.guestsToAssign, event.previousIndex, event.currentIndex);
+  }
+
   onSubmit(): void {
     if (this.invitationForm.invalid) {
       return;
     }
-    this.dialogRef.close(this.invitationForm.value);
+
+    // Return both the form values AND the potentially reordered guests array
+    this.dialogRef.close({
+      ...this.invitationForm.value,
+      orderedGuests: this.guestsToAssign
+    });
   }
 
   onCancel(): void {

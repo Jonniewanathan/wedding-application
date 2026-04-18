@@ -1,4 +1,4 @@
-import { Component, inject, Signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, Signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -7,6 +7,9 @@ import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
 import { ButtonModule } from 'primeng/button';
 import * as Papa from 'papaparse';
+import {Ripple} from 'primeng/ripple';
+import {TableModule} from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
 
 interface StatCard {
   title: string;
@@ -16,9 +19,8 @@ interface StatCard {
 @Component({
   selector: 'app-stats',
   standalone: true,
-  imports: [CommonModule, CardModule, ChartModule, ButtonModule],
+  imports: [CommonModule, CardModule, ChartModule, ButtonModule, Ripple, TableModule, DialogModule],
   templateUrl: './stats.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StatsComponent {
   private firestoreService = inject(FirestoreService);
@@ -31,7 +33,6 @@ export class StatsComponent {
         }
       }
     },
-    // Add responsive properties to force chart to re-render correctly
     responsive: true,
     maintainAspectRatio: false
   };
@@ -47,6 +48,68 @@ export class StatsComponent {
       { title: 'Pending', value: guests.filter(g => g.isAttending === null).length },
     ];
   });
+
+  // Modal State
+  displayModal = false;
+  modalTitle = '';
+  modalGuests: Guest[] = [];
+
+  openModal(statTitle: string) {
+    this.modalTitle = statTitle;
+    const guests = this.allGuests();
+
+    switch (statTitle) {
+      case 'Total Invited':
+        this.modalGuests = guests;
+        break;
+      case 'Attending':
+        this.modalGuests = guests.filter(g => g.isAttending === true);
+        break;
+      case 'Declined':
+        this.modalGuests = guests.filter(g => g.isAttending === false);
+        break;
+      case 'Pending':
+        this.modalGuests = guests.filter(g => g.isAttending === null);
+        break;
+      default:
+        this.modalGuests = [];
+    }
+
+    this.displayModal = true;
+  }
+
+  // --- NEW: Attending / Declined / Pending Chart ---
+  attendanceChartData = computed(() => {
+      const guests = this.allGuests();
+      const counts = {
+          Attending: guests.filter(g => g.isAttending === true).length,
+          Declined: guests.filter(g => g.isAttending === false).length,
+          Pending: guests.filter(g => g.isAttending === null).length
+      };
+
+      // Define standard colors to use for the pie chart sections
+      const backgroundColor = [
+          '#10b981', // green for attending
+          '#ef4444', // red for declined
+          '#cbd5e1'  // slate-300 for pending
+      ];
+
+      const hoverBackgroundColor = [
+          '#059669', // darker green
+          '#dc2626', // darker red
+          '#94a3b8'  // darker slate
+      ];
+
+      return {
+          labels: Object.keys(counts),
+          datasets: [{
+              data: Object.values(counts),
+              backgroundColor: backgroundColor,
+              hoverBackgroundColor: hoverBackgroundColor
+          }]
+      };
+  });
+
 
   dietaryChartData = computed(() => {
     const guests = this.allGuests();
@@ -116,4 +179,97 @@ export class StatsComponent {
     link.click();
     document.body.removeChild(link);
   }
+
+// --- Table Data: Dietary Requirements ---
+  guestsByDietary = computed(() => {
+    const guests = this.allGuests().filter(g => g.isAttending);
+    const result: any[] = [];
+
+    const categories = [...new Set(guests.flatMap(g => g.dietaryPreferences?.length ? g.dietaryPreferences : ['Standard/No Requirements']))];
+
+    categories.sort().forEach(cat => {
+      const guestsInCat = guests
+        .filter(g => (g.dietaryPreferences?.includes(cat)) || (!g.dietaryPreferences?.length && cat === 'Standard/No Requirements'))
+        .sort((a, b) => (a.invitationId || '').localeCompare(b.invitationId || ''));
+
+      let currentInviteId = '';
+      let shaded = false;
+
+      guestsInCat.forEach(g => {
+        if (g.invitationId !== currentInviteId) {
+          shaded = !shaded;
+          currentInviteId = g.invitationId || '';
+        }
+        result.push({
+          dietaryCategory: cat,
+          fullName: `${g.firstName} ${g.lastName}`,
+          details: g.dietaryNotes || g.allergies?.join(', ') || '-',
+          isShaded: shaded
+        });
+      });
+    });
+    return result;
+  });
+
+  // --- Table Data: Bus Manifest ---
+  guestsByBus = computed(() => {
+    const guests = this.allGuests().filter(g => g.isAttending && g.needsBus);
+    const result: any[] = [];
+
+    const locations = [...new Set(guests.map(g => g.busPickupLocation || 'Location Unspecified'))];
+
+    locations.sort().forEach(loc => {
+      const guestsInLoc = guests
+        .filter(g => (g.busPickupLocation || 'Location Unspecified') === loc)
+        .sort((a, b) => (a.invitationId || '').localeCompare(b.invitationId || ''));
+
+      let currentInviteId = '';
+      let shaded = false;
+
+      guestsInLoc.forEach(g => {
+        if (g.invitationId !== currentInviteId) {
+          shaded = !shaded;
+          currentInviteId = g.invitationId || '';
+        }
+        result.push({
+          pickupLocation: loc,
+          fullName: `${g.firstName} ${g.lastName}`,
+          isShaded: shaded
+        });
+      });
+    });
+    return result;
+  });
+
+  // --- Table Data: Allergy List ---
+  guestsByAllergy = computed(() => {
+    const guests = this.allGuests().filter(g => g.isAttending);
+    const result: any[] = [];
+
+    // Only get guests that actually have an allergy
+    const allergyCategories = [...new Set(guests.flatMap(g => g.allergies || []).filter(a => a.length > 0))];
+
+    allergyCategories.sort().forEach(allergy => {
+      const guestsWithAllergy = guests
+        .filter(g => g.allergies?.includes(allergy))
+        .sort((a, b) => (a.invitationId || '').localeCompare(b.invitationId || ''));
+
+      let currentInviteId = '';
+      let shaded = false;
+
+      guestsWithAllergy.forEach(g => {
+        if (g.invitationId !== currentInviteId) {
+          shaded = !shaded;
+          currentInviteId = g.invitationId || '';
+        }
+        result.push({
+          allergyCategory: allergy,
+          fullName: `${g.firstName} ${g.lastName}`,
+          details: g.dietaryNotes || '-',
+          isShaded: shaded
+        });
+      });
+    });
+    return result;
+  });
 }

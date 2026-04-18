@@ -13,9 +13,9 @@
   "SAVE_THE_DATE": {
     "SUBTITLE": "Nos Casamos",
     "DATE": "22 de Agosto, 2026",
-    "LOCATION": "Huelva, España",
+    "LOCATION": "Convento de la Luz, Lucena del Puerto",
     "WELCOME_TITLE": "Una celebración de amor en el corazón de Andalucía.",
-    "WELCOME_TEXT": "Estamos encantados de invitarte a acompañarnos en Huelva. Hemos planeado un fin de semana lleno de sol, comida deliciosa y gran compañía.",
+    "WELCOME_TEXT": "Estamos encantados de invitarte a nuestra boda en Lucena del Puerto, Huelva.",
     "THE_VENUE": "El Lugar",
     "VENUE_NAME": "Convento de la Luz",
     "THE_COUNTDOWN": "La Cuenta Atrás",
@@ -35,15 +35,15 @@
     },
     "PUNTA_UMBRIA": {
       "TITLE": "Punta Umbría",
-      "DESC": "Nuestra principal recomendación. Un hermoso pueblo costero perfecto para un ambiente de vacaciones. Te esperan playas doradas, marisco fresco y un ambiente relajado. Es el punto principal de recogida para el autobús de la boda."
+      "DESC": "Nuestra principal recomendación. Un hermoso pueblo costero perfecto para un ambiente de vacaciones. Te esperan playas doradas, marisco fresco y un ambiente relajado. Es uno de los puntos principales de recogida para el autobús la boda."
     },
     "VALVERDE": {
       "TITLE": "Valverde Del Camino",
-      "DESC": "Para una experiencia andaluza de interior verdaderamente auténtica. Este es el pueblo natal de Marta—tranquilo, tradicional y lleno de encanto local. Un autobús también saldrá de aquí."
+      "DESC": "Para una auténtica experiencia andaluza. Este es el pueblo natal de Marta—tranquilo, tradicional y lleno de encanto local. Un autobús también saldrá de aquí."
     },
     "HUELVA_CITY": {
       "TITLE": "Huelva Ciudad",
-      "DESC": "La capital de la provincia. Perfecta si prefieres las comodidades de la ciudad, compras y lugares históricos. Explora la Plaza de las Monjas y disfruta de los vibrantes bares de tapas por la noche."
+      "DESC": "La capital de la provincia. Perfecta si prefieres las comodidades de la ciudad, compras y lugares históricos. Explora la Plaza de las Monjas y el monumento a la Fe Descubridora."
     },
     "HOTEL_OFFER": {
       "SUBTITLE": "Oferta Exclusiva",
@@ -53,7 +53,7 @@
       "CONDITION": "Se requiere una estancia mínima de 3 noches.",
       "CONTACT_TO_BOOK": "Contactar Directamente para Reservar",
       "HOTEL_AMARILLO_TAG": "Ideal para Familias",
-      "HOTEL_AMARILLO_DESC": "Ideal para estancias con niños. Equipado con dos piscinas y un club infantil dedicado.",
+      "HOTEL_AMARILLO_DESC": "Ideal para estancias con niños. Equipado con dos piscinas y un club infantil.",
       "HOTEL_ROJO_TAG": "Solo Adultos",
       "HOTEL_ROJO_DESC": "Una opción económica. No tiene piscina, pero los huéspedes tienen acceso gratuito a la piscina del Pato Amarillo a solo 200m."
     },
@@ -83,7 +83,7 @@
   "LOCAL_GUIDE": {
     "SUBTITLE": "Guía",
     "TITLE": "La Zona Local",
-    "INTRO": "La provincia de Huelva ofrece una mezcla perfecta de costas doradas y rica historia andaluza. Aquí tienes algunos de nuestros lugares favoritos para explorar mientras estás aquí.",
+    "INTRO": "La provincia de Huelva ofrece una mezcla perfecta de costas doradas y rica historia andaluza. Aquí tienes algunos de nuestros lugares favoritos para explorar durante tu visita.",
     "EXPLORE": "Explora la Región",
     "PUNTA_UMBRIA": {
       "TITLE": "Pueblo de Punta Umbría",
@@ -111,7 +111,10 @@
     }
   },
   "INVITATION": {
-    "RSVP_NOW": "Confirmar Asistencia"
+    "RSVP_NOW": "Confirmar Asistencia",
+    "SUBTITLE": "Nos Casamos",
+    "DATE": "22 de Agosto, 2026",
+    "LOCATION": "Convento de la Luz, Lucena del Puerto"
   },
   "RSVP": {
     "LOADING": "Cargando tu invitación...",
@@ -120,7 +123,7 @@
     "BACK_TO_HOME": "Volver al Inicio",
     "SUBTITLE": "Asistencia",
     "RESPOND_BY": "Por favor responde antes del 1 de Agosto de 2026",
-    "JOYFULLY_ACCEPTS": "Acepta con Alegría",
+    "JOYFULLY_ACCEPTS": "Acepta felizmente",
     "REGRETFULLY_DECLINES": "Declina con Pesar",
     "BUS_QUESTION": "Transporte",
     "BUS_DESC": "Estamos organizando autobuses para llevar a los invitados desde Punta Umbría, Huelva o Valverde al lugar de celebración, y de vuelta al final de la noche. ¿Necesitas un asiento?",
@@ -138,7 +141,7 @@
     "CONFIRM_BTN": "Confirmar Asistencia",
     "DIETARY_VEGETARIAN": "Vegetariano",
     "DIETARY_VEGAN": "Vegano",
-    "DIETARY_PESCATARIAN": "Pescatariano",
+    "DIETARY_PESCATARIAN": "Pescetariano",
     "DIETARY_CHILDRENS": "Menú Infantil",
     "ALLERGY_NUTS": "Frutos Secos",
     "ALLERGY_SHELLFISH": "Marisco",

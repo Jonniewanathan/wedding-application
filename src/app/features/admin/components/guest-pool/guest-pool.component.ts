@@ -6,7 +6,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
-
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -16,14 +15,12 @@ import {InputTextModule} from 'primeng/inputtext';
 import {InputGroupModule} from 'primeng/inputgroup';
 import {InputGroupAddonModule} from 'primeng/inputgroupaddon';
 
-
 interface CsvGuestRow {
   FirstName: string;
   LastName: string;
   Country?: string; // Optional in CSV
   Notes?: string;   // Optional in CSV
 }
-
 
 @Component({
   selector: 'app-guest-pool',
@@ -189,21 +186,24 @@ export class GuestPoolComponent implements OnInit {
     if (!currentSelection || currentSelection.length === 0) return;
 
     this.dialogRef = this.dialogService.open(InvitationFormComponent, {
-      header: 'New Invitation Details',
+      header: ' ', // Handled in component
       width: '90vw',
-      styleClass: 'max-w-[500px]',
+      styleClass: 'editorial-dialog max-w-[500px]',
+      contentStyle: { "padding": "0", "border-radius": "0" },
       data: { guests: currentSelection }
     });
 
-    this.dialogRef?.onClose.subscribe(async (invitationDetails) => {
-      if (invitationDetails) {
+    this.dialogRef?.onClose.subscribe(async (result) => {
+      if (result) {
         try {
           const invitationRef = await this.firestoreService.createInvitation({
-            displayName: invitationDetails.displayName
+            displayName: result.displayName
           });
           const newInvitationId = invitationRef.id;
 
-          const guestIds = currentSelection.map(g => g.id);
+          // Note: orderedGuests comes from the drag-and-drop feature in the form
+          const guestIds = result.orderedGuests.map((g: Guest) => g.id);
+
           await this.firestoreService.assignGuestsToInvitation(newInvitationId, guestIds);
 
           this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Invitation Created' });

@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, where,
   getDocs, collectionData, doc, setDoc,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
-  addDoc, DocumentReference, getDoc, arrayUnion, arrayRemove
+  addDoc, DocumentReference, getDoc, arrayRemove
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation } from '../../../shared/models/invitation.model';
@@ -62,16 +62,14 @@ export class FirestoreService {
     const docRef = doc(this.firestore, `guests/${guest.id}`);
     const updateData: any = { updatedAt: serverTimestamp() };
 
-    if (guest.firstName !== undefined) updateData.firstName = guest.firstName;
-    if (guest.lastName !== undefined) updateData.lastName = guest.lastName;
-    if (guest.countryOfResidence !== undefined) updateData.countryOfResidence = guest.countryOfResidence;
-    if (guest.notes !== undefined) updateData.notes = guest.notes;
-    if (guest.isAttending !== undefined) updateData.isAttending = guest.isAttending;
-    if (guest.needsBus !== undefined) updateData.needsBus = guest.needsBus;
-    if (guest.busPickupLocation !== undefined) updateData.busPickupLocation = guest.busPickupLocation;
-    if (guest.dietaryPreferences !== undefined) updateData.dietaryPreferences = guest.dietaryPreferences;
-    if (guest.allergies !== undefined) updateData.allergies = guest.allergies;
-    if (guest.dietaryNotes !== undefined) updateData.dietaryNotes = guest.dietaryNotes;
+    // Dynamically add fields to update object to avoid overwriting with undefined
+    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes'];
+
+    fields.forEach(field => {
+      if (guest[field] !== undefined) {
+        updateData[field] = guest[field];
+      }
+    });
 
     return updateDoc(docRef, updateData);
   }
@@ -92,21 +90,33 @@ export class FirestoreService {
     }) as Promise<DocumentReference<Invitation>>;
   }
 
+  updateInvitation(invitationId: string, details: { displayName: string }): Promise<void> {
+    const docRef = doc(this.firestore, `invitations/${invitationId}`);
+    return updateDoc(docRef, {
+      displayName: details.displayName,
+      updatedAt: serverTimestamp()
+    });
+  }
+
   async assignGuestsToInvitation(invitationId: string, guestIds: string[]): Promise<void> {
     const batch = writeBatch(this.firestore);
+
+    // 1. Update the Invitation Document (Overwrite the array to maintain the exact order provided)
+    const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
+    batch.update(invitationRef, {
+      guestIds: guestIds,
+      updatedAt: serverTimestamp()
+    });
+
+    // 2. Update each Guest Document (if they aren't already assigned to this invitation)
+    // In a real app, you might want to optimize this to only update guests whose invitationId changed,
+    // but for re-ordering, it's safer to just ensure they all have the correct ID.
     guestIds.forEach(guestId => {
       const guestRef = doc(this.firestore, `guests/${guestId}`);
       batch.update(guestRef, {
         invitationId: invitationId,
-        isAttending: null,
         updatedAt: serverTimestamp()
       });
-    });
-
-    const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
-    batch.update(invitationRef, {
-      guestIds: arrayUnion(...guestIds),
-      updatedAt: serverTimestamp()
     });
 
     return batch.commit();
