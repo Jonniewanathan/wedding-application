@@ -1,23 +1,71 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { AddGuestFormComponent } from './add-guest-form';
 
-import { AddGuestForm } from './add-guest-form';
-
-describe('AddGuestForm', () => {
-  let component: AddGuestForm;
-  let fixture: ComponentFixture<AddGuestForm>;
+describe('AddGuestFormComponent', () => {
+  let component: AddGuestFormComponent;
+  let fixture: ComponentFixture<AddGuestFormComponent>;
+  let dialogRef: jasmine.SpyObj<DynamicDialogRef>;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [AddGuestForm]
-    })
-    .compileComponents();
+    dialogRef = jasmine.createSpyObj<DynamicDialogRef>('DynamicDialogRef', ['close']);
 
-    fixture = TestBed.createComponent(AddGuestForm);
+    await TestBed.configureTestingModule({
+      imports: [AddGuestFormComponent],
+      providers: [{ provide: DynamicDialogRef, useValue: dialogRef }]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AddGuestFormComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    component.ngOnInit();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should initialise the form with empty fields', () => {
+    expect(component.addGuestForm.value).toEqual({
+      firstName: '',
+      lastName: '',
+      countryOfResidence: '',
+      notes: ''
+    });
+  });
+
+  it('should require firstName and lastName', () => {
+    expect(component.addGuestForm.get('firstName')?.valid).toBeFalse();
+    expect(component.addGuestForm.get('lastName')?.valid).toBeFalse();
+  });
+
+  it('should be valid once firstName and lastName are populated', () => {
+    component.addGuestForm.patchValue({ firstName: 'A', lastName: 'B' });
+    expect(component.addGuestForm.valid).toBeTrue();
+  });
+
+  it('should not close the dialog when the form is invalid', () => {
+    component.onSubmit();
+    expect(dialogRef.close).not.toHaveBeenCalled();
+  });
+
+  it('should close the dialog with the form value when valid', () => {
+    component.addGuestForm.setValue({
+      firstName: 'Alice',
+      lastName: 'Smith',
+      countryOfResidence: 'UK',
+      notes: 'VIP'
+    });
+    component.onSubmit();
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      firstName: 'Alice',
+      lastName: 'Smith',
+      countryOfResidence: 'UK',
+      notes: 'VIP'
+    });
+  });
+
+  it('should close the dialog with no argument on cancel', () => {
+    component.onCancel();
+    expect(dialogRef.close).toHaveBeenCalledWith();
   });
 });

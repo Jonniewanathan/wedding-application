@@ -88,47 +88,156 @@ export class QrCodeDisplay implements OnInit {
       return;
     }
 
-    const guestListHtml = this.guests.map(g => `<li class="mb-1">${g.firstName} ${g.lastName}</li>`).join('');
+    // Escape all user-controlled values to prevent HTML injection — guests
+    // and invitation names may originate from CSV uploads or admin input.
+    const safeName = this.escapeHtml(this.invitationName);
+    const safeUrl = this.escapeHtml(this.invitationUrl);
+    const safeQr = this.escapeHtml(this.qrCodeDataUrl);
+    const guestListHtml = this.guests
+      .map(g => `<li>${this.escapeHtml(`${g.firstName} ${g.lastName}`)}</li>`)
+      .join('');
 
+    // Styles are inlined so the print works offline and does not depend on a CDN.
     const htmlContent = `
       <html>
         <head>
-          <title>Print Invitation - ${this.invitationName}</title>
-          <script src="https://cdn.tailwindcss.com"></script>
+          <title>Print Invitation - ${safeName}</title>
           <style>
-            body { margin: 0; padding: 20px; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+              background: #ffffff;
+              color: #0f172a;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+            }
             @media print {
-              body { padding: 0; }
+              body { padding: 0; min-height: auto; }
+            }
+            .invite-card {
+              max-width: 24rem;
+              width: 100%;
+              margin: 0 auto;
+              padding: 2rem;
+              border: 1px solid #e2e8f0;
+              text-align: center;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              box-sizing: border-box;
+            }
+            .invite-header { margin-bottom: 1.5rem; width: 100%; }
+            .invite-eyebrow {
+              display: block;
+              font-size: 0.75rem;
+              text-transform: uppercase;
+              letter-spacing: 0.3em;
+              color: #94a3b8;
+              margin-bottom: 0.5rem;
+            }
+            .invite-name {
+              font-family: ui-serif, Georgia, serif;
+              font-size: 1.875rem;
+              font-style: italic;
+              font-weight: 500;
+              color: #0f172a;
+              margin: 0 0 1rem 0;
+            }
+            .invite-guests {
+              font-size: 0.875rem;
+              color: #475569;
+              border-top: 1px solid #f1f5f9;
+              border-bottom: 1px solid #f1f5f9;
+              padding: 0.75rem 0;
+              margin-bottom: 0.5rem;
+            }
+            .invite-guests-label {
+              font-size: 0.625rem;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              color: #94a3b8;
+              margin: 0 0 0.5rem 0;
+            }
+            .invite-guests ul { list-style: none; padding: 0; margin: 0; }
+            .invite-guests li { margin-bottom: 0.25rem; }
+            .invite-qr {
+              padding: 1rem;
+              border: 1px solid #f1f5f9;
+              margin-bottom: 1.5rem;
+            }
+            .invite-qr img {
+              width: 12rem;
+              height: 12rem;
+              object-fit: contain;
+              display: block;
+              margin: 0 auto;
+            }
+            .invite-scan { margin-bottom: 1.5rem; }
+            .invite-scan-title {
+              font-size: 0.875rem;
+              text-transform: uppercase;
+              letter-spacing: 0.1em;
+              color: #475569;
+              font-weight: bold;
+              margin: 0 0 0.25rem 0;
+            }
+            .invite-scan-help {
+              font-size: 0.75rem;
+              color: #64748b;
+              margin: 0;
+            }
+            .invite-url-section {
+              padding-top: 1.5rem;
+              border-top: 1px solid #e2e8f0;
+              width: 100%;
+            }
+            .invite-url-label {
+              font-size: 0.75rem;
+              color: #64748b;
+              margin: 0 0 0.5rem 0;
+            }
+            .invite-url {
+              font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              font-size: 0.875rem;
+              color: #1e293b;
+              word-break: break-all;
+              background: #f8fafc;
+              padding: 0.5rem;
+              border: 1px solid #f1f5f9;
+              margin: 0;
             }
           </style>
         </head>
-        <body class="flex items-center justify-center min-h-screen bg-white">
-          <div class="p-8 flex flex-col items-center justify-center text-center max-w-sm w-full mx-auto border border-slate-200">
+        <body>
+          <div class="invite-card">
 
-            <div class="mb-6">
-              <span class="block text-xs uppercase tracking-[0.3em] text-slate-400 mb-2">You're Invited</span>
-              <h2 class="text-3xl font-serif font-medium italic text-slate-900 mb-4">${this.invitationName}</h2>
+            <div class="invite-header">
+              <span class="invite-eyebrow">You're Invited</span>
+              <h2 class="invite-name">${safeName}</h2>
 
-              <div class="text-sm text-slate-600 font-sans border-t border-b border-slate-100 py-3 mb-2">
-                <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Admitting:</p>
-                <ul class="list-none p-0 m-0">
+              <div class="invite-guests">
+                <p class="invite-guests-label">Admitting:</p>
+                <ul>
                   ${guestListHtml}
                 </ul>
               </div>
             </div>
 
-            <div class="p-4 bg-white border border-slate-100 mb-6">
-              <img src="${this.qrCodeDataUrl}" alt="QR Code" class="w-48 h-48 object-contain mx-auto">
+            <div class="invite-qr">
+              <img src="${safeQr}" alt="QR Code">
             </div>
 
-            <div class="mb-6">
-              <p class="text-sm uppercase tracking-widest text-slate-600 font-bold mb-1">Scan to RSVP</p>
-              <p class="text-xs text-slate-500">Open your phone's camera and point it at the code above.</p>
+            <div class="invite-scan">
+              <p class="invite-scan-title">Scan to RSVP</p>
+              <p class="invite-scan-help">Open your phone's camera and point it at the code above.</p>
             </div>
 
-            <div class="pt-6 border-t border-slate-200 w-full">
-              <p class="text-xs text-slate-500 mb-2">Or visit this link directly:</p>
-              <p class="text-sm font-mono text-slate-800 break-all bg-slate-50 p-2 border border-slate-100">${this.invitationUrl}</p>
+            <div class="invite-url-section">
+              <p class="invite-url-label">Or visit this link directly:</p>
+              <p class="invite-url">${safeUrl}</p>
             </div>
 
           </div>
@@ -148,5 +257,14 @@ export class QrCodeDisplay implements OnInit {
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+  }
+
+  private escapeHtml(value: string): string {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
