@@ -15,6 +15,9 @@ export interface Invitation {
   // Add message field
   message?: string | null;
 
-  createdAt: Timestamp;
+  // Firestore-only metadata. Optional because a session-restored
+  // invitation (read back from localStorage) has these stripped — they
+  // do not survive a JSON round-trip as Timestamp instances.
+  createdAt?: Timestamp;
   updatedAt?: Timestamp | null;
 }

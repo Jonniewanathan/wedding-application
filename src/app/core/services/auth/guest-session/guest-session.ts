@@ -22,7 +22,7 @@ export class GuestSessionService {
         // If it's a valid JSON string (our Invitation object)
         if (stored.startsWith('{') || stored.startsWith('[')) {
           const parsed = JSON.parse(stored);
-          this._invitation.set(parsed);
+          this._invitation.set(this.stripFirestoreMeta(parsed));
         } else {
           // If someone accidentally saved just the code string, we can't fully restore the session
           // without fetching from Firestore again. We will just clear it.
@@ -39,7 +39,7 @@ export class GuestSessionService {
       if (storedOld) {
         try {
           const parsed = JSON.parse(storedOld);
-          this._invitation.set(parsed);
+          this._invitation.set(this.stripFirestoreMeta(parsed));
           // Migrate to new key
           localStorage.setItem('wedding_invitation_code', storedOld);
           localStorage.removeItem('guest_session');
@@ -55,8 +55,25 @@ export class GuestSessionService {
    * Logs the guest in by saving their invitation details.
    */
   login(invitation: Invitation): void {
-    localStorage.setItem('wedding_invitation_code', JSON.stringify(invitation));
-    this._invitation.set(invitation);
+    const storable = this.stripFirestoreMeta(invitation);
+    localStorage.setItem('wedding_invitation_code', JSON.stringify(storable));
+    this._invitation.set(storable);
+  }
+
+  /**
+   * Remove Firestore Timestamp fields before persisting to localStorage.
+   *
+   * Timestamps don't survive a JSON round-trip — they come back as plain
+   * `{seconds, nanoseconds}` objects, so any code calling `.toDate()` on
+   * a restored invitation would throw. The Invitation document is the
+   * authoritative source of these fields; the session-restored copy in
+   * the browser never needs them, and stripping keeps the signal honest
+   * (better to be missing a field than to claim a Timestamp instance you
+   * don't actually have).
+   */
+  private stripFirestoreMeta(invitation: Invitation): Invitation {
+    const { createdAt, updatedAt, ...rest } = invitation;
+    return rest as Invitation;
   }
 
   /**

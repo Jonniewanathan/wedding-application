@@ -96,6 +96,41 @@ describe('GuestSessionService', () => {
       service.login(invitation);
       expect(service.currentInvitationValue?.invitationCode).toBe('abc-123');
     });
+
+    it('should strip Firestore Timestamp fields before persisting', () => {
+      const service = createService();
+      service.login(makeInvitation());
+
+      const stored = JSON.parse(localStorage.getItem('wedding_invitation_code')!);
+      expect(stored.createdAt).toBeUndefined();
+      expect(stored.updatedAt).toBeUndefined();
+      // The signal mirror should match (so consumers never see a fake Timestamp)
+      expect(service.invitation()?.createdAt).toBeUndefined();
+    });
+  });
+
+  describe('Timestamp safety', () => {
+    it('should strip legacy stored Timestamp fields on restore', () => {
+      // Simulate older session data that was persisted before the strip
+      // logic existed — createdAt is a plain {seconds, nanoseconds} object,
+      // not a real Timestamp.
+      const legacyStored = {
+        id: 'inv-1',
+        displayName: 'Legacy',
+        invitationCode: 'legacy',
+        status: 'sent',
+        guestIds: [],
+        createdAt: { seconds: 12345, nanoseconds: 0 },
+        updatedAt: { seconds: 67890, nanoseconds: 0 }
+      };
+      localStorage.setItem('wedding_invitation_code', JSON.stringify(legacyStored));
+
+      const service = createService();
+      const restored = service.invitation();
+      expect(restored?.invitationCode).toBe('legacy');
+      expect(restored?.createdAt).toBeUndefined();
+      expect(restored?.updatedAt).toBeUndefined();
+    });
   });
 
   describe('logout', () => {
