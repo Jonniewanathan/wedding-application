@@ -17,6 +17,11 @@ export class AuthService {
   /**
    * Signal mirror of the Firebase auth state. Null while auth is still
    * initialising; the User object once a session is restored or signed in.
+   *
+   * For synchronous decisions (e.g. route guards) read auth.currentUser
+   * directly after `await auth.authStateReady()` — the signal updates
+   * asynchronously when authState emits, which lags signInWithEmailAndPassword
+   * resolving.
    */
   readonly currentUser: Signal<User | null> = toSignal(authState(this.auth), {
     initialValue: null
