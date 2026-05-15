@@ -117,7 +117,7 @@ describe('QrCodeDisplay', () => {
     expect(msg).toContain('Bob Smith');
   });
 
-  it('should build a wa.me URL with the generated message URL-encoded', () => {
+  it('should build a wa.me URL with no phone segment when none is supplied', () => {
     setup({
       url: 'https://example.com/invite/x',
       invitationName: 'The Smiths',
@@ -127,6 +127,28 @@ describe('QrCodeDisplay', () => {
     expect(url.startsWith('https://wa.me/?text=')).toBeTrue();
     const decoded = decodeURIComponent(url.split('?text=')[1]);
     expect(decoded).toBe(component.generatedMessage());
+  });
+
+  it('should embed a digits-only phone segment when one is supplied', () => {
+    setup({
+      url: 'https://example.com/invite/x',
+      invitationName: 'The Smiths',
+      phoneNumber: '+353 85 123-4567',
+      guests: []
+    });
+    const url = component.whatsappUrl();
+    expect(url.startsWith('https://wa.me/353851234567?text=')).toBeTrue();
+  });
+
+  it('should fall back to no phone segment when the supplied phone has no digits', () => {
+    setup({
+      url: 'https://example.com/invite/x',
+      invitationName: 'The Smiths',
+      phoneNumber: '???-???',
+      guests: []
+    });
+    const url = component.whatsappUrl();
+    expect(url.startsWith('https://wa.me/?text=')).toBeTrue();
   });
 
   it('should close the dialog when closeDialog is called', () => {

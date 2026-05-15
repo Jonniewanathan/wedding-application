@@ -49,7 +49,7 @@ describe('InvitationForm', () => {
   it('should require displayName', () => {
     setup([]);
     expect(component.invitationForm.valid).toBeFalse();
-    component.invitationForm.setValue({ displayName: 'The Smiths' });
+    component.invitationForm.patchValue({ displayName: 'The Smiths' });
     expect(component.invitationForm.valid).toBeTrue();
   });
 
@@ -71,19 +71,67 @@ describe('InvitationForm', () => {
 
   it('should not close the dialog when the form is invalid', () => {
     setup([]);
-    component.invitationForm.setValue({ displayName: '' });
+    component.invitationForm.patchValue({ displayName: '' });
     component.onSubmit();
     expect(dialogRef.close).not.toHaveBeenCalled();
   });
 
   it('should close the dialog with the form value and ordered guests on submit', () => {
     setup([]);
-    component.invitationForm.setValue({ displayName: 'The Test Family' });
+    component.invitationForm.patchValue({ displayName: 'The Test Family' });
     component.onSubmit();
     expect(dialogRef.close).toHaveBeenCalledWith({
       displayName: 'The Test Family',
+      email: null,
+      phoneNumber: null,
       orderedGuests: []
     });
+  });
+
+  it('should include email and phoneNumber in the close payload when provided', () => {
+    setup([]);
+    component.invitationForm.patchValue({
+      displayName: 'The Test Family',
+      email: 'them@example.com',
+      phoneNumber: '+353 85 1234567'
+    });
+    component.onSubmit();
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      displayName: 'The Test Family',
+      email: 'them@example.com',
+      phoneNumber: '+353 85 1234567',
+      orderedGuests: []
+    });
+  });
+
+  it('should trim surrounding whitespace from the phoneNumber on submit', () => {
+    setup([]);
+    component.invitationForm.patchValue({
+      displayName: 'The Test Family',
+      phoneNumber: '  +353 85 1234567 '
+    });
+    component.onSubmit();
+    const payload = (dialogRef.close as jasmine.Spy).calls.mostRecent().args[0];
+    expect(payload.phoneNumber).toBe('+353 85 1234567');
+  });
+
+  it('should normalise whitespace-only email and phoneNumber to null on submit', () => {
+    setup([]);
+    component.invitationForm.patchValue({
+      displayName: 'The Test Family',
+      phoneNumber: '   '
+    });
+    component.onSubmit();
+    const payload = (dialogRef.close as jasmine.Spy).calls.mostRecent().args[0];
+    expect(payload.email).toBeNull();
+    expect(payload.phoneNumber).toBeNull();
+  });
+
+  it('should block submission when the email field is invalid', () => {
+    setup([]);
+    component.invitationForm.patchValue({ displayName: 'X', email: 'not-an-email' });
+    component.onSubmit();
+    expect(dialogRef.close).not.toHaveBeenCalled();
   });
 
   it('should close the dialog with no argument on cancel', () => {

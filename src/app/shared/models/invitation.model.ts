@@ -7,8 +7,11 @@ export interface Invitation {
 
   invitationCode: string;
 
-  // Admin tracking
-  email?: string;
+  // Admin-captured contact details for the invitation group. Both are
+  // optional — older invitations and invitations the couple don't have
+  // contact info for will have them missing or null.
+  email?: string | null;
+  phoneNumber?: string | null;
   status: 'sent' | 'viewed' | 'responded';
   guestIds: string[];
 

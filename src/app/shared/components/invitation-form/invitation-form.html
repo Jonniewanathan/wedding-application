@@ -41,6 +41,38 @@
       <small class="text-center text-slate-400 text-[10px] md:text-xs mt-1">This is the name they will see on the welcome screen.</small>
     </div>
 
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="invitationPhone" class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Phone (optional)</label>
+        <input
+          id="invitationPhone"
+          type="tel"
+          pInputText
+          formControlName="phoneNumber"
+          class="w-full text-sm p-3 placeholder:italic placeholder:text-slate-300"
+          placeholder="+353 85 123 4567"
+        />
+        <small class="text-slate-400 text-[10px] md:text-xs">Used to pre-fill the WhatsApp link. Include country code.</small>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="invitationEmail" class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Email (optional)</label>
+        <input
+          id="invitationEmail"
+          type="email"
+          pInputText
+          formControlName="email"
+          class="w-full text-sm p-3 placeholder:italic placeholder:text-slate-300"
+          placeholder="them@example.com"
+        />
+        @if (invitationForm.get('email')?.invalid && invitationForm.get('email')?.touched) {
+          <small class="text-red-500 text-[10px] md:text-xs">Not a valid email address.</small>
+        } @else {
+          <small class="text-slate-400 text-[10px] md:text-xs">Not used yet — captured for future follow-up.</small>
+        }
+      </div>
+    </div>
+
     <div class="flex flex-col-reverse sm:flex-row items-center justify-between mt-4 pt-6 border-t border-slate-100 gap-4">
       <button type="button" (click)="onCancel()" class="w-full sm:w-auto text-[10px] md:text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors py-3">Cancel</button>
       <button type="submit" [disabled]="invitationForm.invalid" class="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50 text-center">

@@ -125,7 +125,9 @@ export class InvitationGroups implements OnInit {
         if (result) {
           try {
             await this.firestoreService.updateInvitation(invitation.id, {
-              displayName: result.displayName
+              displayName: result.displayName,
+              email: result.email,
+              phoneNumber: result.phoneNumber
             });
 
             const newOrderIds = result.orderedGuests.map((g: Guest) => g.id);
@@ -164,6 +166,7 @@ export class InvitationGroups implements OnInit {
             url: url,
             qrCodeDataUrl: qrCodeDataUrl,
             invitationName: invitation.displayName,
+            phoneNumber: invitation.phoneNumber ?? null,
             guests: guests
           }
         });

@@ -81,13 +81,19 @@ export class FirestoreService {
     return updateDoc(docRef, updateData);
   }
 
-  createInvitation(details: { displayName: string; }): Promise<DocumentReference<Invitation>> {
+  createInvitation(details: {
+    displayName: string;
+    email?: string | null;
+    phoneNumber?: string | null;
+  }): Promise<DocumentReference<Invitation>> {
     const collectionRef = collection(this.firestore, 'invitations');
     const uniqueCode = self.crypto.randomUUID();
 
     return addDoc(collectionRef, {
       invitationCode: uniqueCode,
       displayName: details.displayName,
+      email: details.email ?? null,
+      phoneNumber: details.phoneNumber ?? null,
       hasResponded: false,
       status: 'sent',
       guestIds: [],
@@ -97,12 +103,22 @@ export class FirestoreService {
     }) as Promise<DocumentReference<Invitation>>;
   }
 
-  updateInvitation(invitationId: string, details: { displayName: string }): Promise<void> {
+  updateInvitation(invitationId: string, details: {
+    displayName: string;
+    email?: string | null;
+    phoneNumber?: string | null;
+  }): Promise<void> {
     const docRef = doc(this.firestore, `invitations/${invitationId}`);
-    return updateDoc(docRef, {
+    // Only include contact fields when the caller provided them — passing
+    // undefined would otherwise write Firestore's `undefined` sentinel error.
+    type UpdateValue = string | null | FieldValue;
+    const payload: Record<string, UpdateValue> = {
       displayName: details.displayName,
       updatedAt: serverTimestamp()
-    });
+    };
+    if (details.email !== undefined) payload['email'] = details.email;
+    if (details.phoneNumber !== undefined) payload['phoneNumber'] = details.phoneNumber;
+    return updateDoc(docRef, payload);
   }
 
   /**

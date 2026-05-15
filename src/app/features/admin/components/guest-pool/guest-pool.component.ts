@@ -224,7 +224,9 @@ export class GuestPool implements OnInit {
       if (result) {
         try {
           const invitationRef = await this.firestoreService.createInvitation({
-            displayName: result.displayName
+            displayName: result.displayName,
+            email: result.email,
+            phoneNumber: result.phoneNumber
           });
           const newInvitationId = invitationRef.id;
 

@@ -59,7 +59,9 @@ export class InvitationForm implements OnInit {
     }
 
     this.invitationForm = this.fb.group({
-      displayName: [defaultName, Validators.required]
+      displayName: [defaultName, Validators.required],
+      email: [existingInvitation?.email ?? '', Validators.email],
+      phoneNumber: [existingInvitation?.phoneNumber ?? '']
     });
   }
 
@@ -74,9 +76,14 @@ export class InvitationForm implements OnInit {
       return;
     }
 
-    // Return both the form values AND the potentially reordered guests array
+    // Normalise empty strings to null so the persisted shape stays
+    // consistent with Firestore's "field present but empty" vs "field
+    // missing" distinction.
+    const { displayName, email, phoneNumber } = this.invitationForm.value;
     this.dialogRef.close({
-      ...this.invitationForm.value,
+      displayName,
+      email: email?.trim() ? email.trim() : null,
+      phoneNumber: phoneNumber?.trim() ? phoneNumber.trim() : null,
       orderedGuests: this.guestsToAssign
     });
   }
