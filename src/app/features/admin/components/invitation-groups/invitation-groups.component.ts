@@ -6,6 +6,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService, SelectItem } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
+import { Timestamp } from '@angular/fire/firestore';
 import QRCode from 'qrcode';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
@@ -171,6 +172,31 @@ export class InvitationGroups implements OnInit {
     } catch (err) {
       this.handleError(err, 'Could not generate or display QR code');
     }
+  }
+
+  /**
+   * Build the tooltip for an outreach chip. When the stage has happened we
+   * surface both the absolute date and a relative "X days ago" so the
+   * couple can scan the table for stale follow-ups at a glance.
+   */
+  outreachTooltip(value: Timestamp | null | undefined, stageLabel: string): string {
+    const ms = this.tsToMs(value);
+    if (ms === null) {
+      return `Mark ${stageLabel.toLowerCase()}`;
+    }
+    const date = new Date(ms);
+    const formatted = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const daysAgo = Math.floor((Date.now() - ms) / (1000 * 60 * 60 * 24));
+    const ago = daysAgo <= 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo} days ago`;
+    return `${stageLabel} ${formatted} · ${ago} — click to clear`;
+  }
+
+  private tsToMs(value: Timestamp | null | undefined): number | null {
+    if (!value) return null;
+    const v = value as { toMillis?: () => number; seconds?: number };
+    if (typeof v.toMillis === 'function') return v.toMillis();
+    if (typeof v.seconds === 'number') return v.seconds * 1000;
+    return null;
   }
 
   /**

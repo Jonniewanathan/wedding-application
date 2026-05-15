@@ -170,6 +170,33 @@ describe('InvitationGroups', () => {
     });
   });
 
+  describe('outreachTooltip', () => {
+    function tsSecondsAgo(secs: number): Timestamp {
+      return { seconds: Math.floor(Date.now() / 1000) - secs, nanoseconds: 0 } as unknown as Timestamp;
+    }
+
+    it('should return a "mark" prompt when the stage is not set', () => {
+      expect(component.outreachTooltip(null, 'Sent')).toBe('Mark sent');
+      expect(component.outreachTooltip(undefined, '1st reminder')).toBe('Mark 1st reminder');
+    });
+
+    it('should describe a today-set stage as today', () => {
+      const tooltip = component.outreachTooltip(tsSecondsAgo(60), 'Sent');
+      expect(tooltip).toContain('today');
+      expect(tooltip).toContain('— click to clear');
+    });
+
+    it('should describe a yesterday-set stage as yesterday', () => {
+      const tooltip = component.outreachTooltip(tsSecondsAgo(60 * 60 * 30), 'Sent');
+      expect(tooltip).toContain('yesterday');
+    });
+
+    it('should describe stages set days ago with the day count', () => {
+      const tooltip = component.outreachTooltip(tsSecondsAgo(60 * 60 * 24 * 12), '1st reminder');
+      expect(tooltip).toContain('12 days ago');
+    });
+  });
+
   it('should open the view-guests dialog with the right invitation id', () => {
     dialogSpy.open.and.returnValue({ onClose: of(null) } as any);
     component.openViewGuests(makeInvitation('inv-x'));

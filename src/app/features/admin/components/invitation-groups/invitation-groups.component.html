@@ -72,7 +72,7 @@
                   ? 'bg-slate-900 text-white border-slate-900'
                   : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
                 class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
-                [pTooltip]="invitation.sentAt ? 'Sent — click to clear' : 'Mark invitation as sent'"
+                [pTooltip]="outreachTooltip(invitation.sentAt, 'Sent')"
                 tooltipPosition="top">
                 Sent
               </button>
@@ -83,7 +83,7 @@
                   ? 'bg-slate-900 text-white border-slate-900'
                   : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
                 class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
-                [pTooltip]="invitation.firstReminderAt ? '1st reminder sent — click to clear' : 'Mark 1st reminder sent'"
+                [pTooltip]="outreachTooltip(invitation.firstReminderAt, '1st reminder')"
                 tooltipPosition="top">
                 R1
               </button>
@@ -94,7 +94,7 @@
                   ? 'bg-slate-900 text-white border-slate-900'
                   : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
                 class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
-                [pTooltip]="invitation.secondReminderAt ? '2nd reminder sent — click to clear' : 'Mark 2nd reminder sent'"
+                [pTooltip]="outreachTooltip(invitation.secondReminderAt, '2nd reminder')"
                 tooltipPosition="top">
                 R2
               </button>
