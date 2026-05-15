@@ -149,7 +149,11 @@ export class SeatingChart {
     }
 
     try {
-      await this.firestoreService.setGuestTable(guest.id, normalized);
+      await this.firestoreService.setGuestTable(
+        guest.id,
+        normalized,
+        `${guest.firstName} ${guest.lastName}`
+      );
       this.messageService.add({
         severity: 'success',
         summary: 'Seating updated',
@@ -170,7 +174,11 @@ export class SeatingChart {
 
   async unseatGuest(guest: Guest): Promise<void> {
     try {
-      await this.firestoreService.setGuestTable(guest.id, null);
+      await this.firestoreService.setGuestTable(
+        guest.id,
+        null,
+        `${guest.firstName} ${guest.lastName}`
+      );
       this.messageService.add({
         severity: 'success',
         summary: 'Unseated',

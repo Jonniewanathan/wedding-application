@@ -1,0 +1,53 @@
+<div class="py-4 md:py-6 min-h-[500px]">
+
+  <div class="mb-8 max-w-2xl">
+    <p class="text-sm text-slate-500 font-light">
+      Chronological feed of changes to the guest list, invitations, RSVP submissions
+      and outreach actions. Showing the most recent {{ FEED_LIMIT }} entries; older
+      activity is preserved in the database.
+    </p>
+  </div>
+
+  @if (feed().length === 0) {
+    <div class="bg-slate-50 border border-slate-100 p-12 text-center">
+      <i class="pi pi-history text-3xl text-slate-300 mb-3 block"></i>
+      <p class="text-sm text-slate-500 font-light italic">
+        No activity recorded yet. Actions taken in the admin will appear here.
+      </p>
+    </div>
+  } @else {
+    <ul class="list-none m-0 p-0 border border-slate-100 bg-white shadow-sm divide-y divide-slate-100">
+      @for (row of feed(); track row.id) {
+        <li
+          class="px-4 md:px-6 py-3 md:py-4 transition-colors"
+          [class.bg-slate-50]="row.isShaded"
+          [class.bg-white]="!row.isShaded">
+
+          <div class="flex items-start gap-3 md:gap-4">
+
+            <i [class]="iconForAction(row.action)" class="text-slate-400 text-base mt-0.5 shrink-0"></i>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-col md:flex-row md:items-baseline md:gap-3">
+                <p class="text-sm text-slate-800 break-words flex-1">{{ row.summary }}</p>
+                <span class="text-[10px] uppercase tracking-widest text-slate-400 shrink-0">{{ row.relativeTime }}</span>
+              </div>
+
+              <div class="mt-1 flex items-center gap-2 flex-wrap">
+                <span
+                  class="text-[10px] uppercase tracking-widest border px-2 py-0.5"
+                  [class]="actorColorClass(row.actor.role)">
+                  {{ row.actor.label }}
+                </span>
+                <span class="text-[10px] uppercase tracking-widest text-slate-300">
+                  {{ row.subject.type }} · {{ row.subject.name }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</div>

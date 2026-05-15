@@ -172,7 +172,12 @@ describe('ViewGuests', () => {
       component.startMoveGuest(g);
       component.moveTarget = target;
       await component.confirmMoveGuest();
-      expect(firestoreSpy.moveGuestToInvitation).toHaveBeenCalledWith('g1', 'inv-1', 'inv-x');
+      expect(firestoreSpy.moveGuestToInvitation).toHaveBeenCalledWith(
+        'g1',
+        'inv-1',
+        'inv-x',
+        { guestName: 'A B', toName: 'Target' }
+      );
       expect(component.movingGuest).toBeNull();
     });
 

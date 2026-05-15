@@ -201,7 +201,7 @@ describe('SeatingChart', () => {
       component.beginEdit(guest);
       component.editingDraft.set('  Garden Table  ');
       await component.saveEdit(guest);
-      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', 'Garden Table');
+      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', 'Garden Table', 'Alice B');
     });
 
     it('should clear the assignment when the draft is empty', async () => {
@@ -209,7 +209,7 @@ describe('SeatingChart', () => {
       component.beginEdit(guest);
       component.editingDraft.set('   ');
       await component.saveEdit(guest);
-      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', null);
+      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', null, 'Alice B');
     });
 
     it('should skip the write when the draft matches the current value', async () => {
@@ -240,7 +240,7 @@ describe('SeatingChart', () => {
     it('should write null to setGuestTable', async () => {
       const guest = component.tables()[0].guests[0];
       await component.unseatGuest(guest);
-      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', null);
+      expect(firestoreSpy.setGuestTable).toHaveBeenCalledWith('1', null, 'Alice B');
     });
 
     it('should surface an error toast when the write rejects', async () => {

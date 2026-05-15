@@ -205,7 +205,12 @@ export class Rsvp implements OnInit {
     const message = formValue.message;
 
     try {
-      await this.firestoreService.submitRsvpForGuests(this.invitation.id, guestsToUpdate, message);
+      await this.firestoreService.submitRsvpForGuests(
+        this.invitation.id,
+        guestsToUpdate,
+        message,
+        this.invitation.displayName
+      );
       this.submitted = true;
       this.isLoading = false;
     } catch (err) {

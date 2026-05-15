@@ -122,7 +122,11 @@ export class ViewGuests implements OnInit {
       await this.firestoreService.moveGuestToInvitation(
         guest.id,
         this.invitationId,
-        target.id
+        target.id,
+        {
+          guestName: `${guest.firstName} ${guest.lastName}`,
+          toName: target.displayName
+        }
       );
       this.messageService.add({
         severity: 'success',

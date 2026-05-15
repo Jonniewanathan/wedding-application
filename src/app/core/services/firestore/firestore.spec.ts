@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
 import { FirestoreService } from './firestore';
+import { AuthService } from '../auth/auth';
 
 /**
  * FirestoreService is a façade over Firebase Firestore's modular SDK
@@ -19,10 +20,12 @@ describe('FirestoreService', () => {
 
   beforeEach(() => {
     firestoreMock = {};
+    const authMock = { currentUser: () => null };
     TestBed.configureTestingModule({
       providers: [
         FirestoreService,
-        { provide: Firestore, useValue: firestoreMock }
+        { provide: Firestore, useValue: firestoreMock },
+        { provide: AuthService, useValue: authMock }
       ]
     });
     service = TestBed.inject(FirestoreService);
@@ -51,6 +54,8 @@ describe('FirestoreService', () => {
     expect(typeof service.backfillRsvpSubmittedAt).toBe('function');
     expect(typeof service.moveGuestToInvitation).toBe('function');
     expect(typeof service.setGuestTable).toBe('function');
+    expect(typeof service.logActivity).toBe('function');
+    expect(typeof service.getRecentActivity).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');
     expect(typeof service.unassignGuest).toBe('function');
     expect(typeof service.getInvitations).toBe('function');

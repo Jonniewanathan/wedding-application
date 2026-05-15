@@ -122,9 +122,10 @@ describe('InvitationGroups', () => {
 
   it('should delete the invitation when confirmation is accepted', async () => {
     confirmSpy.confirm.and.callFake((opts: any) => { opts.accept(); return confirmSpy; });
-    component.onDeleteInvitation(makeInvitation('inv-x'));
+    const inv = makeInvitation('inv-x');
+    component.onDeleteInvitation(inv);
     await Promise.resolve();
-    expect(firestoreSpy.deleteInvitationAndUnassignGuests).toHaveBeenCalledWith('inv-x');
+    expect(firestoreSpy.deleteInvitationAndUnassignGuests).toHaveBeenCalledWith('inv-x', inv.displayName);
   });
 
   describe('toggleOutreach', () => {
@@ -134,7 +135,8 @@ describe('InvitationGroups', () => {
       expect(firestoreSpy.setInvitationOutreachStage).toHaveBeenCalledWith(
         invitation.id,
         'sentAt',
-        true
+        true,
+        invitation.displayName
       );
     });
 
@@ -145,7 +147,8 @@ describe('InvitationGroups', () => {
       expect(firestoreSpy.setInvitationOutreachStage).toHaveBeenCalledWith(
         invitation.id,
         'sentAt',
-        false
+        false,
+        invitation.displayName
       );
     });
 
@@ -155,8 +158,8 @@ describe('InvitationGroups', () => {
       component.toggleOutreach(invitation, 'secondReminderAt');
       const calls = firestoreSpy.setInvitationOutreachStage.calls.allArgs();
       expect(calls).toEqual([
-        [invitation.id, 'firstReminderAt', true],
-        [invitation.id, 'secondReminderAt', true]
+        [invitation.id, 'firstReminderAt', true, invitation.displayName],
+        [invitation.id, 'secondReminderAt', true, invitation.displayName]
       ]);
     });
 

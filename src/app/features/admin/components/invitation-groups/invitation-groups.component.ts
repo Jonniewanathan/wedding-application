@@ -211,7 +211,7 @@ export class InvitationGroups implements OnInit {
   toggleOutreach(invitation: Invitation, stage: InvitationOutreachStage): void {
     const isCurrentlyActive = !!invitation[stage];
     this.firestoreService
-      .setInvitationOutreachStage(invitation.id, stage, !isCurrentlyActive)
+      .setInvitationOutreachStage(invitation.id, stage, !isCurrentlyActive, invitation.displayName)
       .catch(err => this.handleError(err, 'Could not update outreach status.'));
   }
 
@@ -221,7 +221,7 @@ export class InvitationGroups implements OnInit {
       header: 'Delete Confirmation',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.firestoreService.deleteInvitationAndUnassignGuests(invitation.id)
+        this.firestoreService.deleteInvitationAndUnassignGuests(invitation.id, invitation.displayName)
           .then(() => this.messageService.add({ severity: 'success', summary: 'Deleted', detail: 'Invitation removed, guests unassigned.' }))
           .catch(err => this.handleError(err, 'Could not delete invitation.'));
       }

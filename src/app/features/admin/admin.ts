@@ -11,6 +11,7 @@ import { Guest } from '../../shared/models/guest.model';
 import { Invitation } from '../../shared/models/invitation.model';
 
 // Components
+import { ActivityLog } from './components/activity-log/activity-log';
 import { GuestPool } from './components/guest-pool/guest-pool.component';
 import { InvitationGroups } from './components/invitation-groups/invitation-groups.component';
 import { SeatingChart } from './components/seating-chart/seating-chart';
@@ -26,7 +27,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPool, InvitationGroups, SeatingChart, StatsComponent, StatsV2
+    GuestPool, InvitationGroups, SeatingChart, StatsComponent, StatsV2, ActivityLog
   ],
   providers: [
     DialogService, ConfirmationService, MessageService, AdminStateService
