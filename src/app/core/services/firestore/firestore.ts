@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, where,
   getDocs, collectionData, doc, setDoc,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
-  addDoc, DocumentReference, getDoc, arrayRemove, FieldValue
+  addDoc, DocumentReference, getDoc, arrayRemove, FieldValue, Timestamp
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation, InvitationOutreachStage } from '../../../shared/models/invitation.model';
@@ -103,6 +103,26 @@ export class FirestoreService {
       displayName: details.displayName,
       updatedAt: serverTimestamp()
     });
+  }
+
+  /**
+   * One-shot migration: copy a historical Timestamp into the
+   * rsvpSubmittedAt field for invitations that responded before that
+   * field was introduced. Caller supplies the {id, rsvpSubmittedAt}
+   * pairs (typically built from each invitation's existing updatedAt).
+   *
+   * Important: we deliberately write the historical Timestamp value,
+   * NOT serverTimestamp(), so the backfilled record reflects when the
+   * RSVP actually happened — not when the backfill ran.
+   */
+  backfillRsvpSubmittedAt(updates: { id: string; rsvpSubmittedAt: Timestamp }[]): Promise<void> {
+    if (updates.length === 0) return Promise.resolve();
+    const batch = writeBatch(this.firestore);
+    for (const u of updates) {
+      const ref = doc(this.firestore, `invitations/${u.id}`);
+      batch.update(ref, { rsvpSubmittedAt: u.rsvpSubmittedAt });
+    }
+    return batch.commit();
   }
 
   /**

@@ -33,6 +33,9 @@ export class StatsV2 {
   private readonly DAYS_AFTER_SEND_BEFORE_FIRST_REMINDER = 14;
   private readonly DAYS_AFTER_FIRST_BEFORE_SECOND_REMINDER = 7;
 
+  /** One-shot backfill UI state. */
+  backfillRunning = false;
+
   readonly allGuests: Signal<Guest[]> = toSignal(
     this.firestoreService.getAllGuests(),
     { initialValue: [] }
@@ -148,6 +151,35 @@ export class StatsV2 {
       return (b.daysSinceLastContact ?? 0) - (a.daysSinceLastContact ?? 0);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Backfill banner — appears only when there are responded invitations
+  // missing the rsvpSubmittedAt field (i.e. records that responded before
+  // f18fc8c added it).
+  // -------------------------------------------------------------------------
+
+  readonly invitationsMissingRsvpTimestamp = computed(() =>
+    this.allInvitations().filter(
+      inv => inv.status === 'responded' && !inv.rsvpSubmittedAt && !!inv.updatedAt
+    )
+  );
+
+  async runRsvpTimestampBackfill(): Promise<void> {
+    if (this.backfillRunning) return;
+    const targets = this.invitationsMissingRsvpTimestamp();
+    if (targets.length === 0) return;
+
+    this.backfillRunning = true;
+    try {
+      await this.firestoreService.backfillRsvpSubmittedAt(
+        targets.map(inv => ({ id: inv.id, rsvpSubmittedAt: inv.updatedAt as Timestamp }))
+      );
+    } catch (err) {
+      console.error('Backfill failed', err);
+    } finally {
+      this.backfillRunning = false;
+    }
+  }
 
   // -------------------------------------------------------------------------
   // Charts

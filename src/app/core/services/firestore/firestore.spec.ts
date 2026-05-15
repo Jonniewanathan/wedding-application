@@ -32,6 +32,10 @@ describe('FirestoreService', () => {
     expect(service).toBeTruthy();
   });
 
+  it('should resolve immediately when backfillRsvpSubmittedAt is called with no updates', async () => {
+    await expectAsync(service.backfillRsvpSubmittedAt([])).toBeResolved();
+  });
+
   it('should expose the expected public methods', () => {
     expect(typeof service.addGuest).toBe('function');
     expect(typeof service.getUnassignedGuests).toBe('function');
@@ -40,6 +44,7 @@ describe('FirestoreService', () => {
     expect(typeof service.createInvitation).toBe('function');
     expect(typeof service.updateInvitation).toBe('function');
     expect(typeof service.setInvitationOutreachStage).toBe('function');
+    expect(typeof service.backfillRsvpSubmittedAt).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');
     expect(typeof service.unassignGuest).toBe('function');
     expect(typeof service.getInvitations).toBe('function');

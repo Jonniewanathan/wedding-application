@@ -51,10 +51,12 @@ describe('StatsV2', () => {
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getAllGuests',
-      'getInvitations'
+      'getInvitations',
+      'backfillRsvpSubmittedAt'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
+    firestoreSpy.backfillRsvpSubmittedAt.and.returnValue(Promise.resolve());
 
     TestBed.configureTestingModule({
       imports: [StatsV2],
@@ -176,6 +178,62 @@ describe('StatsV2', () => {
       const followUps = component.followUps();
       expect(followUps[0].reasonKey).toBe('not-sent');
       expect(followUps[1].reasonKey).toBe('first-reminder-due');
+    });
+  });
+
+  describe('rsvpSubmittedAt backfill', () => {
+    it('should list responded invitations that are missing rsvpSubmittedAt', () => {
+      build([], [
+        makeInv({
+          id: 'a',
+          status: 'responded',
+          updatedAt: ts(60 * 60 * 24 * 5),
+          rsvpSubmittedAt: null
+        }),
+        makeInv({
+          id: 'b',
+          status: 'responded',
+          updatedAt: ts(60 * 60 * 24 * 10),
+          rsvpSubmittedAt: ts(60 * 60 * 24 * 10)
+        }),
+        makeInv({ id: 'c', status: 'sent', updatedAt: ts(60 * 60 * 24 * 2) })
+      ]);
+      const targets = component.invitationsMissingRsvpTimestamp();
+      expect(targets.length).toBe(1);
+      expect(targets[0].id).toBe('a');
+    });
+
+    it('should skip the backfill call when nothing needs updating', async () => {
+      build([], [makeInv({ id: 'b', status: 'responded', rsvpSubmittedAt: ts(0) })]);
+      await component.runRsvpTimestampBackfill();
+      expect(firestoreSpy.backfillRsvpSubmittedAt).not.toHaveBeenCalled();
+    });
+
+    it('should copy each target invitation\'s updatedAt into rsvpSubmittedAt', async () => {
+      const updatedAt = ts(60 * 60 * 24 * 5);
+      build([], [
+        makeInv({ id: 'a', status: 'responded', updatedAt, rsvpSubmittedAt: null })
+      ]);
+      await component.runRsvpTimestampBackfill();
+      expect(firestoreSpy.backfillRsvpSubmittedAt).toHaveBeenCalledWith([
+        { id: 'a', rsvpSubmittedAt: updatedAt }
+      ]);
+    });
+
+    it('should ignore concurrent backfill clicks while one is running', async () => {
+      build([], [
+        makeInv({ id: 'a', status: 'responded', updatedAt: ts(0), rsvpSubmittedAt: null })
+      ]);
+      let resolveBackfill!: () => void;
+      firestoreSpy.backfillRsvpSubmittedAt.and.returnValue(
+        new Promise<void>(res => { resolveBackfill = res; })
+      );
+      const first = component.runRsvpTimestampBackfill();
+      const second = component.runRsvpTimestampBackfill();
+      resolveBackfill();
+      await first;
+      await second;
+      expect(firestoreSpy.backfillRsvpSubmittedAt).toHaveBeenCalledTimes(1);
     });
   });
 
