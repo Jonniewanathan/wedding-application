@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { SeatingChart } from './seating-chart';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { Guest } from '../../../../shared/models/guest.model';
+import { Invitation } from '../../../../shared/models/invitation.model';
 
 function ts(): Timestamp {
   return { seconds: 0, nanoseconds: 0 } as unknown as Timestamp;
@@ -21,14 +22,26 @@ function makeGuest(overrides: Partial<Guest>): Guest {
   };
 }
 
+function makeInvitation(id: string, displayName: string): Invitation {
+  return {
+    id,
+    displayName,
+    invitationCode: id,
+    status: 'sent',
+    guestIds: [],
+    createdAt: ts()
+  };
+}
+
 describe('SeatingChart', () => {
   let component: SeatingChart;
   let fixture: ComponentFixture<SeatingChart>;
   let firestoreSpy: jasmine.SpyObj<FirestoreService>;
   let messageSpy: jasmine.SpyObj<MessageService>;
 
-  function build(guests: Guest[]) {
+  function build(guests: Guest[], invitations: Invitation[] = []) {
     firestoreSpy.getAllGuests.and.returnValue(of(guests));
+    firestoreSpy.getInvitations.and.returnValue(of(invitations));
     fixture = TestBed.createComponent(SeatingChart);
     component = fixture.componentInstance;
   }
@@ -36,9 +49,11 @@ describe('SeatingChart', () => {
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getAllGuests',
+      'getInvitations',
       'setGuestTable'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
+    firestoreSpy.getInvitations.and.returnValue(of([]));
     firestoreSpy.setGuestTable.and.returnValue(Promise.resolve());
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
 
@@ -69,7 +84,54 @@ describe('SeatingChart', () => {
       ]);
       const unseated = component.unseatedGuests();
       expect(unseated.length).toBe(2);
-      expect(unseated.map(g => g.firstName)).toEqual(['Alice', 'Bob']);
+      expect(unseated.map(r => r.guest.firstName)).toEqual(['Alice', 'Bob']);
+    });
+
+    it('should attach the invitation displayName to each unseated row', () => {
+      build(
+        [
+          makeGuest({ id: '1', firstName: 'Alice', invitationId: 'inv-a', tableName: null }),
+          makeGuest({ id: '2', firstName: 'Bob', invitationId: 'inv-b', tableName: null })
+        ],
+        [
+          makeInvitation('inv-a', 'Smith family'),
+          makeInvitation('inv-b', 'Jones family')
+        ]
+      );
+      const rows = component.unseatedGuests();
+      expect(rows[0].invitationDisplayName).toBe('Smith family');
+      expect(rows[1].invitationDisplayName).toBe('Jones family');
+    });
+
+    it('should label rows without a matching invitation as "(unassigned)"', () => {
+      build(
+        [makeGuest({ id: '1', firstName: 'Alice', invitationId: 'inv-missing', tableName: null })],
+        []
+      );
+      expect(component.unseatedGuests()[0].invitationDisplayName).toBe('(unassigned)');
+    });
+
+    it('should group consecutive same-invitation rows and alternate isShaded by invitation', () => {
+      build(
+        [
+          makeGuest({ id: '1', firstName: 'Alice', invitationId: 'inv-a', tableName: null }),
+          makeGuest({ id: '2', firstName: 'Bob', invitationId: 'inv-a', tableName: null }),
+          makeGuest({ id: '3', firstName: 'Carol', invitationId: 'inv-b', tableName: null }),
+          makeGuest({ id: '4', firstName: 'Dan', invitationId: 'inv-c', tableName: null }),
+          makeGuest({ id: '5', firstName: 'Eve', invitationId: 'inv-c', tableName: null })
+        ],
+        [
+          makeInvitation('inv-a', 'A'),
+          makeInvitation('inv-b', 'B'),
+          makeInvitation('inv-c', 'C')
+        ]
+      );
+      const rows = component.unseatedGuests();
+      // Two guests in inv-a share a shaded value; the inv-b guest flips; inv-c flips back.
+      expect(rows[0].isShaded).toBe(rows[1].isShaded);
+      expect(rows[1].isShaded).not.toBe(rows[2].isShaded);
+      expect(rows[2].isShaded).not.toBe(rows[3].isShaded);
+      expect(rows[3].isShaded).toBe(rows[4].isShaded);
     });
 
     it('should group seated attending guests by tableName', () => {
@@ -117,7 +179,7 @@ describe('SeatingChart', () => {
 
   describe('edit lifecycle', () => {
     beforeEach(() => {
-      build([makeGuest({ id: '1', firstName: 'Alice', tableName: 'Table 1' })]);
+      build([makeGuest({ id: '1', firstName: 'Alice', tableName: 'Table 1' })], []);
     });
 
     it('should seed the draft with the guest\'s current table on beginEdit', () => {
@@ -172,7 +234,7 @@ describe('SeatingChart', () => {
 
   describe('unseatGuest', () => {
     beforeEach(() => {
-      build([makeGuest({ id: '1', firstName: 'Alice', tableName: 'Table 1' })]);
+      build([makeGuest({ id: '1', firstName: 'Alice', tableName: 'Table 1' })], []);
     });
 
     it('should write null to setGuestTable', async () => {

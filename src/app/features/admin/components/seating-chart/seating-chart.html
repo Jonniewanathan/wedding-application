@@ -34,22 +34,29 @@
       </p>
     } @else {
       <ul class="divide-y divide-slate-100">
-        @for (guest of unseatedGuests(); track guest.id) {
-          <li class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            <span class="text-sm font-medium text-slate-800">{{ guest.firstName }} {{ guest.lastName }}</span>
+        @for (row of unseatedGuests(); track row.guest.id) {
+          <li
+            class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-colors"
+            [ngClass]="row.isShaded
+              ? '!bg-slate-50 !border-slate-200'
+              : 'bg-white'">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-slate-800">{{ row.guest.firstName }} {{ row.guest.lastName }}</span>
+              <span class="text-[10px] uppercase tracking-widest text-slate-400 mt-0.5">{{ row.invitationDisplayName }}</span>
+            </div>
 
-            @if (editingGuestId() === guest.id) {
+            @if (editingGuestId() === row.guest.id) {
               <div class="flex items-center gap-2 w-full md:w-auto">
                 <input
                   type="text"
                   [(ngModel)]="editingDraft"
-                  (keydown.enter)="saveEdit(guest)"
+                  (keydown.enter)="saveEdit(row.guest)"
                   (keydown.escape)="cancelEdit()"
                   placeholder="Table name"
                   class="flex-1 md:w-48 text-sm border border-slate-300 px-3 py-1.5 outline-none focus:border-slate-600"
                   autofocus>
                 <button
-                  (click)="saveEdit(guest)"
+                  (click)="saveEdit(row.guest)"
                   class="bg-slate-900 text-white px-3 py-1.5 text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors">
                   Save
                 </button>
@@ -61,7 +68,7 @@
               </div>
             } @else {
               <button
-                (click)="beginEdit(guest)"
+                (click)="beginEdit(row.guest)"
                 class="text-[10px] uppercase tracking-widest text-slate-500 border border-slate-200 hover:border-slate-400 hover:text-slate-900 px-3 py-1.5 transition-colors">
                 Assign table
               </button>

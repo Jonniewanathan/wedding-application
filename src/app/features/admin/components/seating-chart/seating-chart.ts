@@ -9,10 +9,23 @@ import { MessageService } from 'primeng/api';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { Guest } from '../../../../shared/models/guest.model';
+import { Invitation } from '../../../../shared/models/invitation.model';
 
 interface TableGroup {
   name: string;
   guests: Guest[];
+}
+
+/**
+ * One row in the unseated panel. Shaded alternates as the
+ * invitationId changes so consecutive same-invitation rows share a
+ * background band — mirrors the bus pickup manifest's grouping
+ * pattern.
+ */
+interface UnseatedRow {
+  guest: Guest;
+  invitationDisplayName: string;
+  isShaded: boolean;
 }
 
 @Component({
@@ -30,18 +43,59 @@ export class SeatingChart {
     { initialValue: [] }
   );
 
+  private readonly allInvitations: Signal<Invitation[]> = toSignal(
+    this.firestoreService.getInvitations(),
+    { initialValue: [] }
+  );
+
   // Only attending guests can be seated.
   private readonly attendingGuests = computed(() =>
     this.allGuests().filter(g => g.isAttending === true)
   );
 
-  readonly unseatedGuests = computed(() =>
-    this.attendingGuests()
+  /**
+   * Unseated attending guests, grouped by invitation. Consecutive
+   * rows from the same invitation share a shaded band so the admin
+   * can spot families/parties at a glance — same shading pattern as
+   * the stats-page bus manifest.
+   */
+  readonly unseatedGuests = computed<UnseatedRow[]>(() => {
+    // Sort by invitationId first so same-invitation rows are consecutive
+    // (the shaded toggle relies on this). Then alphabetical within a group.
+    const guests = this.attendingGuests()
       .filter(g => !g.tableName || g.tableName.trim().length === 0)
-      .sort((a, b) =>
-        `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
-      )
-  );
+      .sort((a, b) => {
+        const inviteA = a.invitationId || '￿'; // unassigned to end
+        const inviteB = b.invitationId || '￿';
+        const inviteCmp = inviteA.localeCompare(inviteB);
+        if (inviteCmp !== 0) return inviteCmp;
+        return `${a.firstName} ${a.lastName}`.localeCompare(
+          `${b.firstName} ${b.lastName}`
+        );
+      });
+
+    const invitationsById = new Map(
+      this.allInvitations().map(inv => [inv.id, inv])
+    );
+
+    const rows: UnseatedRow[] = [];
+    let currentInvitationId = '';
+    let shaded = false;
+    for (const guest of guests) {
+      const invId = guest.invitationId || '';
+      if (invId !== currentInvitationId) {
+        shaded = !shaded;
+        currentInvitationId = invId;
+      }
+      const invitation = invId ? invitationsById.get(invId) : null;
+      rows.push({
+        guest,
+        invitationDisplayName: invitation?.displayName ?? '(unassigned)',
+        isShaded: shaded
+      });
+    }
+    return rows;
+  });
 
   readonly tables = computed<TableGroup[]>(() => {
     const seated = this.attendingGuests().filter(
