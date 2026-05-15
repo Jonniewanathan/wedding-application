@@ -2,8 +2,10 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DynamicDialogConfig, DynamicDialogRef, DialogService } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { Guest } from '../../models/guest.model';
+import { Invitation } from '../../models/invitation.model';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 // PrimeNG Modules
@@ -40,15 +42,25 @@ export class ViewGuests implements OnInit {
   invitationId!: string;
   guests$!: Observable<Guest[]>;
   unassignedGuests$!: Observable<Guest[]>;
+  otherInvitations$!: Observable<Invitation[]>;
 
   showAddDropdown = false;
   selectedUnassignedGuest: Guest | null = null;
+
+  // Inline "move guest" state: when set, an inline panel opens above
+  // the table letting the admin pick another invitation as the target.
+  movingGuest: Guest | null = null;
+  moveTarget: Invitation | null = null;
+  moveInProgress = false;
 
   ngOnInit(): void {
     this.invitationId = this.config.data?.invitationId;
     if (this.invitationId) {
       this.guests$ = this.firestoreService.getGuestsForInvitation(this.invitationId);
       this.unassignedGuests$ = this.firestoreService.getUnassignedGuests();
+      this.otherInvitations$ = this.firestoreService.getInvitations().pipe(
+        map(invs => invs.filter(inv => inv.id !== this.invitationId))
+      );
     }
   }
 
@@ -84,6 +96,48 @@ export class ViewGuests implements OnInit {
           this.messageService.add({ severity: 'success', summary: 'Updated', detail: 'Guest details saved.' });
         }
       });
+    }
+  }
+
+  startMoveGuest(guest: Guest): void {
+    this.movingGuest = guest;
+    this.moveTarget = null;
+    // Close the add-guest panel if it's open so only one inline panel is
+    // active at a time.
+    this.showAddDropdown = false;
+  }
+
+  cancelMoveGuest(): void {
+    this.movingGuest = null;
+    this.moveTarget = null;
+  }
+
+  async confirmMoveGuest(): Promise<void> {
+    if (!this.movingGuest || !this.moveTarget || !this.invitationId) return;
+    if (this.moveInProgress) return;
+    this.moveInProgress = true;
+    const guest = this.movingGuest;
+    const target = this.moveTarget;
+    try {
+      await this.firestoreService.moveGuestToInvitation(
+        guest.id,
+        this.invitationId,
+        target.id
+      );
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Moved',
+        detail: `${guest.firstName} ${guest.lastName} moved to ${target.displayName}.`
+      });
+      this.cancelMoveGuest();
+    } catch (err) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Could not move guest.'
+      });
+    } finally {
+      this.moveInProgress = false;
     }
   }
 

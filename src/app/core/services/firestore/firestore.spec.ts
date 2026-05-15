@@ -36,6 +36,10 @@ describe('FirestoreService', () => {
     await expectAsync(service.backfillRsvpSubmittedAt([])).toBeResolved();
   });
 
+  it('should no-op moveGuestToInvitation when source and target match', async () => {
+    await expectAsync(service.moveGuestToInvitation('g1', 'inv-x', 'inv-x')).toBeResolved();
+  });
+
   it('should expose the expected public methods', () => {
     expect(typeof service.addGuest).toBe('function');
     expect(typeof service.getUnassignedGuests).toBe('function');
@@ -45,6 +49,7 @@ describe('FirestoreService', () => {
     expect(typeof service.updateInvitation).toBe('function');
     expect(typeof service.setInvitationOutreachStage).toBe('function');
     expect(typeof service.backfillRsvpSubmittedAt).toBe('function');
+    expect(typeof service.moveGuestToInvitation).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');
     expect(typeof service.unassignGuest).toBe('function');
     expect(typeof service.getInvitations).toBe('function');

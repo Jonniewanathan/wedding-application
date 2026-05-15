@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, where,
   getDocs, collectionData, doc, setDoc,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
-  addDoc, DocumentReference, getDoc, arrayRemove, FieldValue, Timestamp
+  addDoc, DocumentReference, getDoc, arrayRemove, arrayUnion, FieldValue, Timestamp
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation, InvitationOutreachStage } from '../../../shared/models/invitation.model';
@@ -228,6 +228,47 @@ export class FirestoreService {
 
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.delete(invitationRef);
+
+    return batch.commit();
+  }
+
+  /**
+   * Atomically move one guest from a source invitation to a target
+   * invitation. Three doc updates in a single batch:
+   *  - the guest's invitationId switches to the target
+   *  - the source invitation's guestIds[] loses the guest
+   *  - the target invitation's guestIds[] gains the guest
+   *
+   * Avoids the intermediate "unassigned" state that the
+   * unassign-then-assign path would expose.
+   */
+  moveGuestToInvitation(
+    guestId: string,
+    fromInvitationId: string,
+    toInvitationId: string
+  ): Promise<void> {
+    if (fromInvitationId === toInvitationId) {
+      return Promise.resolve();
+    }
+    const batch = writeBatch(this.firestore);
+
+    const guestRef = doc(this.firestore, `guests/${guestId}`);
+    batch.update(guestRef, {
+      invitationId: toInvitationId,
+      updatedAt: serverTimestamp()
+    });
+
+    const fromRef = doc(this.firestore, `invitations/${fromInvitationId}`);
+    batch.update(fromRef, {
+      guestIds: arrayRemove(guestId),
+      updatedAt: serverTimestamp()
+    });
+
+    const toRef = doc(this.firestore, `invitations/${toInvitationId}`);
+    batch.update(toRef, {
+      guestIds: arrayUnion(guestId),
+      updatedAt: serverTimestamp()
+    });
 
     return batch.commit();
   }

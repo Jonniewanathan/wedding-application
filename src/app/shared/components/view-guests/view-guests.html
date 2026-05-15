@@ -14,6 +14,49 @@
     </button>
   </div>
 
+  <!-- Inline Move Guest Form -->
+  @if(movingGuest) {
+    <div class="mb-6 p-4 bg-amber-50 border border-amber-100 flex flex-col sm:flex-row items-stretch sm:items-end gap-4 animate-fade-in w-full">
+      <div class="flex-grow flex flex-col gap-2 w-full">
+        <label class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-amber-800">
+          Move <span class="font-medium">{{ movingGuest.firstName }} {{ movingGuest.lastName }}</span> to
+        </label>
+        <p-select
+          [options]="(otherInvitations$ | async)!"
+          [(ngModel)]="moveTarget"
+          optionLabel="displayName"
+          [filter]="true"
+          filterBy="displayName,invitationCode"
+          [showClear]="true"
+          placeholder="Select target invitation"
+          styleClass="w-full text-sm font-sans !border-amber-200">
+          <ng-template pTemplate="selectedItem" let-inv>
+            <div *ngIf="inv" class="truncate">{{ inv.displayName }}</div>
+          </ng-template>
+          <ng-template pTemplate="item" let-inv>
+            <div class="flex flex-col">
+              <span class="truncate">{{ inv.displayName }}</span>
+              <span class="text-[10px] text-slate-400 font-mono">{{ inv.invitationCode }}</span>
+            </div>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="confirmMoveGuest()"
+          [disabled]="!moveTarget || moveInProgress"
+          class="bg-amber-900 text-white px-6 py-[11px] text-xs uppercase tracking-widest hover:bg-amber-800 transition-colors disabled:opacity-50 h-[42px]">
+          @if (moveInProgress) { Moving… } @else { Move }
+        </button>
+        <button
+          (click)="cancelMoveGuest()"
+          class="border border-amber-200 text-amber-800 px-4 py-[11px] text-xs uppercase tracking-widest hover:border-amber-400 transition-colors h-[42px]">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
+
   <!-- Inline Add Guest Form -->
   @if(showAddDropdown) {
     <div class="mb-6 p-4 bg-slate-50 border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-end gap-4 animate-fade-in w-full">
@@ -119,6 +162,14 @@
                 class="p-button-text p-button-rounded p-button-secondary hover:text-slate-900 transition-colors"
                 (click)="onEditGuest(guest)"
                 pTooltip="Edit Details" tooltipPosition="top">
+              </button>
+
+              <button
+                pButton
+                icon="pi pi-arrow-right-arrow-left"
+                class="p-button-text p-button-rounded p-button-secondary hover:text-amber-700 transition-colors"
+                (click)="startMoveGuest(guest)"
+                pTooltip="Move to another group" tooltipPosition="top">
               </button>
 
               <button

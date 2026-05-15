@@ -37,13 +37,17 @@ describe('ViewGuests', () => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getGuestsForInvitation',
       'getUnassignedGuests',
+      'getInvitations',
       'assignGuestsToInvitation',
-      'unassignGuest'
+      'unassignGuest',
+      'moveGuestToInvitation'
     ]);
     firestoreSpy.getGuestsForInvitation.and.returnValue(of([makeGuest('g1')]));
     firestoreSpy.getUnassignedGuests.and.returnValue(of([makeGuest('u1')]));
+    firestoreSpy.getInvitations.and.returnValue(of([]));
     firestoreSpy.assignGuestsToInvitation.and.returnValue(Promise.resolve());
     firestoreSpy.unassignGuest.and.returnValue(Promise.resolve());
+    firestoreSpy.moveGuestToInvitation.and.returnValue(Promise.resolve());
 
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     confirmSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
@@ -127,6 +131,81 @@ describe('ViewGuests', () => {
     component.onEditGuest(makeGuest('g1'));
     const lastCall = messageSpy.add.calls.mostRecent().args[0] as any;
     expect(lastCall.severity).toBe('success');
+  });
+
+  describe('move guest between invitations', () => {
+    function makeInvitation(id: string, name: string) {
+      return {
+        id,
+        displayName: name,
+        invitationCode: id,
+        status: 'sent' as const,
+        guestIds: [],
+        createdAt: { seconds: 0, nanoseconds: 0 } as any
+      };
+    }
+
+    it('should populate movingGuest and clear moveTarget when startMoveGuest is called', () => {
+      const g = makeGuest('g1');
+      component.startMoveGuest(g);
+      expect(component.movingGuest).toBe(g);
+      expect(component.moveTarget).toBeNull();
+    });
+
+    it('should close the add-guest panel when starting a move', () => {
+      component.showAddDropdown = true;
+      component.startMoveGuest(makeGuest('g1'));
+      expect(component.showAddDropdown).toBeFalse();
+    });
+
+    it('should clear move state on cancel', () => {
+      component.startMoveGuest(makeGuest('g1'));
+      component.moveTarget = makeInvitation('inv-x', 'Target');
+      component.cancelMoveGuest();
+      expect(component.movingGuest).toBeNull();
+      expect(component.moveTarget).toBeNull();
+    });
+
+    it('should call firestore.moveGuestToInvitation with the source and target ids on confirm', async () => {
+      const g = makeGuest('g1');
+      const target = makeInvitation('inv-x', 'Target');
+      component.startMoveGuest(g);
+      component.moveTarget = target;
+      await component.confirmMoveGuest();
+      expect(firestoreSpy.moveGuestToInvitation).toHaveBeenCalledWith('g1', 'inv-1', 'inv-x');
+      expect(component.movingGuest).toBeNull();
+    });
+
+    it('should not call moveGuestToInvitation if target is not selected', async () => {
+      component.startMoveGuest(makeGuest('g1'));
+      // moveTarget left null
+      await component.confirmMoveGuest();
+      expect(firestoreSpy.moveGuestToInvitation).not.toHaveBeenCalled();
+      // movingGuest should remain so the user can still pick a target
+      expect(component.movingGuest).not.toBeNull();
+    });
+
+    it('should surface an error toast when the move call rejects', async () => {
+      firestoreSpy.moveGuestToInvitation.and.returnValue(Promise.reject(new Error('boom')));
+      component.startMoveGuest(makeGuest('g1'));
+      component.moveTarget = makeInvitation('inv-x', 'Target');
+      await component.confirmMoveGuest();
+      const last = (messageSpy as any).add.calls.mostRecent().args[0];
+      expect(last.severity).toBe('error');
+    });
+
+    it('should ignore concurrent confirmMoveGuest clicks while a write is in flight', async () => {
+      let resolve!: () => void;
+      firestoreSpy.moveGuestToInvitation.and.returnValue(new Promise<void>(r => { resolve = r; }));
+      component.startMoveGuest(makeGuest('g1'));
+      component.moveTarget = makeInvitation('inv-x', 'Target');
+      const first = component.confirmMoveGuest();
+      const second = component.confirmMoveGuest();
+      resolve();
+      await first;
+      await second;
+      expect(firestoreSpy.moveGuestToInvitation).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('should request confirmation before unassigning a guest', () => {
