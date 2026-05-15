@@ -10,7 +10,7 @@ import QRCode from 'qrcode';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
-import { Invitation } from '../../../../shared/models/invitation.model';
+import { Invitation, InvitationOutreachStage } from '../../../../shared/models/invitation.model';
 import { ViewGuests } from '../../../../shared/components/view-guests/view-guests';
 import { QrCodeDisplay } from '../../../../shared/components/qr-code-display/qr-code-display';
 import { take } from 'rxjs/operators';
@@ -171,6 +171,19 @@ export class InvitationGroups implements OnInit {
     } catch (err) {
       this.handleError(err, 'Could not generate or display QR code');
     }
+  }
+
+  /**
+   * Toggle an outreach milestone (sent / first reminder / second reminder)
+   * on an invitation. Optimistic UI — the table is bound to the live
+   * Firestore stream, so flipping the field server-side re-renders the
+   * row automatically.
+   */
+  toggleOutreach(invitation: Invitation, stage: InvitationOutreachStage): void {
+    const isCurrentlyActive = !!invitation[stage];
+    this.firestoreService
+      .setInvitationOutreachStage(invitation.id, stage, !isCurrentlyActive)
+      .catch(err => this.handleError(err, 'Could not update outreach status.'));
   }
 
   onDeleteInvitation(invitation: Invitation): void {

@@ -46,12 +46,14 @@ describe('InvitationGroups', () => {
       'getInvitations',
       'getGuestsForInvitation',
       'assignGuestsToInvitation',
-      'deleteInvitationAndUnassignGuests'
+      'deleteInvitationAndUnassignGuests',
+      'setInvitationOutreachStage'
     ]);
     firestoreSpy.getInvitations.and.returnValue(of([makeInvitation()]));
     firestoreSpy.getGuestsForInvitation.and.returnValue(of([]));
     firestoreSpy.assignGuestsToInvitation.and.returnValue(Promise.resolve());
     firestoreSpy.deleteInvitationAndUnassignGuests.and.returnValue(Promise.resolve());
+    firestoreSpy.setInvitationOutreachStage.and.returnValue(Promise.resolve());
 
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     confirmSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
@@ -123,6 +125,49 @@ describe('InvitationGroups', () => {
     component.onDeleteInvitation(makeInvitation('inv-x'));
     await Promise.resolve();
     expect(firestoreSpy.deleteInvitationAndUnassignGuests).toHaveBeenCalledWith('inv-x');
+  });
+
+  describe('toggleOutreach', () => {
+    it('should activate a stage that was previously inactive', () => {
+      const invitation = makeInvitation();
+      component.toggleOutreach(invitation, 'sentAt');
+      expect(firestoreSpy.setInvitationOutreachStage).toHaveBeenCalledWith(
+        invitation.id,
+        'sentAt',
+        true
+      );
+    });
+
+    it('should clear a stage that was already active', () => {
+      const invitation = makeInvitation();
+      invitation.sentAt = { seconds: 1, nanoseconds: 0 } as unknown as Timestamp;
+      component.toggleOutreach(invitation, 'sentAt');
+      expect(firestoreSpy.setInvitationOutreachStage).toHaveBeenCalledWith(
+        invitation.id,
+        'sentAt',
+        false
+      );
+    });
+
+    it('should toggle each of the three stages independently', () => {
+      const invitation = makeInvitation();
+      component.toggleOutreach(invitation, 'firstReminderAt');
+      component.toggleOutreach(invitation, 'secondReminderAt');
+      const calls = firestoreSpy.setInvitationOutreachStage.calls.allArgs();
+      expect(calls).toEqual([
+        [invitation.id, 'firstReminderAt', true],
+        [invitation.id, 'secondReminderAt', true]
+      ]);
+    });
+
+    it('should surface an error toast when the firestore write rejects', async () => {
+      firestoreSpy.setInvitationOutreachStage.and.returnValue(Promise.reject(new Error('boom')));
+      component.toggleOutreach(makeInvitation(), 'sentAt');
+      await Promise.resolve();
+      await Promise.resolve();
+      const last = messageSpy.add.calls.mostRecent().args[0] as any;
+      expect(last.severity).toBe('error');
+    });
   });
 
   it('should open the view-guests dialog with the right invitation id', () => {

@@ -43,6 +43,7 @@
             <!-- Keeping the column filter definition so the table knows it can filter this column, but hiding the menu icon -->
             <p-columnFilter field="hasResponded" matchMode="equals" display="menu" [showMenu]="false"></p-columnFilter>
           </th>
+          <th>Outreach</th>
           <th class="text-right">Manage</th>
         </tr>
       </ng-template>
@@ -61,6 +62,43 @@
             } @else {
               <span class="text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1">Pending</span>
             }
+          </td>
+          <td>
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                (click)="toggleOutreach(invitation, 'sentAt')"
+                [class]="invitation.sentAt
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
+                class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
+                [pTooltip]="invitation.sentAt ? 'Sent — click to clear' : 'Mark invitation as sent'"
+                tooltipPosition="top">
+                Sent
+              </button>
+              <button
+                type="button"
+                (click)="toggleOutreach(invitation, 'firstReminderAt')"
+                [class]="invitation.firstReminderAt
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
+                class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
+                [pTooltip]="invitation.firstReminderAt ? '1st reminder sent — click to clear' : 'Mark 1st reminder sent'"
+                tooltipPosition="top">
+                R1
+              </button>
+              <button
+                type="button"
+                (click)="toggleOutreach(invitation, 'secondReminderAt')"
+                [class]="invitation.secondReminderAt
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'"
+                class="text-[10px] uppercase tracking-widest px-2 py-1 border transition-colors cursor-pointer"
+                [pTooltip]="invitation.secondReminderAt ? '2nd reminder sent — click to clear' : 'Mark 2nd reminder sent'"
+                tooltipPosition="top">
+                R2
+              </button>
+            </div>
           </td>
           <td class="text-right">
             <div class="flex items-center justify-end gap-2">

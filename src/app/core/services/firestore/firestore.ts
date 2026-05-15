@@ -6,7 +6,7 @@ import {
   addDoc, DocumentReference, getDoc, arrayRemove, FieldValue
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
-import { Invitation } from '../../../shared/models/invitation.model';
+import { Invitation, InvitationOutreachStage } from '../../../shared/models/invitation.model';
 import { Guest } from '../../../shared/models/guest.model';
 
 @Injectable({
@@ -101,6 +101,24 @@ export class FirestoreService {
     const docRef = doc(this.firestore, `invitations/${invitationId}`);
     return updateDoc(docRef, {
       displayName: details.displayName,
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  /**
+   * Set or clear a single outreach milestone on an invitation. Writes a
+   * server-side Timestamp when activating; writes null when clearing
+   * (so the stats page can rely on truthiness to mean "this stage has
+   * happened").
+   */
+  setInvitationOutreachStage(
+    invitationId: string,
+    stage: InvitationOutreachStage,
+    isActive: boolean
+  ): Promise<void> {
+    const docRef = doc(this.firestore, `invitations/${invitationId}`);
+    return updateDoc(docRef, {
+      [stage]: isActive ? serverTimestamp() : null,
       updatedAt: serverTimestamp()
     });
   }
