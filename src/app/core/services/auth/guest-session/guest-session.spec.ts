@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
 import { Timestamp } from '@angular/fire/firestore';
-import { take } from 'rxjs/operators';
 import { GuestSessionService } from './guest-session';
 import { Invitation } from '../../../../shared/models/invitation.model';
 
@@ -37,63 +36,49 @@ describe('GuestSessionService', () => {
   });
 
   describe('initialization', () => {
-    it('should default to null when no session is stored', (done) => {
+    it('should default to null when no session is stored', () => {
       const service = createService();
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value).toBeNull();
-        done();
-      });
+      expect(service.invitation()).toBeNull();
     });
 
-    it('should restore the session from the new "wedding_invitation_code" key', (done) => {
+    it('should restore the session from the new "wedding_invitation_code" key', () => {
       const invitation = makeInvitation();
       localStorage.setItem('wedding_invitation_code', JSON.stringify(invitation));
 
       const service = createService();
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value?.invitationCode).toBe('abc-123');
-        expect(value?.displayName).toBe('The Smiths');
-        done();
-      });
+      const value = service.invitation();
+      expect(value?.invitationCode).toBe('abc-123');
+      expect(value?.displayName).toBe('The Smiths');
     });
 
-    it('should migrate from the legacy "guest_session" key', (done) => {
+    it('should migrate from the legacy "guest_session" key', () => {
       const invitation = makeInvitation({ invitationCode: 'legacy-code' });
       localStorage.setItem('guest_session', JSON.stringify(invitation));
 
       const service = createService();
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value?.invitationCode).toBe('legacy-code');
-        expect(localStorage.getItem('wedding_invitation_code')).toBeTruthy();
-        expect(localStorage.getItem('guest_session')).toBeNull();
-        done();
-      });
+      expect(service.invitation()?.invitationCode).toBe('legacy-code');
+      expect(localStorage.getItem('wedding_invitation_code')).toBeTruthy();
+      expect(localStorage.getItem('guest_session')).toBeNull();
     });
 
-    it('should clear the session when stored value is malformed JSON', (done) => {
+    it('should clear the session when stored value is malformed JSON', () => {
       localStorage.setItem('wedding_invitation_code', '{not valid json');
 
       const service = createService();
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value).toBeNull();
-        expect(localStorage.getItem('wedding_invitation_code')).toBeNull();
-        done();
-      });
+      expect(service.invitation()).toBeNull();
+      expect(localStorage.getItem('wedding_invitation_code')).toBeNull();
     });
 
-    it('should clear the session when stored value is a plain string (not an object)', (done) => {
+    it('should clear the session when stored value is a plain string (not an object)', () => {
       localStorage.setItem('wedding_invitation_code', 'plain-code-only');
 
       const service = createService();
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value).toBeNull();
-        done();
-      });
+      expect(service.invitation()).toBeNull();
     });
   });
 
   describe('login', () => {
-    it('should persist the invitation to localStorage and emit it', (done) => {
+    it('should persist the invitation to localStorage and update the signal', () => {
       const service = createService();
       const invitation = makeInvitation();
 
@@ -102,11 +87,7 @@ describe('GuestSessionService', () => {
       const stored = localStorage.getItem('wedding_invitation_code');
       expect(stored).toBeTruthy();
       expect(JSON.parse(stored!).invitationCode).toBe('abc-123');
-
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value?.invitationCode).toBe('abc-123');
-        done();
-      });
+      expect(service.invitation()?.invitationCode).toBe('abc-123');
     });
 
     it('should expose the latest value via currentInvitationValue', () => {
@@ -129,15 +110,11 @@ describe('GuestSessionService', () => {
       expect(localStorage.getItem('wedding_invitation_code')).toBeNull();
     });
 
-    it('should emit null after logout', (done) => {
+    it('should reset the signal to null after logout', () => {
       const service = createService();
       service.login(makeInvitation());
       service.logout();
-
-      service.invitation$.pipe(take(1)).subscribe(value => {
-        expect(value).toBeNull();
-        done();
-      });
+      expect(service.invitation()).toBeNull();
     });
 
     it('should make currentInvitationValue return null after logout', () => {

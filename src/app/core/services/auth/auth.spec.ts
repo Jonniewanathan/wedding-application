@@ -1,19 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { Auth } from '@angular/fire/auth';
-import { Observable } from 'rxjs';
 import { AuthService } from './auth';
 
 /**
  * AuthService is a thin wrapper over Firebase modular-SDK functions
- * (signInWithEmailAndPassword, signOut, onAuthStateChanged). Those are
- * tree-shaken module imports and cannot be reliably spied on without
- * restructuring the service. The tests below cover what is unit-testable:
- * construction, the shape of the public API, and that currentUser$
- * registers an onAuthStateChanged listener at subscribe time.
+ * (signInWithEmailAndPassword, signOut, authState). Those are tree-shaken
+ * module imports and cannot be reliably spied on without restructuring the
+ * service. The tests below cover what is unit-testable: construction, the
+ * shape of the public API, and that currentUser is a callable signal.
  *
- * Behavioural coverage (success/failure of login, sign-out side effects,
- * auth-state propagation) belongs in integration tests against the
- * Firebase Auth emulator.
+ * Behavioural coverage (login/logout side effects, auth-state propagation)
+ * belongs in integration tests against the Firebase Auth emulator.
  */
 describe('AuthService', () => {
   let service: AuthService;
@@ -36,23 +33,23 @@ describe('AuthService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should expose currentUser$ as an Observable', () => {
-    expect(service.currentUser$).toBeInstanceOf(Observable);
+  it('should expose currentUser as a callable signal', () => {
+    expect(typeof service.currentUser).toBe('function');
   });
 
-  it('should expose login() that returns a Promise', () => {
-    // We do not invoke it — that would hit the real Firebase SDK.
+  it('should default currentUser to null before the auth state resolves', () => {
+    expect(service.currentUser()).toBeNull();
+  });
+
+  it('should expose login() as a function', () => {
     expect(typeof service.login).toBe('function');
   });
 
-  it('should expose logout() that returns a Promise', () => {
+  it('should expose logout() as a function', () => {
     expect(typeof service.logout).toBe('function');
   });
 
-  it('should not eagerly subscribe to onAuthStateChanged on construction', () => {
-    // currentUser$ is cold — the onAuthStateChanged registration only fires
-    // when a consumer subscribes. Constructing the service should not throw
-    // even though our mock Auth is incomplete.
+  it('should not throw when constructed with an incomplete Auth mock', () => {
     expect(() => TestBed.inject(AuthService)).not.toThrow();
   });
 });

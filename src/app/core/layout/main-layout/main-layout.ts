@@ -1,11 +1,9 @@
-import { Component, OnInit, inject, Renderer2, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, Renderer2, DestroyRef, effect } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MenuItem } from 'primeng/api';
 import { AuthService } from '../../services/auth/auth';
-import { Observable } from 'rxjs';
-import { User } from '@angular/fire/auth';
 import { filter } from 'rxjs/operators';
 import { GuestSessionService } from '../../services/auth/guest-session/guest-session';
 import { LanguageService } from '../../services/language/language';
@@ -27,34 +25,38 @@ import { TranslateService, TranslateModule } from '@ngx-translate/core';
 export class MainLayout implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
-  private guestSession = inject(GuestSessionService); // Inject GuestSessionService
+  private guestSession = inject(GuestSessionService);
   private destroyRef = inject(DestroyRef);
   private renderer = inject(Renderer2);
 
-  // Inject Language Services
-  public languageService = inject(LanguageService); // Must be public for template access
+  public languageService = inject(LanguageService);
   private translate = inject(TranslateService);
+
+  /** Signal alias exposed to the template (was previously currentUser$ | async). */
+  readonly currentUser = this.authService.currentUser;
 
   navItems: MenuItem[] = [];
   currentYear = new Date().getFullYear();
-
   isMobileMenuOpen = false;
   coupleNames = "Marta & Jonathan";
 
-  currentUser$: Observable<User | null>;
-
-  constructor() {
-    this.currentUser$ = this.authService.currentUser$;
-  }
+  /**
+   * Rebuild the nav items whenever the guest invitation signal changes
+   * (login / logout). The effect also runs once on construction with the
+   * initial signal value; that pre-init call is harmless because
+   * updateNavItems falls back to translation keys when translations are
+   * not yet loaded, and ngOnInit will call it again after initLanguage().
+   */
+  private invitationEffect = effect(() => {
+    this.guestSession.invitation();
+    this.updateNavItems();
+  });
 
   ngOnInit() {
-    // Initialize Language Service
     this.languageService.initLanguage();
 
-    // Set initial nav items
     this.updateNavItems();
 
-    // Subscribe to router events to update nav on navigation
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
       takeUntilDestroyed(this.destroyRef)
@@ -62,14 +64,6 @@ export class MainLayout implements OnInit {
       this.updateNavItems();
     });
 
-    // Subscribe to the guest session to update the UI instantly when they log in/out
-    this.guestSession.invitation$.pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(() => {
-      this.updateNavItems();
-    });
-
-    // CRITICAL: Rebuild nav when language changes so titles update
     this.translate.onLangChange.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(() => {
@@ -78,12 +72,9 @@ export class MainLayout implements OnInit {
   }
 
   updateNavItems() {
-    // Check GuestSessionService for the invitation code instead of a raw localStorage key
     const currentInvitation = this.guestSession.currentInvitationValue;
     const hasStoredInvite = !!currentInvitation;
 
-    // Use TranslateService.instant() to fetch translations synchronously if available
-    // or fallback to the key. In onLangChange, these will be re-evaluated.
     const baseNavItems: MenuItem[] = [
       { label: this.translate.instant('NAV.SAVE_THE_DATE'), routerLink: '/save-the-date' },
       { label: this.translate.instant('NAV.TRAVEL_INFO'), routerLink: '/travel-info' },
@@ -91,7 +82,6 @@ export class MainLayout implements OnInit {
     ];
 
     if (hasStoredInvite && currentInvitation?.invitationCode) {
-      // Ensure "My Invitation" is the last item
       this.navItems = [
         ...baseNavItems,
         {
@@ -104,7 +94,6 @@ export class MainLayout implements OnInit {
     }
   }
 
-  // Expose language switching to the template
   switchLanguage(lang: string) {
     this.languageService.switchLanguage(lang);
   }

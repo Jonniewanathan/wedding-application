@@ -30,7 +30,7 @@
           </button>
         </div>
 
-        @if (currentUser$ | async) {
+        @if (currentUser()) {
           <a routerLink="/admin" class="text-xs uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors border border-slate-200 px-3 py-1 rounded-sm">
             <i class="pi pi-cog mr-2"></i> Admin
           </a>
@@ -72,7 +72,7 @@
       </button>
 
       <!-- Admin Quick Link (Mobile) -->
-      @if (currentUser$ | async) {
+      @if (currentUser()) {
         <a routerLink="/admin" class="text-slate-400 hover:text-slate-900 transition-colors">
           <i class="pi pi-cog"></i>
         </a>
@@ -107,7 +107,7 @@
     </ul>
 
     <!-- Admin Controls (Mobile Menu Bottom) -->
-    @if (currentUser$ | async) {
+    @if (currentUser()) {
       <div class="mt-auto mb-12 flex flex-col items-center gap-6 border-t border-slate-100 pt-8 w-full">
         <span class="text-xs uppercase tracking-widest text-slate-400">Admin Controls</span>
         <a routerLink="/admin" (click)="closeMobileMenu()" class="bg-slate-900 text-white px-8 py-3 text-xs uppercase tracking-widest">
