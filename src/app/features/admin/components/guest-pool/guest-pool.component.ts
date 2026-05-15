@@ -6,6 +6,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
+import Papa from 'papaparse';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -65,10 +66,18 @@ export class GuestPoolComponent implements OnInit {
     const file: File = input.files[0];
     const text: string = await file.text();
 
-    const csvData: CsvGuestRow[] = this.parseCSV<CsvGuestRow>(text);
+    const parseResult = Papa.parse<CsvGuestRow>(text, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: h => h.trim()
+    });
 
-    const newGuests: Partial<Guest>[] = csvData
-      .filter(row => row.FirstName && row.LastName) // Safety check
+    if (parseResult.errors.length > 0) {
+      console.warn('CSV parse warnings', parseResult.errors);
+    }
+
+    const newGuests: Partial<Guest>[] = (parseResult.data || [])
+      .filter(row => row.FirstName && row.LastName)
       .map(row => ({
         firstName: row.FirstName.trim(),
         lastName: row.LastName.trim(),
@@ -91,41 +100,12 @@ export class GuestPoolComponent implements OnInit {
       this.messageService.add({
         severity: 'warn',
         summary: 'No Data',
-        detail: 'No valid guests found in CSV. Check headers.'
+        detail: 'No valid guests found in CSV. Check headers (FirstName, LastName, Country, Notes).'
       });
     }
 
     // Reset input
     input.value = '';
-  }
-
-  private parseCSV<T>(text: string): T[] {
-    const lines: string[] = text.split('\n');
-    const headers: string[] = lines[0].split(',').map(h => h.trim().replace(/['"]+/g, '')); // Clean headers
-
-    const results: T[] = [];
-
-    // Start from index 1 to skip header
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      const currentLine = line.split(',');
-      const obj: any = {};
-
-      headers.forEach((header, index) => {
-        // Clean quotes from values if present
-        let value = currentLine[index]?.trim();
-        if (value && value.startsWith('"') && value.endsWith('"')) {
-          value = value.substring(1, value.length - 1);
-        }
-        obj[header] = value;
-      });
-
-      results.push(obj as T);
-    }
-
-    return results;
   }
 
   openAddGuestForm(): void {
