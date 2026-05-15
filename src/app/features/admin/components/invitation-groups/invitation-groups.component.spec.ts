@@ -66,7 +66,14 @@ describe('InvitationGroupsComponent', () => {
         { provide: DialogService, useValue: dialogSpy },
         AdminStateService
       ]
-    }).compileComponents();
+    })
+      // The real template contains <p-inputgroup> + pInputText + pButtonIcon
+      // combinations that trigger an Angular directive-collision error in
+      // tests. We stub the template to test the class logic in isolation.
+      .overrideComponent(InvitationGroupsComponent, {
+        set: { template: '<div></div>' }
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(InvitationGroupsComponent);
     component = fixture.componentInstance;

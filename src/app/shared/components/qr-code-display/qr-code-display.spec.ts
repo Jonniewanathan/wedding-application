@@ -1,9 +1,29 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { EventEmitter } from '@angular/core';
 import { Timestamp } from '@angular/fire/firestore';
 import { MessageService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { TranslateService } from '@ngx-translate/core';
+import { of } from 'rxjs';
 import { QrCodeDisplay } from './qr-code-display';
+import { LanguageService } from '../../../core/services/language/language';
 import { Guest } from '../../models/guest.model';
+
+function translateStub(): Partial<TranslateService> {
+  return {
+    instant: ((k: string) => k) as any,
+    get: ((k: string) => of(k)) as any,
+    stream: ((k: string) => of(k)) as any,
+    onLangChange: new EventEmitter() as any,
+    onTranslationChange: new EventEmitter() as any,
+    onDefaultLangChange: new EventEmitter() as any,
+    currentLang: 'en',
+    addLangs: () => {},
+    getLangs: () => ['en', 'es'],
+    use: (() => of({})) as any,
+    getBrowserLang: () => 'en'
+  };
+}
 
 function makeGuest(firstName: string, lastName: string): Guest {
   return {
@@ -26,11 +46,19 @@ describe('QrCodeDisplay', () => {
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     config = { data } as DynamicDialogConfig;
 
+    const languageStub: Partial<LanguageService> = {
+      switchLanguage: () => {},
+      initLanguage: () => {}
+    };
+    Object.defineProperty(languageStub, 'currentLang', { get: () => 'en' });
+
     TestBed.configureTestingModule({
       imports: [QrCodeDisplay],
       providers: [
         { provide: DynamicDialogRef, useValue: dialogRef },
-        { provide: DynamicDialogConfig, useValue: config }
+        { provide: DynamicDialogConfig, useValue: config },
+        { provide: LanguageService, useValue: languageStub },
+        { provide: TranslateService, useValue: translateStub() }
       ]
     }).overrideComponent(QrCodeDisplay, {
       set: {
@@ -74,9 +102,10 @@ describe('QrCodeDisplay', () => {
       invitationName: 'The Smiths',
       guests: []
     });
-    expect(component.whatsappMessage).toContain('The Smiths');
-    expect(component.whatsappMessage).toContain('https://example.com/invite/x');
-    expect(component.whatsappMessage).not.toContain('This invitation admits');
+    const msg = component.generatedMessage();
+    expect(msg).toContain('The Smiths');
+    expect(msg).toContain('https://example.com/invite/x');
+    expect(msg).not.toContain('This invitation admits');
   });
 
   it('should include the guest list in the WhatsApp message when guests are supplied', () => {
@@ -85,9 +114,10 @@ describe('QrCodeDisplay', () => {
       invitationName: 'The Smiths',
       guests: [makeGuest('Alice', 'Smith'), makeGuest('Bob', 'Smith')]
     });
-    expect(component.whatsappMessage).toContain('This invitation admits');
-    expect(component.whatsappMessage).toContain('Alice Smith');
-    expect(component.whatsappMessage).toContain('Bob Smith');
+    const msg = component.generatedMessage();
+    expect(msg).toContain('This invitation admits');
+    expect(msg).toContain('Alice Smith');
+    expect(msg).toContain('Bob Smith');
   });
 
   it('should close the dialog when closeDialog is called', () => {
@@ -117,7 +147,7 @@ describe('QrCodeDisplay', () => {
     component.copyMessage();
     await Promise.resolve();
     await Promise.resolve();
-    expect(writeText).toHaveBeenCalledWith(component.whatsappMessage);
+    expect(writeText).toHaveBeenCalledWith(component.generatedMessage());
     expect(messageSpy.add).toHaveBeenCalled();
   });
 

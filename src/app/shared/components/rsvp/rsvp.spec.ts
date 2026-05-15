@@ -50,6 +50,17 @@ function translateStub(): Partial<TranslateService> {
   };
 }
 
+/**
+ * Wait for all outstanding microtasks. Rsvp.ngOnInit chains several
+ * promises (getInvitationByCode, then loadGuests, then subscribe), so
+ * multiple flushes are required to fully drain the queue.
+ */
+async function flushAsync(): Promise<void> {
+  for (let i = 0; i < 5; i++) {
+    await Promise.resolve();
+  }
+}
+
 describe('Rsvp', () => {
   let component: Rsvp;
   let fixture: ComponentFixture<Rsvp>;
@@ -61,16 +72,23 @@ describe('Rsvp', () => {
   function setup(invitation: Invitation | null) {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getGuestsForInvitation',
+      'getInvitationByCode',
       'submitRsvpForGuests'
     ]);
     guests$ = new Subject<Guest[]>();
     firestoreSpy.getGuestsForInvitation.and.returnValue(guests$.asObservable());
+    firestoreSpy.getInvitationByCode.and.returnValue(
+      Promise.resolve(invitation ? { ...invitation } : null)
+    );
     firestoreSpy.submitRsvpForGuests.and.returnValue(Promise.resolve());
 
-    sessionSpy = jasmine.createSpyObj<GuestSessionService>('GuestSessionService', [], {
-      currentInvitationValue: invitation
-    });
+    sessionSpy = jasmine.createSpyObj<GuestSessionService>(
+      'GuestSessionService',
+      ['login'],
+      { currentInvitationValue: invitation }
+    );
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
+    routerSpy.navigate.and.returnValue(Promise.resolve(true));
 
     TestBed.configureTestingModule({
       imports: [Rsvp],
@@ -91,22 +109,26 @@ describe('Rsvp', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should redirect to home when no invitation session exists', () => {
+  it('should redirect to home when no invitation session exists', async () => {
     setup(null);
     component.ngOnInit();
+    await flushAsync();
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
     expect(firestoreSpy.getGuestsForInvitation).not.toHaveBeenCalled();
   });
 
-  it('should load guests for the invitation on init', () => {
+  it('should refetch the invitation and load guests on init', async () => {
     setup(makeInvitation());
     component.ngOnInit();
+    await flushAsync();
+    expect(firestoreSpy.getInvitationByCode).toHaveBeenCalledWith('ABC');
     expect(firestoreSpy.getGuestsForInvitation).toHaveBeenCalledWith('inv-1');
   });
 
-  it('should build a form array with one group per guest', () => {
+  it('should build a form array with one group per guest', async () => {
     setup(makeInvitation());
     component.ngOnInit();
+    await flushAsync();
     guests$.next([makeGuest('g1', 'Alice'), makeGuest('g2', 'Bob')]);
     expect(component.guestControls.length).toBe(2);
     expect(component.isLoading).toBeFalse();
@@ -121,20 +143,27 @@ describe('Rsvp', () => {
   it('should not submit when the form is invalid', async () => {
     setup(makeInvitation());
     component.ngOnInit();
+    await flushAsync();
     guests$.next([makeGuest('g1', 'Alice')]);
     await component.onSubmit();
     expect(firestoreSpy.submitRsvpForGuests).not.toHaveBeenCalled();
   });
 
-  it('should submit the form when all guests have an isAttending value', async () => {
+  it('should submit with invitationId, guests, and message when valid', async () => {
     setup(makeInvitation());
     component.ngOnInit();
+    await flushAsync();
     guests$.next([makeGuest('g1', 'Alice')]);
-    const guestGroup = component.guestControls[0];
-    guestGroup.patchValue({ isAttending: true });
+    component.guestControls[0].patchValue({ isAttending: true, needsBus: false });
+    component.rsvpForm.patchValue({ message: 'See you soon' });
 
     await component.onSubmit();
+
     expect(firestoreSpy.submitRsvpForGuests).toHaveBeenCalled();
+    const args = firestoreSpy.submitRsvpForGuests.calls.mostRecent().args;
+    expect(args[0]).toBe('inv-1');
+    expect(Array.isArray(args[1])).toBeTrue();
+    expect(args[2]).toBe('See you soon');
     expect(component.submitted).toBeTrue();
     expect(component.isLoading).toBeFalse();
   });
@@ -142,8 +171,9 @@ describe('Rsvp', () => {
   it('should keep submitted false if the submission rejects', async () => {
     setup(makeInvitation());
     component.ngOnInit();
+    await flushAsync();
     guests$.next([makeGuest('g1', 'Alice')]);
-    component.guestControls[0].patchValue({ isAttending: true });
+    component.guestControls[0].patchValue({ isAttending: true, needsBus: false });
     firestoreSpy.submitRsvpForGuests.and.returnValue(Promise.reject(new Error('fail')));
 
     await component.onSubmit();
@@ -151,10 +181,11 @@ describe('Rsvp', () => {
     expect(component.isLoading).toBeFalse();
   });
 
-  it('should stop loading even if the guests query errors', () => {
+  it('should stop loading even if the guests query errors', async () => {
     setup(makeInvitation());
     firestoreSpy.getGuestsForInvitation.and.returnValue(throwError(() => new Error('boom')));
     component.ngOnInit();
+    await flushAsync();
     expect(component.isLoading).toBeFalse();
   });
 });

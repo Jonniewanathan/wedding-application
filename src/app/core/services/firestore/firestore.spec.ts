@@ -8,9 +8,7 @@ import { FirestoreService } from './firestore';
  * are tree-shaken named exports and cannot be reliably spied on in this
  * test harness without restructuring the service. The tests below verify
  * what is unit-testable: that the service can be constructed with a
- * mocked Firestore token, exposes the expected public surface, and
- * validates obvious preconditions (e.g. rejecting an RSVP update for an
- * unassigned guest).
+ * mocked Firestore token and exposes the expected public surface.
  *
  * Behavioural coverage of read/write operations belongs in integration
  * tests against the Firestore emulator.
@@ -40,41 +38,15 @@ describe('FirestoreService', () => {
     expect(typeof service.deleteUnassignedGuest).toBe('function');
     expect(typeof service.updateGuestDetails).toBe('function');
     expect(typeof service.createInvitation).toBe('function');
+    expect(typeof service.updateInvitation).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');
     expect(typeof service.unassignGuest).toBe('function');
     expect(typeof service.getInvitations).toBe('function');
     expect(typeof service.getInvitationByCode).toBe('function');
     expect(typeof service.deleteInvitationAndUnassignGuests).toBe('function');
     expect(typeof service.getGuestsForInvitation).toBe('function');
-    expect(typeof service.updateGuestRsvpDetails).toBe('function');
+    expect(typeof service.getAllGuests).toBe('function');
     expect(typeof service.submitRsvpForGuests).toBe('function');
     expect(typeof service.addGuestsBatch).toBe('function');
-  });
-
-  it('should reject updateGuestRsvpDetails when the guest has no invitationId', async () => {
-    const unassignedGuest = {
-      id: 'g1',
-      firstName: 'A',
-      lastName: 'B',
-      invitationId: null,
-      createdAt: {} as any
-    };
-
-    await expectAsync(
-      service.updateGuestRsvpDetails(unassignedGuest as any)
-    ).toBeRejected();
-  });
-
-  it('should reject updateGuestRsvpDetails when invitationId is undefined', async () => {
-    const guestWithoutInvitation = {
-      id: 'g1',
-      firstName: 'A',
-      lastName: 'B',
-      createdAt: {} as any
-    };
-
-    await expectAsync(
-      service.updateGuestRsvpDetails(guestWithoutInvitation as any)
-    ).toBeRejected();
   });
 });

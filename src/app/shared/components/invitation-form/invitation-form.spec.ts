@@ -76,11 +76,14 @@ describe('InvitationFormComponent', () => {
     expect(dialogRef.close).not.toHaveBeenCalled();
   });
 
-  it('should close the dialog with the form value on submit', () => {
+  it('should close the dialog with the form value and ordered guests on submit', () => {
     setup([]);
     component.invitationForm.setValue({ displayName: 'The Test Family' });
     component.onSubmit();
-    expect(dialogRef.close).toHaveBeenCalledWith({ displayName: 'The Test Family' });
+    expect(dialogRef.close).toHaveBeenCalledWith({
+      displayName: 'The Test Family',
+      orderedGuests: []
+    });
   });
 
   it('should close the dialog with no argument on cancel', () => {

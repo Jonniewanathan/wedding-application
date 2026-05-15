@@ -5,6 +5,7 @@ import {
 } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { CustomTranslateHttpLoader } from './custom-translate-loader';
+import { version as appVersion } from '../../../../../package.json';
 
 describe('CustomTranslateHttpLoader', () => {
   let loader: CustomTranslateHttpLoader;
@@ -38,14 +39,14 @@ describe('CustomTranslateHttpLoader', () => {
       expect(translations).toEqual(expected);
     });
 
-    const req = httpMock.expectOne('./assets/i18n/en.json');
+    const req = httpMock.expectOne(`./assets/i18n/en.json?v=${appVersion}`);
     expect(req.request.method).toBe('GET');
     req.flush(expected);
   });
 
   it('should build the URL using the supplied language code', () => {
     loader.getTranslation('es').subscribe();
-    const req = httpMock.expectOne('./assets/i18n/es.json');
+    const req = httpMock.expectOne(`./assets/i18n/es.json?v=${appVersion}`);
     req.flush({});
   });
 
@@ -57,7 +58,7 @@ describe('CustomTranslateHttpLoader', () => {
       error: (err) => (receivedError = err)
     });
 
-    const req = httpMock.expectOne('./assets/i18n/xx.json');
+    const req = httpMock.expectOne(`./assets/i18n/xx.json?v=${appVersion}`);
     req.flush('not found', { status: 404, statusText: 'Not Found' });
 
     expect(receivedError).toBeTruthy();
