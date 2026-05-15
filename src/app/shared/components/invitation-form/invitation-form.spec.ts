@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Timestamp } from '@angular/fire/firestore';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { InvitationFormComponent } from './invitation-form';
+import { InvitationForm } from './invitation-form';
 import { Guest } from '../../models/guest.model';
 
 function g(id: string, firstName: string, lastName: string): Guest {
@@ -13,9 +13,9 @@ function g(id: string, firstName: string, lastName: string): Guest {
   };
 }
 
-describe('InvitationFormComponent', () => {
-  let component: InvitationFormComponent;
-  let fixture: ComponentFixture<InvitationFormComponent>;
+describe('InvitationForm', () => {
+  let component: InvitationForm;
+  let fixture: ComponentFixture<InvitationForm>;
   let dialogRef: jasmine.SpyObj<DynamicDialogRef>;
   let config: DynamicDialogConfig;
 
@@ -24,14 +24,14 @@ describe('InvitationFormComponent', () => {
     config = { data: { guests } } as DynamicDialogConfig;
 
     TestBed.configureTestingModule({
-      imports: [InvitationFormComponent],
+      imports: [InvitationForm],
       providers: [
         { provide: DynamicDialogRef, useValue: dialogRef },
         { provide: DynamicDialogConfig, useValue: config }
       ]
     });
 
-    fixture = TestBed.createComponent(InvitationFormComponent);
+    fixture = TestBed.createComponent(InvitationForm);
     component = fixture.componentInstance;
     component.ngOnInit();
   }

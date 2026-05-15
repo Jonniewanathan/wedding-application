@@ -29,7 +29,7 @@ import { SelectModule } from 'primeng/select';
   templateUrl: './guest-form.html',
   styleUrl: './guest-form.scss'
 })
-export class GuestFormComponent implements OnInit {
+export class GuestForm implements OnInit {
   private fb = inject(FormBuilder);
   private firestoreService = inject(FirestoreService);
   public dialogRef = inject(DynamicDialogRef);

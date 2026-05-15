@@ -12,12 +12,12 @@ export const routes: Routes = [
       {
         path: 'login',
         loadComponent: () =>
-          import('./features/login/login').then(m => m.LoginComponent)
+          import('./features/login/login').then(m => m.Login)
       },
       {
         path: 'admin',
         loadComponent: () =>
-          import('./features/admin/admin').then(m => m.AdminComponent),
+          import('./features/admin/admin').then(m => m.Admin),
         canActivate: [authGuard]
       },
       // SaveTheDate stays eager — it's the default landing route, so its

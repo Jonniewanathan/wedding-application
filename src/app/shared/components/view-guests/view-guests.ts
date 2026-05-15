@@ -11,7 +11,7 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
-import { GuestFormComponent } from '../guest-form/guest-form';
+import { GuestForm } from '../guest-form/guest-form';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 
@@ -73,7 +73,7 @@ export class ViewGuests implements OnInit {
   }
 
   onEditGuest(guest: Guest): void {
-    const ref = this.dialogService.open(GuestFormComponent, {
+    const ref = this.dialogService.open(GuestForm, {
       header: 'Edit Guest Details',
       width: '40%',
       data: { guest: guest }

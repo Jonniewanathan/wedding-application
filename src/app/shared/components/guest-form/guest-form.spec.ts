@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Timestamp } from '@angular/fire/firestore';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { GuestFormComponent } from './guest-form';
+import { GuestForm } from './guest-form';
 import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { Guest } from '../../models/guest.model';
 
@@ -21,9 +21,9 @@ function makeGuest(overrides: Partial<Guest> = {}): Guest {
   };
 }
 
-describe('GuestFormComponent', () => {
-  let component: GuestFormComponent;
-  let fixture: ComponentFixture<GuestFormComponent>;
+describe('GuestForm', () => {
+  let component: GuestForm;
+  let fixture: ComponentFixture<GuestForm>;
   let dialogRef: jasmine.SpyObj<DynamicDialogRef>;
   let firestoreSpy: jasmine.SpyObj<FirestoreService>;
   let config: DynamicDialogConfig;
@@ -40,7 +40,7 @@ describe('GuestFormComponent', () => {
     config = { data: { guest } } as DynamicDialogConfig;
 
     TestBed.configureTestingModule({
-      imports: [GuestFormComponent],
+      imports: [GuestForm],
       providers: [
         { provide: DynamicDialogRef, useValue: dialogRef },
         { provide: DynamicDialogConfig, useValue: config },
@@ -48,7 +48,7 @@ describe('GuestFormComponent', () => {
       ]
     });
 
-    fixture = TestBed.createComponent(GuestFormComponent);
+    fixture = TestBed.createComponent(GuestForm);
     component = fixture.componentInstance;
     component.ngOnInit();
   }

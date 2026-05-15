@@ -6,7 +6,7 @@ import {
   MessageService
 } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { GuestPoolComponent } from './guest-pool.component';
+import { GuestPool } from './guest-pool.component';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -20,9 +20,9 @@ function makeGuest(id: string, firstName = 'A', lastName = 'B'): Guest {
   };
 }
 
-describe('GuestPoolComponent', () => {
-  let component: GuestPoolComponent;
-  let fixture: ComponentFixture<GuestPoolComponent>;
+describe('GuestPool', () => {
+  let component: GuestPool;
+  let fixture: ComponentFixture<GuestPool>;
   let firestoreSpy: jasmine.SpyObj<FirestoreService>;
   let messageSpy: jasmine.SpyObj<MessageService>;
   let confirmSpy: jasmine.SpyObj<ConfirmationService>;
@@ -48,7 +48,7 @@ describe('GuestPoolComponent', () => {
     dialogSpy = jasmine.createSpyObj<DialogService>('DialogService', ['open']);
 
     await TestBed.configureTestingModule({
-      imports: [GuestPoolComponent],
+      imports: [GuestPool],
       providers: [
         { provide: FirestoreService, useValue: firestoreSpy },
         { provide: MessageService, useValue: messageSpy },
@@ -58,7 +58,7 @@ describe('GuestPoolComponent', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GuestPoolComponent);
+    fixture = TestBed.createComponent(GuestPool);
     component = fixture.componentInstance;
     adminState = TestBed.inject(AdminStateService);
     component.ngOnInit();

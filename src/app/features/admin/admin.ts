@@ -7,8 +7,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 // Components
-import { GuestPoolComponent } from './components/guest-pool/guest-pool.component';
-import { InvitationGroupsComponent } from './components/invitation-groups/invitation-groups.component';
+import { GuestPool } from './components/guest-pool/guest-pool.component';
+import { InvitationGroups } from './components/invitation-groups/invitation-groups.component';
 import { StatsComponent } from './components/stats/stats.component';
 
 // PrimeNG Modules
@@ -20,14 +20,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPoolComponent, InvitationGroupsComponent, StatsComponent
+    GuestPool, InvitationGroups, StatsComponent
   ],
   providers: [
     DialogService, ConfirmationService, MessageService, AdminStateService
   ],
   templateUrl: './admin.html',
 })
-export class AdminComponent {
+export class Admin {
   private authService = inject(AuthService);
   private router = inject(Router);
 

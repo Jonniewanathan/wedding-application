@@ -6,7 +6,7 @@ import {
   MessageService
 } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { InvitationGroupsComponent } from './invitation-groups.component';
+import { InvitationGroups } from './invitation-groups.component';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -32,9 +32,9 @@ function makeInvitation(id = 'inv-1'): Invitation {
   };
 }
 
-describe('InvitationGroupsComponent', () => {
-  let component: InvitationGroupsComponent;
-  let fixture: ComponentFixture<InvitationGroupsComponent>;
+describe('InvitationGroups', () => {
+  let component: InvitationGroups;
+  let fixture: ComponentFixture<InvitationGroups>;
   let firestoreSpy: jasmine.SpyObj<FirestoreService>;
   let messageSpy: jasmine.SpyObj<MessageService>;
   let confirmSpy: jasmine.SpyObj<ConfirmationService>;
@@ -58,7 +58,7 @@ describe('InvitationGroupsComponent', () => {
     dialogSpy = jasmine.createSpyObj<DialogService>('DialogService', ['open']);
 
     await TestBed.configureTestingModule({
-      imports: [InvitationGroupsComponent],
+      imports: [InvitationGroups],
       providers: [
         { provide: FirestoreService, useValue: firestoreSpy },
         { provide: MessageService, useValue: messageSpy },
@@ -68,7 +68,7 @@ describe('InvitationGroupsComponent', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(InvitationGroupsComponent);
+    fixture = TestBed.createComponent(InvitationGroups);
     component = fixture.componentInstance;
     adminState = TestBed.inject(AdminStateService);
     component.ngOnInit();

@@ -9,7 +9,7 @@ import {
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { AdminComponent } from './admin';
+import { Admin } from './admin';
 import { AuthService } from '../../core/services/auth/auth';
 import { AdminStateService } from './services/admin-state.service';
 
@@ -27,9 +27,9 @@ class GuestPoolStubComponent {}
 })
 class InvitationGroupsStubComponent {}
 
-describe('AdminComponent', () => {
-  let component: AdminComponent;
-  let fixture: ComponentFixture<AdminComponent>;
+describe('Admin', () => {
+  let component: Admin;
+  let fixture: ComponentFixture<Admin>;
   let authSpy: jasmine.SpyObj<AuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
 
@@ -44,14 +44,14 @@ describe('AdminComponent', () => {
     const dialogSpy = jasmine.createSpyObj<DialogService>('DialogService', ['open']);
 
     await TestBed.configureTestingModule({
-      imports: [AdminComponent, GuestPoolStubComponent, InvitationGroupsStubComponent],
+      imports: [Admin, GuestPoolStubComponent, InvitationGroupsStubComponent],
       providers: [
         provideRouter([]),
         { provide: AuthService, useValue: authSpy },
         { provide: Router, useValue: routerSpy }
       ]
     })
-      .overrideComponent(AdminComponent, {
+      .overrideComponent(Admin, {
         set: {
           imports: [
             CommonModule,
@@ -70,7 +70,7 @@ describe('AdminComponent', () => {
       })
       .compileComponents();
 
-    fixture = TestBed.createComponent(AdminComponent);
+    fixture = TestBed.createComponent(Admin);
     component = fixture.componentInstance;
   });
 

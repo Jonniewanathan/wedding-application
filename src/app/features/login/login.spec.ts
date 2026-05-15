@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { LoginComponent } from './login';
+import { Login } from './login';
 import { AuthService } from '../../core/services/auth/auth';
 
-describe('LoginComponent', () => {
-  let component: LoginComponent;
-  let fixture: ComponentFixture<LoginComponent>;
+describe('Login', () => {
+  let component: Login;
+  let fixture: ComponentFixture<Login>;
   let authSpy: jasmine.SpyObj<AuthService>;
   let routerSpy: jasmine.SpyObj<Router>;
 
@@ -14,14 +14,14 @@ describe('LoginComponent', () => {
     routerSpy = jasmine.createSpyObj<Router>('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
-      imports: [LoginComponent],
+      imports: [Login],
       providers: [
         { provide: AuthService, useValue: authSpy },
         { provide: Router, useValue: routerSpy }
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(LoginComponent);
+    fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
   });
 

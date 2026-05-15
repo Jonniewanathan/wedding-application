@@ -17,7 +17,7 @@ import { take } from 'rxjs/operators';
 import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
-import { InvitationFormComponent } from '../../../../shared/components/invitation-form/invitation-form';
+import { InvitationForm } from '../../../../shared/components/invitation-form/invitation-form';
 import { Guest } from '../../../../shared/models/guest.model';
 import {InputGroupAddon} from 'primeng/inputgroupaddon';
 import {InputGroup} from 'primeng/inputgroup';
@@ -29,7 +29,7 @@ import { environment } from '../../../../../environments/environment';
   imports: [CommonModule, TableModule, ButtonModule, TooltipModule, SelectModule, FormsModule, InputTextModule, InputGroupAddon, InputGroup],
   templateUrl: './invitation-groups.component.html',
 })
-export class InvitationGroupsComponent implements OnInit {
+export class InvitationGroups implements OnInit {
   private firestoreService = inject(FirestoreService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
@@ -109,7 +109,7 @@ export class InvitationGroupsComponent implements OnInit {
         return indexA - indexB;
       });
 
-      this.dialogRef = this.dialogService.open(InvitationFormComponent, {
+      this.dialogRef = this.dialogService.open(InvitationForm, {
         header: ' ',
         width: '90vw',
         styleClass: 'editorial-dialog max-w-[500px]',

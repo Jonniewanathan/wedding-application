@@ -1,21 +1,21 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
-import { AddGuestFormComponent } from './add-guest-form';
+import { AddGuestForm } from './add-guest-form';
 
-describe('AddGuestFormComponent', () => {
-  let component: AddGuestFormComponent;
-  let fixture: ComponentFixture<AddGuestFormComponent>;
+describe('AddGuestForm', () => {
+  let component: AddGuestForm;
+  let fixture: ComponentFixture<AddGuestForm>;
   let dialogRef: jasmine.SpyObj<DynamicDialogRef>;
 
   beforeEach(async () => {
     dialogRef = jasmine.createSpyObj<DynamicDialogRef>('DynamicDialogRef', ['close']);
 
     await TestBed.configureTestingModule({
-      imports: [AddGuestFormComponent],
+      imports: [AddGuestForm],
       providers: [{ provide: DynamicDialogRef, useValue: dialogRef }]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(AddGuestFormComponent);
+    fixture = TestBed.createComponent(AddGuestForm);
     component = fixture.componentInstance;
     component.ngOnInit();
   });

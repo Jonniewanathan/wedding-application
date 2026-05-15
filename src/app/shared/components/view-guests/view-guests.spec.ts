@@ -116,7 +116,7 @@ describe('ViewGuests', () => {
     expect(lastCall.severity).toBe('error');
   });
 
-  it('should call dialogService.open with GuestFormComponent on edit', () => {
+  it('should call dialogService.open with GuestForm on edit', () => {
     dialogServiceSpy.open.and.returnValue({ onClose: of(true) } as any);
     component.onEditGuest(makeGuest('g1'));
     expect(dialogServiceSpy.open).toHaveBeenCalled();

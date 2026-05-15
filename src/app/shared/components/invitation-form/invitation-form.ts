@@ -16,7 +16,7 @@ import { ChipModule } from 'primeng/chip';
   imports: [CommonModule, ReactiveFormsModule, InputTextModule, ButtonModule, ChipModule, DragDropModule],
   templateUrl: './invitation-form.html',
 })
-export class InvitationFormComponent implements OnInit {
+export class InvitationForm implements OnInit {
   private fb = inject(FormBuilder);
   public dialogRef = inject(DynamicDialogRef);
   public config = inject(DynamicDialogConfig);

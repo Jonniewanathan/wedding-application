@@ -10,8 +10,8 @@ import Papa from 'papaparse';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { AdminStateService } from '../../services/admin-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
-import { GuestFormComponent } from '../../../../shared/components/guest-form/guest-form';
-import { InvitationFormComponent } from '../../../../shared/components/invitation-form/invitation-form';
+import { GuestForm } from '../../../../shared/components/guest-form/guest-form';
+import { InvitationForm } from '../../../../shared/components/invitation-form/invitation-form';
 import {InputTextModule} from 'primeng/inputtext';
 import {InputGroupModule} from 'primeng/inputgroup';
 import {InputGroupAddonModule} from 'primeng/inputgroupaddon';
@@ -29,7 +29,7 @@ interface CsvGuestRow {
   imports: [CommonModule, TableModule, ButtonModule, TooltipModule, InputTextModule, InputGroupModule, InputGroupAddonModule],
   templateUrl: './guest-pool.component.html',
 })
-export class GuestPoolComponent implements OnInit {
+export class GuestPool implements OnInit {
   private firestoreService = inject(FirestoreService);
   private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
@@ -109,7 +109,7 @@ export class GuestPoolComponent implements OnInit {
   }
 
   openAddGuestForm(): void {
-    this.dialogRef = this.dialogService.open(GuestFormComponent, {
+    this.dialogRef = this.dialogService.open(GuestForm, {
       header: ' ',
       width: '90vw',
       styleClass: 'editorial-dialog max-w-[500px]',
@@ -125,7 +125,7 @@ export class GuestPoolComponent implements OnInit {
   }
 
   onEditGuest(guest: Guest): void {
-    this.dialogRef = this.dialogService.open(GuestFormComponent, {
+    this.dialogRef = this.dialogService.open(GuestForm, {
       header: ' ',
       width: '90vw',
       styleClass: 'editorial-dialog max-w-[500px]',
@@ -165,7 +165,7 @@ export class GuestPoolComponent implements OnInit {
     const currentSelection = this.selectedGuests; // Cache to avoid multiple reads
     if (!currentSelection || currentSelection.length === 0) return;
 
-    this.dialogRef = this.dialogService.open(InvitationFormComponent, {
+    this.dialogRef = this.dialogService.open(InvitationForm, {
       header: ' ', // Handled in component
       width: '90vw',
       styleClass: 'editorial-dialog max-w-[500px]',
