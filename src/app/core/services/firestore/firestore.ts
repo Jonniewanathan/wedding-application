@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, where,
   getDocs, collectionData, doc, setDoc,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
-  addDoc, DocumentReference, getDoc, arrayRemove
+  addDoc, DocumentReference, getDoc, arrayRemove, FieldValue
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Invitation } from '../../../shared/models/invitation.model';
@@ -38,7 +38,7 @@ export class FirestoreService {
       updatedAt: null
     };
 
-    return setDoc(newDocRef, newGuestData as unknown as Omit<Guest, 'id'>);
+    return setDoc(newDocRef, newGuestData);
   }
 
   getUnassignedGuests(): Observable<Guest[]> {
@@ -60,14 +60,21 @@ export class FirestoreService {
 
   updateGuestDetails(guest: Partial<Guest> & { id: string }): Promise<void> {
     const docRef = doc(this.firestore, `guests/${guest.id}`);
-    const updateData: any = { updatedAt: serverTimestamp() };
+
+    // Update payload: each key is a Guest field name; each value is either a
+    // Guest field value or a FieldValue sentinel (e.g. serverTimestamp()).
+    type UpdateValue = Guest[keyof Guest] | FieldValue;
+    const updateData: Record<string, UpdateValue> = {
+      updatedAt: serverTimestamp()
+    };
 
     // Dynamically add fields to update object to avoid overwriting with undefined
     const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes'];
 
     fields.forEach(field => {
-      if (guest[field] !== undefined) {
-        updateData[field] = guest[field];
+      const value = guest[field];
+      if (value !== undefined) {
+        updateData[field] = value;
       }
     });
 
