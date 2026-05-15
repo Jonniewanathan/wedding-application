@@ -126,19 +126,30 @@ describe('QrCodeDisplay', () => {
     expect(dialogRef.close).toHaveBeenCalled();
   });
 
-  it('should select the input and toast on copyUrl', () => {
-    setup();
-    const input = document.createElement('input');
-    input.value = 'https://example.com';
-    const selectSpy = spyOn(input, 'select');
-    spyOn(document, 'execCommand').and.returnValue(true);
+  it('should write invitationUrl to the clipboard and toast on copyUrl', async () => {
+    setup({ url: 'https://example.com/invite/x', guests: [] });
+    const writeText = spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
 
-    component.copyUrl(input);
+    component.copyUrl();
+    await Promise.resolve();
+    await Promise.resolve();
 
-    expect(selectSpy).toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledWith('https://example.com/invite/x');
     expect(messageSpy.add).toHaveBeenCalled();
     const last = messageSpy.add.calls.mostRecent().args[0] as any;
     expect(last.severity).toBe('success');
+  });
+
+  it('should toast error when copyUrl rejects', async () => {
+    setup({ url: 'https://example.com/invite/x', guests: [] });
+    spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.reject(new Error('denied')));
+
+    component.copyUrl();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const last = messageSpy.add.calls.mostRecent().args[0] as any;
+    expect(last.severity).toBe('error');
   });
 
   it('should toast success when copyMessage resolves', async () => {

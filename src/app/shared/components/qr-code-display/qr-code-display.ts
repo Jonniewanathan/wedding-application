@@ -66,10 +66,13 @@ export class QrCodeDisplay implements OnInit {
     this.dialogRef.close();
   }
 
-  copyUrl(inputElement: HTMLInputElement): void {
-    inputElement.select();
-    document.execCommand('copy');
-    this.messageService.add({ severity: 'success', summary: 'Copied', detail: 'URL copied to clipboard' });
+  copyUrl(): void {
+    navigator.clipboard.writeText(this.invitationUrl).then(() => {
+      this.messageService.add({ severity: 'success', summary: 'Copied', detail: 'URL copied to clipboard' });
+    }).catch(err => {
+      console.error('Could not copy URL: ', err);
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to copy URL' });
+    });
   }
 
   copyMessage(): void {

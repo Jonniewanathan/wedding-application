@@ -29,13 +29,12 @@
 
         <div class="flex w-full">
           <input
-            #urlInput
             type="text"
             [value]="invitationUrl"
             readonly
             class="w-0 flex-1 bg-white border border-r-0 border-slate-300 text-slate-600 text-[10px] font-mono px-2 py-3 md:py-2 outline-none">
           <button
-            (click)="copyUrl(urlInput)"
+            (click)="copyUrl()"
             class="bg-slate-900 text-white px-4 md:px-3 hover:bg-slate-800 transition-colors shrink-0"
             pTooltip="Copy Link" tooltipPosition="top">
             <i class="pi pi-copy"></i>
