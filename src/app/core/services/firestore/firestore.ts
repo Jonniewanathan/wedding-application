@@ -236,7 +236,9 @@ export class FirestoreService {
         isAttending: null,
         needsBus: null,
         busPickupLocation: null,
-        dietaryRestrictions: '',
+        dietaryPreferences: [],
+        allergies: [],
+        dietaryNotes: '',
         type: 'primary',
         createdAt: serverTimestamp(),
         updatedAt: null
