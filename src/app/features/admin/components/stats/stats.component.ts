@@ -171,12 +171,13 @@ export class StatsComponent {
     return this.allInvitations()
       .filter(inv => inv.message && inv.message.trim().length > 0)
       .sort((a, b) => {
-        // Newest first by updatedAt, falling back to createdAt. Caveat:
-        // updatedAt is touched by admin renames and outreach toggles, so
-        // this isn't a pure "message-submitted" sort — best signal we
-        // have without adding a dedicated messageSubmittedAt field.
-        const aTime = tsToMs(a.updatedAt) ?? tsToMs(a.createdAt) ?? 0;
-        const bTime = tsToMs(b.updatedAt) ?? tsToMs(b.createdAt) ?? 0;
+        // Prefer the dedicated rsvpSubmittedAt timestamp; fall back to
+        // updatedAt / createdAt for invitations submitted before the
+        // dedicated field was introduced.
+        const aTime =
+          tsToMs(a.rsvpSubmittedAt) ?? tsToMs(a.updatedAt) ?? tsToMs(a.createdAt) ?? 0;
+        const bTime =
+          tsToMs(b.rsvpSubmittedAt) ?? tsToMs(b.updatedAt) ?? tsToMs(b.createdAt) ?? 0;
         return bTime - aTime;
       });
   });

@@ -212,6 +212,29 @@ describe('StatsV2', () => {
       expect(component.busTotalSeats()).toBe(2);
     });
 
+    it('should prefer rsvpSubmittedAt over updatedAt when sorting messages', () => {
+      build([], [
+        // updatedAt is RECENT (admin just renamed it), but rsvp was submitted long ago
+        makeInv({
+          id: 'submitted-long-ago',
+          displayName: 'Submitted long ago',
+          message: 'old reply',
+          rsvpSubmittedAt: ts(60 * 60 * 24 * 20),
+          updatedAt: ts(60 * 60)
+        }),
+        // Submitted recently — should appear first
+        makeInv({
+          id: 'submitted-recently',
+          displayName: 'Submitted recently',
+          message: 'fresh reply',
+          rsvpSubmittedAt: ts(60 * 60),
+          updatedAt: ts(60 * 60 * 24 * 5)
+        })
+      ]);
+      const ordered = component.invitationsWithMessages().map(inv => inv.id);
+      expect(ordered).toEqual(['submitted-recently', 'submitted-long-ago']);
+    });
+
     it('should sort guest messages newest-first by updatedAt', () => {
       build([], [
         makeInv({
@@ -236,6 +259,26 @@ describe('StatsV2', () => {
       ]);
       const ordered = component.invitationsWithMessages().map(inv => inv.id);
       expect(ordered).toEqual(['newest', 'middle', 'older']);
+    });
+
+    it('should build the response curve from rsvpSubmittedAt when present', () => {
+      build([], [
+        makeInv({ id: '1', status: 'responded', rsvpSubmittedAt: ts(60 * 60 * 24) }),
+        makeInv({ id: '2', status: 'responded', rsvpSubmittedAt: ts(60 * 60) })
+      ]);
+      const data = component.dailyResponsesData();
+      expect(data).toBeTruthy();
+      // Cumulative — last value equals total responses
+      expect(data!.datasets[0].data[data!.datasets[0].data.length - 1]).toBe(2);
+    });
+
+    it('should ignore non-responded invitations in the response curve', () => {
+      build([], [
+        makeInv({ id: '1', status: 'responded', rsvpSubmittedAt: ts(60 * 60) }),
+        makeInv({ id: '2', status: 'sent', rsvpSubmittedAt: ts(60 * 60) })
+      ]);
+      const data = component.dailyResponsesData();
+      expect(data!.datasets[0].data[data!.datasets[0].data.length - 1]).toBe(1);
     });
 
     it('should rank countries by attending guest count', () => {

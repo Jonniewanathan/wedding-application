@@ -240,6 +240,7 @@ export class FirestoreService {
       hasResponded: true,
       status: 'responded',
       message: message, // Save the message
+      rsvpSubmittedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 

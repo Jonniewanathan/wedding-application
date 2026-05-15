@@ -23,6 +23,11 @@ export interface Invitation {
   firstReminderAt?: Timestamp | null;
   secondReminderAt?: Timestamp | null;
 
+  // Set exactly once, when the guest submits their RSVP. Distinct from
+  // updatedAt which is bumped by admin renames, outreach toggles, etc.
+  // Use this for "responses over time" charts and message ordering.
+  rsvpSubmittedAt?: Timestamp | null;
+
   // Firestore-only metadata. Optional because a session-restored
   // invitation (read back from localStorage) has these stripped — they
   // do not survive a JSON round-trip as Timestamp instances.

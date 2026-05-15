@@ -179,13 +179,17 @@ export class StatsV2 {
     }
   };
 
-  /** Daily cumulative responses, bucketed by Guest.updatedAt (approx submission time). */
+  /**
+   * Cumulative responses over time. Uses Invitation.rsvpSubmittedAt
+   * (set exactly once at RSVP submit) with a fallback to updatedAt for
+   * legacy invitations that responded before the dedicated field existed.
+   */
   readonly dailyResponsesData = computed(() => {
-    const respondedGuests = this.allGuests().filter(
-      g => g.isAttending === true || g.isAttending === false
+    const respondedInvitations = this.allInvitations().filter(
+      inv => inv.status === 'responded'
     );
-    const updates = respondedGuests
-      .map(g => this.tsToMs(g.updatedAt))
+    const updates = respondedInvitations
+      .map(inv => this.tsToMs(inv.rsvpSubmittedAt) ?? this.tsToMs(inv.updatedAt))
       .filter((v): v is number => v !== null)
       .sort((a, b) => a - b);
 
@@ -437,12 +441,19 @@ export class StatsV2 {
     this.allInvitations()
       .filter(inv => inv.message && inv.message.trim().length > 0)
       .sort((a, b) => {
-        // Newest first. Falls back to createdAt if updatedAt is missing
-        // (which only happens for session-restored data, but be defensive).
-        // Caveat: updatedAt is also touched by admin renames and outreach
-        // chip toggles, so this isn't a pure "message-submitted-at" sort.
-        const aTime = this.tsToMs(a.updatedAt) ?? this.tsToMs(a.createdAt) ?? 0;
-        const bTime = this.tsToMs(b.updatedAt) ?? this.tsToMs(b.createdAt) ?? 0;
+        // Prefer the dedicated rsvpSubmittedAt timestamp; fall back to
+        // updatedAt (with createdAt as a last resort) for legacy records
+        // that responded before rsvpSubmittedAt was introduced.
+        const aTime =
+          this.tsToMs(a.rsvpSubmittedAt) ??
+          this.tsToMs(a.updatedAt) ??
+          this.tsToMs(a.createdAt) ??
+          0;
+        const bTime =
+          this.tsToMs(b.rsvpSubmittedAt) ??
+          this.tsToMs(b.updatedAt) ??
+          this.tsToMs(b.createdAt) ??
+          0;
         return bTime - aTime;
       })
   );
