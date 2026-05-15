@@ -1,7 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, computed, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { Guest } from '../../models/guest.model';
+import { LanguageService } from '../../../core/services/language/language';
+import { TranslateService } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 // PrimeNG Modules
 import { ButtonModule } from 'primeng/button';
@@ -21,12 +24,28 @@ export class QrCodeDisplay implements OnInit {
   public config = inject(DynamicDialogConfig);
   public dialogRef = inject(DynamicDialogRef);
   private messageService = inject(MessageService);
+  private languageService = inject(LanguageService);
+  private translate = inject(TranslateService);
+  private destroyRef = inject(DestroyRef);
 
   invitationUrl: string = '';
   qrCodeDataUrl: string = '';
   invitationName: string = '';
-  whatsappMessage: string = '';
   guests: Guest[] = [];
+
+  // Create a signal for the current language
+  currentLang = signal(this.languageService.currentLang);
+
+  // Make the message a computed signal that reacts to language changes
+  generatedMessage = computed(() => {
+    if (this.currentLang() === 'es') {
+      return `Hola ${this.invitationName}\n\n¡Estáis invitados a la boda de Marta & Jonathan!\n\nNos encantaría contar con vuestra presencia en un día tan especial para nosotros.\n\nPor favor, acceda a la invitación a través del siguiente enlace:\n${this.invitationUrl}\n\nEsperamos vuestra respuesta.`;
+    } else {
+      // Default to English
+      const guestListSection = this.guests.length > 0 ? `\n\nThis invitation admits:\n• ${this.guests.map(g => `${g.firstName} ${g.lastName}`).join('\n• ')}` : '';
+      return `Hi ${this.invitationName}!\n\nYou're invited to Marta & Jonathan's wedding!${guestListSection}\n\nPlease view your formal invitation and RSVP by clicking the secure link below:\n\n${this.invitationUrl}\n\nWe hope you can make it!`;
+    }
+  });
 
   ngOnInit(): void {
     // Get the data passed in from the admin component
@@ -35,27 +54,26 @@ export class QrCodeDisplay implements OnInit {
     this.invitationName = this.config.data?.invitationName || '';
     this.guests = this.config.data?.guests || [];
 
-    // Build the guest list for the whatsapp message
-    const guestNames = this.guests.map(g => `${g.firstName} ${g.lastName}`).join('\n• ');
-    const guestListSection = this.guests.length > 0 ? `\n\nThis invitation admits:\n• ${guestNames}` : '';
-
-    this.whatsappMessage = `Hi ${this.invitationName}!\n\nYou're invited to Marta & Jonathan's wedding!${guestListSection}\n\nPlease view your formal invitation and RSVP by clicking the secure link below:\n\n${this.invitationUrl}\n\nWe hope you can make it!`;
+    // Subscribe to language changes to update our local signal
+    this.translate.onLangChange.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(event => {
+      this.currentLang.set(event.lang);
+    });
   }
 
   closeDialog(): void {
     this.dialogRef.close();
   }
 
-  // Function to copy URL to clipboard
   copyUrl(inputElement: HTMLInputElement): void {
     inputElement.select();
     document.execCommand('copy');
     this.messageService.add({ severity: 'success', summary: 'Copied', detail: 'URL copied to clipboard' });
   }
 
-  // Function to copy full message
   copyMessage(): void {
-    navigator.clipboard.writeText(this.whatsappMessage).then(() => {
+    navigator.clipboard.writeText(this.generatedMessage()).then(() => {
       this.messageService.add({ severity: 'success', summary: 'Copied', detail: 'Full message copied to clipboard' });
     }).catch(err => {
       console.error('Could not copy text: ', err);
@@ -63,27 +81,21 @@ export class QrCodeDisplay implements OnInit {
     });
   }
 
-  // Function to trigger print for the specific invite using a new window
   printInvite(): void {
-    // 1. Create a new invisible window/iframe specifically for printing
     const printWindow = window.open('', '', 'width=600,height=800');
     if (!printWindow) {
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Pop-ups blocked. Please allow pop-ups to print.' });
       return;
     }
 
-    // Build the guest list HTML snippet
     const guestListHtml = this.guests.map(g => `<li class="mb-1">${g.firstName} ${g.lastName}</li>`).join('');
 
-    // 2. Build the HTML content for the print window
-    // We inject tailwind via a CDN just for the print layout so it looks exactly the same
     const htmlContent = `
       <html>
         <head>
           <title>Print Invitation - ${this.invitationName}</title>
           <script src="https://cdn.tailwindcss.com"></script>
           <style>
-            /* Reset body margins for printing */
             body { margin: 0; padding: 20px; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
             @media print {
               body { padding: 0; }
@@ -97,7 +109,6 @@ export class QrCodeDisplay implements OnInit {
               <span class="block text-xs uppercase tracking-[0.3em] text-slate-400 mb-2">You're Invited</span>
               <h2 class="text-3xl font-serif font-medium italic text-slate-900 mb-4">${this.invitationName}</h2>
 
-              <!-- Included Guests List on Print -->
               <div class="text-sm text-slate-600 font-sans border-t border-b border-slate-100 py-3 mb-2">
                 <p class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Admitting:</p>
                 <ul class="list-none p-0 m-0">
@@ -123,11 +134,10 @@ export class QrCodeDisplay implements OnInit {
           </div>
 
           <script>
-            // Wait for images to load before printing
             window.onload = function() {
               setTimeout(function() {
                 window.print();
-                window.close(); // Automatically close the popup after printing
+                window.close();
               }, 250);
             }
           </script>
@@ -135,7 +145,6 @@ export class QrCodeDisplay implements OnInit {
       </html>
     `;
 
-    // 3. Write the content and print
     printWindow.document.open();
     printWindow.document.write(htmlContent);
     printWindow.document.close();

@@ -2,6 +2,7 @@ import { Component, inject, Signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { Guest } from '../../../../shared/models/guest.model';
+import { Invitation } from '../../../../shared/models/invitation.model';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
@@ -38,6 +39,7 @@ export class StatsComponent {
   };
 
   allGuests: Signal<Guest[]> = toSignal(this.firestoreService.getAllGuests(), { initialValue: [] });
+  allInvitations: Signal<Invitation[]> = toSignal(this.firestoreService.getInvitations(), { initialValue: [] });
 
   stats = computed<StatCard[]>(() => {
     const guests = this.allGuests();
@@ -78,7 +80,6 @@ export class StatsComponent {
     this.displayModal = true;
   }
 
-  // --- NEW: Attending / Declined / Pending Chart ---
   attendanceChartData = computed(() => {
       const guests = this.allGuests();
       const counts = {
@@ -87,7 +88,6 @@ export class StatsComponent {
           Pending: guests.filter(g => g.isAttending === null).length
       };
 
-      // Define standard colors to use for the pie chart sections
       const backgroundColor = [
           '#10b981', // green for attending
           '#ef4444', // red for declined
@@ -151,6 +151,10 @@ export class StatsComponent {
       labels: labels,
       datasets: [{ data: data }]
     };
+  });
+
+  invitationsWithMessages = computed(() => {
+    return this.allInvitations().filter(inv => inv.message && inv.message.trim().length > 0);
   });
 
   exportRsvpData(): void {

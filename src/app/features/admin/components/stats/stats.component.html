@@ -159,6 +159,29 @@
         </div>
     </div>
   </div>
+
+  <!-- Guest Messages Table -->
+  <div class="mt-8">
+    <h3 class="text-lg font-serif text-slate-800 mb-4 italic text-center">Guest Messages</h3>
+    @if(invitationsWithMessages().length > 0) {
+      <p-table [value]="invitationsWithMessages()" class="editorial-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="w-1/3">From Group</th>
+            <th>Message</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-invitation>
+          <tr>
+            <td class="font-serif italic text-slate-700">{{ invitation.displayName }}</td>
+            <td class="text-slate-600 font-light leading-relaxed">{{ invitation.message }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <p class="text-center text-slate-400 italic py-8">No messages from guests yet.</p>
+    }
+  </div>
 </div>
 
 <!-- Modal for viewing guest lists -->
