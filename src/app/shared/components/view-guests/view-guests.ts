@@ -9,12 +9,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 // PrimeNG Modules
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
 import { GuestFormComponent } from '../guest-form/guest-form';
-import { ConfirmDialog } from 'primeng/confirmdialog';
-import { SelectModule } from 'primeng/select'; // Correct import for PrimeNG v18+
+import { SelectModule } from 'primeng/select';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -24,14 +22,11 @@ import { FormsModule } from '@angular/forms';
     CommonModule,
     TableModule,
     ButtonModule,
-    ToastModule,
     TooltipModule,
     TagModule,
-    ConfirmDialog,
-    SelectModule, // Update in imports array
+    SelectModule,
     FormsModule
   ],
-  providers: [MessageService, ConfirmationService, DialogService],
   templateUrl: './view-guests.html',
 })
 export class ViewGuests implements OnInit {

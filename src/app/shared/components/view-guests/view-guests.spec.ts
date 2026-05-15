@@ -45,17 +45,8 @@ describe('ViewGuests', () => {
     firestoreSpy.assignGuestsToInvitation.and.returnValue(Promise.resolve());
     firestoreSpy.unassignGuest.and.returnValue(Promise.resolve());
 
-    // Template includes <p-toast> and <p-confirmDialog>, which subscribe
-    // to internal subjects on MessageService / ConfirmationService.
-    // Use real instances and spy on the methods we care about.
-    const realMessage = new MessageService();
-    const realConfirm = new ConfirmationService();
-    spyOn(realMessage, 'add');
-    spyOn(realConfirm, 'confirm');
-    messageSpy = realMessage as jasmine.SpyObj<MessageService>;
-    confirmSpy = realConfirm as jasmine.SpyObj<ConfirmationService>;
-
-    // DialogService is not used in the template; a barebones spy is fine.
+    messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
+    confirmSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
     dialogServiceSpy = jasmine.createSpyObj<DialogService>('DialogService', ['open']);
     dialogRef = jasmine.createSpyObj<DynamicDialogRef>('DynamicDialogRef', ['close']);
     config = { data: { invitationId: 'inv-1' } } as DynamicDialogConfig;
@@ -65,19 +56,12 @@ describe('ViewGuests', () => {
       providers: [
         { provide: FirestoreService, useValue: firestoreSpy },
         { provide: DynamicDialogRef, useValue: dialogRef },
-        { provide: DynamicDialogConfig, useValue: config }
+        { provide: DynamicDialogConfig, useValue: config },
+        { provide: MessageService, useValue: messageSpy },
+        { provide: ConfirmationService, useValue: confirmSpy },
+        { provide: DialogService, useValue: dialogServiceSpy }
       ]
-    })
-      .overrideComponent(ViewGuests, {
-        set: {
-          providers: [
-            { provide: MessageService, useValue: realMessage },
-            { provide: ConfirmationService, useValue: realConfirm },
-            { provide: DialogService, useValue: dialogServiceSpy }
-          ]
-        }
-      })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(ViewGuests);
     component = fixture.componentInstance;

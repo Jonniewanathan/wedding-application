@@ -16,7 +16,6 @@ import { MessageService } from 'primeng/api';
   selector: 'app-qr-code-display',
   standalone: true,
   imports: [CommonModule, ButtonModule, InputTextModule, Tooltip],
-  providers: [MessageService],
   templateUrl: './qr-code-display.html',
   styleUrls: ['./qr-code-display.scss']
 })

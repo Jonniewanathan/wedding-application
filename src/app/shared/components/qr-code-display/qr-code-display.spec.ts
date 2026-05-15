@@ -58,12 +58,9 @@ describe('QrCodeDisplay', () => {
         { provide: DynamicDialogRef, useValue: dialogRef },
         { provide: DynamicDialogConfig, useValue: config },
         { provide: LanguageService, useValue: languageStub },
-        { provide: TranslateService, useValue: translateStub() }
+        { provide: TranslateService, useValue: translateStub() },
+        { provide: MessageService, useValue: messageSpy }
       ]
-    }).overrideComponent(QrCodeDisplay, {
-      set: {
-        providers: [{ provide: MessageService, useValue: messageSpy }]
-      }
     });
 
     fixture = TestBed.createComponent(QrCodeDisplay);
