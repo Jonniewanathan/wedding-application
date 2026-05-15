@@ -35,6 +35,16 @@ export class QrCodeDisplay implements OnInit {
   // Create a signal for the current language
   currentLang = signal(this.languageService.currentLang);
 
+  /**
+   * wa.me deep link with the generated message pre-filled. Opens
+   * WhatsApp Web on desktop or the WhatsApp app on phone; the user
+   * picks the recipient from their own contacts. No phone number is
+   * encoded because we don't currently capture one per invitation.
+   */
+  whatsappUrl = computed(
+    () => `https://wa.me/?text=${encodeURIComponent(this.generatedMessage())}`
+  );
+
   // Make the message a computed signal that reacts to language changes
   generatedMessage = computed(() => {
     if (this.currentLang() === 'es') {

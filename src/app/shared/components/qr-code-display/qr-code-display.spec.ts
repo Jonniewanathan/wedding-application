@@ -117,6 +117,18 @@ describe('QrCodeDisplay', () => {
     expect(msg).toContain('Bob Smith');
   });
 
+  it('should build a wa.me URL with the generated message URL-encoded', () => {
+    setup({
+      url: 'https://example.com/invite/x',
+      invitationName: 'The Smiths',
+      guests: []
+    });
+    const url = component.whatsappUrl();
+    expect(url.startsWith('https://wa.me/?text=')).toBeTrue();
+    const decoded = decodeURIComponent(url.split('?text=')[1]);
+    expect(decoded).toBe(component.generatedMessage());
+  });
+
   it('should close the dialog when closeDialog is called', () => {
     setup();
     component.closeDialog();

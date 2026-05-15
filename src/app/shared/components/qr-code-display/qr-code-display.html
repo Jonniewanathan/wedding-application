@@ -9,11 +9,18 @@
   <div class="w-full max-w-lg">
     <div class="flex flex-col md:grid md:grid-cols-2 gap-4 mb-6">
 
-      <!-- Copy Message Box -->
+      <!-- Send / Copy Message Box -->
       <div class="bg-slate-50 border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
         <i class="pi pi-whatsapp text-2xl text-slate-400 mb-2"></i>
         <h3 class="text-xs uppercase tracking-widest text-slate-700 font-bold mb-1">Pre-Written Message</h3>
-        <p class="text-[10px] text-slate-500 mb-4">A polite message ready to paste into WhatsApp, iMessage, or Email.</p>
+        <p class="text-[10px] text-slate-500 mb-4">Open WhatsApp with the message ready, or copy it for iMessage / Email.</p>
+        <a
+          [href]="whatsappUrl()"
+          target="_blank"
+          rel="noopener"
+          class="w-full bg-[#25d366] text-white py-3 md:py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-[#1ebe5d] transition-colors inline-flex items-center justify-center mb-2">
+          <i class="pi pi-whatsapp mr-2"></i> Send via WhatsApp
+        </a>
         <button
           (click)="copyMessage()"
           class="w-full bg-slate-900 text-white py-3 md:py-2 text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors">
