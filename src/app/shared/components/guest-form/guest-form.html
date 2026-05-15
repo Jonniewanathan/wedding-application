@@ -92,7 +92,7 @@
             @for(opt of dietaryOptions; track opt.value) {
               <label class="flex items-center cursor-pointer p-1 -m-1 rounded hover:bg-slate-50 transition-colors">
                 <p-checkbox [value]="opt.value" formControlName="dietaryPreferences" class="mr-2"></p-checkbox>
-                <span class="text-sm">{{ opt.label }}</span>
+                <span class="text-sm">{{ opt.labelKey | translate }}</span>
               </label>
             }
           </div>
@@ -105,7 +105,7 @@
             @for(opt of allergyOptions; track opt.value) {
               <label class="flex items-center cursor-pointer p-1 -m-1 rounded hover:bg-slate-50 transition-colors">
                 <p-checkbox [value]="opt.value" formControlName="allergies" class="mr-2"></p-checkbox>
-                <span class="text-sm">{{ opt.label }}</span>
+                <span class="text-sm">{{ opt.labelKey | translate }}</span>
               </label>
             }
           </div>

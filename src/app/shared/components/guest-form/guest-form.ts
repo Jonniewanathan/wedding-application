@@ -1,9 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { Guest } from '../../models/guest.model';
+import { ALLERGY_OPTIONS, DIETARY_OPTIONS } from '../../models/dietary-options';
 
 // PrimeNG Modules
 import { InputTextModule } from 'primeng/inputtext';
@@ -19,6 +21,7 @@ import { SelectModule } from 'primeng/select';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TranslateModule,
     InputTextModule,
     TextareaModule,
     ButtonModule,
@@ -40,21 +43,10 @@ export class GuestForm implements OnInit {
   isEditMode = false;
   isLoading = false;
 
-  // Options matching the public RSVP page
-  dietaryOptions = [
-    { label: 'Vegetarian', value: 'Vegetarian' },
-    { label: 'Vegan', value: 'Vegan' },
-    { label: 'Pescatarian', value: 'Pescatarian' },
-    { label: 'Children\'s Meal', value: 'Children\'s Meal' },
-  ];
-
-  allergyOptions = [
-    { label: 'Nuts', value: 'Nuts' },
-    { label: 'Shellfish', value: 'Shellfish' },
-    { label: 'Eggs', value: 'Eggs' },
-    { label: 'Gluten', value: 'Gluten Free' },
-    { label: 'Dairy', value: 'Dairy Free' }
-  ];
+  // Sourced from the shared list so admin and RSVP forms agree on what
+  // values can appear in dietaryPreferences[] / allergies[].
+  readonly dietaryOptions = DIETARY_OPTIONS;
+  readonly allergyOptions = ALLERGY_OPTIONS;
 
   busPickupOptions = [
     { label: 'Punta Umbría', value: 'Punta Umbría' },

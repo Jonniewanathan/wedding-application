@@ -6,6 +6,7 @@ import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { GuestSessionService } from '../../../core/services/auth/guest-session/guest-session';
 import { Invitation } from '../../models/invitation.model';
 import { Guest } from '../../models/guest.model';
+import { ALLERGY_OPTIONS, DIETARY_OPTIONS } from '../../models/dietary-options';
 import { take } from 'rxjs/operators';
 
 // PrimeNG
@@ -50,21 +51,10 @@ export class Rsvp implements OnInit {
   isLoading = true;
   submitted = false;
 
-  // Options for the chips
-  dietaryOptions = [
-    { labelKey: 'RSVP.DIETARY_VEGETARIAN', value: 'Vegetarian' },
-    { labelKey: 'RSVP.DIETARY_VEGAN', value: 'Vegan' },
-    { labelKey: 'RSVP.DIETARY_PESCATARIAN', value: 'Pescatarian' },
-    { labelKey: 'RSVP.DIETARY_CHILDRENS', value: 'Children\'s Meal' },
-  ];
-
-  allergyOptions = [
-    { labelKey: 'RSVP.ALLERGY_NUTS', value: 'Nuts' },
-    { labelKey: 'RSVP.ALLERGY_SHELLFISH', value: 'Shellfish' },
-    { labelKey: 'RSVP.ALLERGY_EGGS', value: 'Eggs' },
-    { labelKey: 'RSVP.ALLERGY_GLUTEN_FREE', value: 'Gluten Free' },
-    { labelKey: 'RSVP.ALLERGY_DAIRY_FREE', value: 'Dairy Free' }
-  ];
+  // Sourced from the shared list so admin and RSVP forms agree on what
+  // values can appear in dietaryPreferences[] / allergies[].
+  readonly dietaryOptions = DIETARY_OPTIONS;
+  readonly allergyOptions = ALLERGY_OPTIONS;
 
   // Options for bus pickup
   busPickupOptions = [
