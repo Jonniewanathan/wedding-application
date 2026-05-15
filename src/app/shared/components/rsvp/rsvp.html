@@ -30,7 +30,7 @@
       <form [formGroup]="rsvpForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-12">
 
         <div formArrayName="guests" class="flex flex-col gap-12">
-          @for (control of guestControls; track $index) {
+          @for (control of guestControls; track $index; let guestIdx = $index) {
             <div [formGroupName]="$index" class="border-b border-slate-100 pb-12 animate-slide-up" [style.animation-delay]="$index * 100 + 'ms'">
 
               <div class="flex justify-between items-baseline mb-8">
@@ -102,12 +102,12 @@
                     <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.DIETARY_PREFS' | translate }}</p>
                     <div class="flex flex-wrap gap-x-6 gap-y-4">
                       @for (opt of dietaryOptions; track opt.value) {
-                        <label for="{{opt.labelKey + '_' + $index}}" class="flex items-center cursor-pointer">
+                        <label for="{{opt.labelKey + '_' + guestIdx + '_' + $index}}" class="flex items-center cursor-pointer">
                           <p-checkbox
-                            name="dietary"
+                            name="dietary_{{guestIdx}}"
                             [value]="opt.value"
                             formControlName="dietaryPreferences"
-                            inputId="{{opt.labelKey + '_' + $index}}"
+                            inputId="{{opt.labelKey + '_' + guestIdx + '_' + $index}}"
                             class="chip-checkbox mr-2">
                           </p-checkbox>
                           <span class="text-sm">{{ opt.labelKey | translate }}</span>
@@ -121,11 +121,11 @@
                     <p class="text-xs uppercase tracking-widest text-slate-400 mb-3">{{ 'RSVP.ALLERGIES' | translate }}</p>
                     <div class="flex flex-wrap gap-x-6 gap-y-4">
                       @for (opt of allergyOptions; track opt.value) {
-                        <label for="{{opt.labelKey + '_' + $index}}" class="flex items-center cursor-pointer">
+                        <label for="{{opt.labelKey + '_' + guestIdx + '_' + $index}}" class="flex items-center cursor-pointer">
                           <p-checkbox
-                            name="allergies"
+                            name="allergies_{{guestIdx}}"
                             [value]="opt.value"
-                            inputId="{{opt.labelKey + '_' + $index}}"
+                            inputId="{{opt.labelKey + '_' + guestIdx + '_' + $index}}"
                             formControlName="allergies"
                             class="chip-checkbox mr-2">
                           </p-checkbox>

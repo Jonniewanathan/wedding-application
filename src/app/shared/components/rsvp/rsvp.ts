@@ -131,9 +131,14 @@ export class Rsvp implements OnInit {
       needsBus: [guest.needsBus ?? null],
       busPickupLocation: [guest.busPickupLocation ?? null],
 
-      // Chips (Arrays)
-      dietaryPreferences: [guest.dietaryPreferences || []],
-      allergies: [guest.allergies || []],
+      // Chips (Arrays) — clone to ensure each guest's FormControl owns its
+      // own array reference. Otherwise a mutating consumer (e.g. an
+      // accidental shared reference from Firestore cache) would cause one
+      // guest's selection to leak into another's. The real bug that
+      // triggered this defence was duplicate <label for="..."> ids in the
+      // template; the clone is belt-and-braces.
+      dietaryPreferences: [[...(guest.dietaryPreferences || [])]],
+      allergies: [[...(guest.allergies || [])]],
       dietaryNotes: [guest.dietaryNotes || '', [Validators.maxLength(200)]]
     });
 
