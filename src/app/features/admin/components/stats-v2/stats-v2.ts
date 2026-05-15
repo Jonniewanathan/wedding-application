@@ -434,7 +434,17 @@ export class StatsV2 {
   });
 
   readonly invitationsWithMessages = computed(() =>
-    this.allInvitations().filter(inv => inv.message && inv.message.trim().length > 0)
+    this.allInvitations()
+      .filter(inv => inv.message && inv.message.trim().length > 0)
+      .sort((a, b) => {
+        // Newest first. Falls back to createdAt if updatedAt is missing
+        // (which only happens for session-restored data, but be defensive).
+        // Caveat: updatedAt is also touched by admin renames and outreach
+        // chip toggles, so this isn't a pure "message-submitted-at" sort.
+        const aTime = this.tsToMs(a.updatedAt) ?? this.tsToMs(a.createdAt) ?? 0;
+        const bTime = this.tsToMs(b.updatedAt) ?? this.tsToMs(b.createdAt) ?? 0;
+        return bTime - aTime;
+      })
   );
 
   // -------------------------------------------------------------------------

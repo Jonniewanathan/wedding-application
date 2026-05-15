@@ -1,8 +1,22 @@
 import { Component, inject, Signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Timestamp } from '@angular/fire/firestore';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { Guest } from '../../../../shared/models/guest.model';
 import { Invitation } from '../../../../shared/models/invitation.model';
+
+/**
+ * Convert a Firestore Timestamp (or its plain {seconds, nanoseconds}
+ * round-tripped equivalent) to milliseconds. Returns null when the
+ * value is missing.
+ */
+function tsToMs(value: Timestamp | null | undefined): number | null {
+  if (!value) return null;
+  const maybe = value as { toMillis?: () => number; seconds?: number };
+  if (typeof maybe.toMillis === 'function') return maybe.toMillis();
+  if (typeof maybe.seconds === 'number') return maybe.seconds * 1000;
+  return null;
+}
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
@@ -154,7 +168,17 @@ export class StatsComponent {
   });
 
   invitationsWithMessages = computed(() => {
-    return this.allInvitations().filter(inv => inv.message && inv.message.trim().length > 0);
+    return this.allInvitations()
+      .filter(inv => inv.message && inv.message.trim().length > 0)
+      .sort((a, b) => {
+        // Newest first by updatedAt, falling back to createdAt. Caveat:
+        // updatedAt is touched by admin renames and outreach toggles, so
+        // this isn't a pure "message-submitted" sort — best signal we
+        // have without adding a dedicated messageSubmittedAt field.
+        const aTime = tsToMs(a.updatedAt) ?? tsToMs(a.createdAt) ?? 0;
+        const bTime = tsToMs(b.updatedAt) ?? tsToMs(b.createdAt) ?? 0;
+        return bTime - aTime;
+      });
   });
 
   exportRsvpData(): void {

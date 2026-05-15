@@ -212,6 +212,32 @@ describe('StatsV2', () => {
       expect(component.busTotalSeats()).toBe(2);
     });
 
+    it('should sort guest messages newest-first by updatedAt', () => {
+      build([], [
+        makeInv({
+          id: 'older',
+          displayName: 'Older',
+          message: 'first',
+          updatedAt: ts(60 * 60 * 24 * 10) // 10 days ago
+        }),
+        makeInv({
+          id: 'newest',
+          displayName: 'Newest',
+          message: 'latest',
+          updatedAt: ts(60 * 60) // 1h ago
+        }),
+        makeInv({
+          id: 'middle',
+          displayName: 'Middle',
+          message: 'mid',
+          updatedAt: ts(60 * 60 * 24 * 3) // 3 days ago
+        }),
+        makeInv({ id: 'no-msg', displayName: 'No message' })
+      ]);
+      const ordered = component.invitationsWithMessages().map(inv => inv.id);
+      expect(ordered).toEqual(['newest', 'middle', 'older']);
+    });
+
     it('should rank countries by attending guest count', () => {
       build(
         [
