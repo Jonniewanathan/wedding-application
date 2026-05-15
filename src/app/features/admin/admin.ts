@@ -10,6 +10,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { GuestPool } from './components/guest-pool/guest-pool.component';
 import { InvitationGroups } from './components/invitation-groups/invitation-groups.component';
 import { StatsComponent } from './components/stats/stats.component';
+import { StatsV2 } from './components/stats-v2/stats-v2';
 
 // PrimeNG Modules
 import { ToastModule } from 'primeng/toast';
@@ -20,7 +21,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPool, InvitationGroups, StatsComponent
+    GuestPool, InvitationGroups, StatsComponent, StatsV2
   ],
   providers: [
     DialogService, ConfirmationService, MessageService, AdminStateService
