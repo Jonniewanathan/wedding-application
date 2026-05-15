@@ -121,86 +121,67 @@ describe('GuestPool', () => {
     expect(last.severity).toBe('success');
   });
 
-  describe('handleCsvUpload', () => {
-    function makeUploadEvent(csv: string): Event {
-      const file = new File([csv], 'guests.csv', { type: 'text/csv' });
+  describe('CSV upload — preview stage', () => {
+    function makeUploadEvent(csv: string, name = 'guests.csv'): Event {
+      const file = new File([csv], name, { type: 'text/csv' });
       const input = { files: [file], value: 'something' };
       return { target: input } as unknown as Event;
     }
 
+    it('should not write to Firestore on upload — only preview', async () => {
+      const csv = 'FirstName,LastName\nAlice,Smith';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      expect(firestoreSpy.addGuestsBatch).not.toHaveBeenCalled();
+      expect(component.csvPreviewOpen).toBeTrue();
+    });
+
     it('should do nothing when no file is selected', async () => {
       const event = { target: { files: null } } as unknown as Event;
       await component.handleCsvUpload(event);
-      expect(firestoreSpy.addGuestsBatch).not.toHaveBeenCalled();
+      expect(component.csvPreviewOpen).toBeFalse();
     });
 
-    it('should parse a simple CSV and call addGuestsBatch', async () => {
+    it('should populate the preview with valid parsed rows', async () => {
       const csv = 'FirstName,LastName,Country,Notes\nAlice,Smith,UK,VIP\nBob,Jones,IE,';
       await component.handleCsvUpload(makeUploadEvent(csv));
-      expect(firestoreSpy.addGuestsBatch).toHaveBeenCalled();
-      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
-      expect(rows.length).toBe(2);
-      expect(rows[0].firstName).toBe('Alice');
-      expect(rows[0].lastName).toBe('Smith');
-      expect(rows[0].countryOfResidence).toBe('UK');
-      expect(rows[0].notes).toBe('VIP');
+      expect(component.csvPreviewValid.length).toBe(2);
+      expect(component.csvPreviewValid[0].firstName).toBe('Alice');
+      expect(component.csvPreviewValid[0].countryOfResidence).toBe('UK');
+      expect(component.csvPreviewValid[0].notes).toBe('VIP');
     });
 
-    it('should correctly parse quoted fields containing commas', async () => {
+    it('should split skipped rows into a separate list with a reason', async () => {
+      const csv = 'FirstName,LastName,Country,Notes\nAlice,Smith,UK,\n,Jones,IE,\nBob,,US,';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      expect(component.csvPreviewValid.length).toBe(1);
+      expect(component.csvPreviewSkipped.length).toBe(2);
+      expect(component.csvPreviewSkipped[0].reason).toContain('Missing');
+    });
+
+    it('should handle quoted fields containing commas', async () => {
       const csv = 'FirstName,LastName,Country,Notes\nAlice,Smith,UK,"Loves cake, wine, and dancing"';
       await component.handleCsvUpload(makeUploadEvent(csv));
-      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
-      expect(rows.length).toBe(1);
-      expect(rows[0].notes).toBe('Loves cake, wine, and dancing');
+      expect(component.csvPreviewValid[0].notes).toBe('Loves cake, wine, and dancing');
     });
 
     it('should tolerate whitespace in headers', async () => {
       const csv = ' FirstName , LastName ,Country,Notes\nAlice,Smith,UK,note';
       await component.handleCsvUpload(makeUploadEvent(csv));
-      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
-      expect(rows.length).toBe(1);
-      expect(rows[0].firstName).toBe('Alice');
-      expect(rows[0].lastName).toBe('Smith');
-    });
-
-    it('should filter out rows missing FirstName or LastName', async () => {
-      const csv = 'FirstName,LastName,Country,Notes\nAlice,Smith,UK,\n,Jones,IE,\nBob,,US,';
-      await component.handleCsvUpload(makeUploadEvent(csv));
-      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
-      expect(rows.length).toBe(1);
-      expect(rows[0].firstName).toBe('Alice');
+      expect(component.csvPreviewValid.length).toBe(1);
+      expect(component.csvPreviewValid[0].firstName).toBe('Alice');
     });
 
     it('should default optional fields to empty strings when omitted', async () => {
       const csv = 'FirstName,LastName\nAlice,Smith';
       await component.handleCsvUpload(makeUploadEvent(csv));
-      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
-      expect(rows[0].countryOfResidence).toBe('');
-      expect(rows[0].notes).toBe('');
+      expect(component.csvPreviewValid[0].countryOfResidence).toBe('');
+      expect(component.csvPreviewValid[0].notes).toBe('');
     });
 
-    it('should add a success toast when guests are imported', async () => {
+    it('should capture the source file name for display', async () => {
       const csv = 'FirstName,LastName\nAlice,Smith';
-      await component.handleCsvUpload(makeUploadEvent(csv));
-      const last = messageSpy.add.calls.mostRecent().args[0] as any;
-      expect(last.severity).toBe('success');
-      expect(last.detail).toContain('1');
-    });
-
-    it('should add a warn toast when no valid rows are present', async () => {
-      const csv = 'FirstName,LastName\n,';
-      await component.handleCsvUpload(makeUploadEvent(csv));
-      expect(firestoreSpy.addGuestsBatch).not.toHaveBeenCalled();
-      const last = messageSpy.add.calls.mostRecent().args[0] as any;
-      expect(last.severity).toBe('warn');
-    });
-
-    it('should add an error toast when the firestore batch write rejects', async () => {
-      firestoreSpy.addGuestsBatch.and.returnValue(Promise.reject(new Error('boom')));
-      const csv = 'FirstName,LastName\nAlice,Smith';
-      await component.handleCsvUpload(makeUploadEvent(csv));
-      const last = messageSpy.add.calls.mostRecent().args[0] as any;
-      expect(last.severity).toBe('error');
+      await component.handleCsvUpload(makeUploadEvent(csv, 'my-guests-2026.csv'));
+      expect(component.csvPreviewFileName).toBe('my-guests-2026.csv');
     });
 
     it('should reset the input value after handling', async () => {
@@ -209,6 +190,72 @@ describe('GuestPool', () => {
       await component.handleCsvUpload(event);
       const input = (event.target as any) as { value: string };
       expect(input.value).toBe('');
+    });
+  });
+
+  describe('CSV upload — confirm stage', () => {
+    function makeUploadEvent(csv: string): Event {
+      const file = new File([csv], 'guests.csv', { type: 'text/csv' });
+      const input = { files: [file], value: 'something' };
+      return { target: input } as unknown as Event;
+    }
+
+    it('should call addGuestsBatch with the preview-valid rows on confirm', async () => {
+      const csv = 'FirstName,LastName\nAlice,Smith\nBob,Jones';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      await component.confirmCsvImport();
+      expect(firestoreSpy.addGuestsBatch).toHaveBeenCalled();
+      const rows = firestoreSpy.addGuestsBatch.calls.mostRecent().args[0];
+      expect(rows.length).toBe(2);
+    });
+
+    it('should add a success toast and close the preview after a successful import', async () => {
+      const csv = 'FirstName,LastName\nAlice,Smith';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      await component.confirmCsvImport();
+      const last = messageSpy.add.calls.mostRecent().args[0] as any;
+      expect(last.severity).toBe('success');
+      expect(component.csvPreviewOpen).toBeFalse();
+      expect(component.csvPreviewValid.length).toBe(0);
+    });
+
+    it('should add an error toast when the firestore batch write rejects', async () => {
+      firestoreSpy.addGuestsBatch.and.returnValue(Promise.reject(new Error('boom')));
+      const csv = 'FirstName,LastName\nAlice,Smith';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      await component.confirmCsvImport();
+      const last = messageSpy.add.calls.mostRecent().args[0] as any;
+      expect(last.severity).toBe('error');
+    });
+
+    it('should not write anything and warn when there are no valid rows', async () => {
+      const csv = 'FirstName,LastName\n,';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      await component.confirmCsvImport();
+      expect(firestoreSpy.addGuestsBatch).not.toHaveBeenCalled();
+      const last = messageSpy.add.calls.mostRecent().args[0] as any;
+      expect(last.severity).toBe('warn');
+    });
+
+    it('should ignore concurrent confirms while a write is in flight', async () => {
+      let resolve!: () => void;
+      firestoreSpy.addGuestsBatch.and.returnValue(new Promise<void>(r => { resolve = r; }));
+      await component.handleCsvUpload(makeUploadEvent('FirstName,LastName\nAlice,Smith'));
+      const first = component.confirmCsvImport();
+      const second = component.confirmCsvImport();
+      resolve();
+      await first;
+      await second;
+      expect(firestoreSpy.addGuestsBatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not write to Firestore when the import is cancelled', async () => {
+      const csv = 'FirstName,LastName\nAlice,Smith';
+      await component.handleCsvUpload(makeUploadEvent(csv));
+      component.cancelCsvImport();
+      expect(firestoreSpy.addGuestsBatch).not.toHaveBeenCalled();
+      expect(component.csvPreviewOpen).toBeFalse();
+      expect(component.csvPreviewValid.length).toBe(0);
     });
   });
 });

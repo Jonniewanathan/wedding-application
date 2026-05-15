@@ -104,3 +104,106 @@
   </div>
 
 </div>
+
+<!-- ─────────── CSV Import Preview Dialog ─────────── -->
+<p-dialog
+  [(visible)]="csvPreviewOpen"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  header="Review CSV import"
+  [style]="{width: '90vw', maxWidth: '640px'}"
+  styleClass="editorial-dialog">
+
+  <div class="p-2 md:p-4 flex flex-col gap-5">
+    <div>
+      <span class="block text-[10px] uppercase tracking-widest text-slate-400 mb-1">File</span>
+      <span class="text-sm text-slate-700 font-mono break-all">{{ csvPreviewFileName }}</span>
+    </div>
+
+    <!-- Summary counts -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-slate-50 border border-slate-100 p-4 text-center">
+        <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Will import</span>
+        <span class="text-3xl font-serif text-slate-800">{{ csvPreviewValid.length }}</span>
+      </div>
+      <div
+        class="border p-4 text-center"
+        [class.bg-amber-50]="csvPreviewSkipped.length > 0"
+        [class.border-amber-100]="csvPreviewSkipped.length > 0"
+        [class.bg-slate-50]="csvPreviewSkipped.length === 0"
+        [class.border-slate-100]="csvPreviewSkipped.length === 0">
+        <span class="text-[10px] uppercase tracking-widest block mb-1"
+          [class.text-amber-700]="csvPreviewSkipped.length > 0"
+          [class.text-slate-400]="csvPreviewSkipped.length === 0">
+          Skipped
+        </span>
+        <span class="text-3xl font-serif text-slate-800">{{ csvPreviewSkipped.length }}</span>
+      </div>
+    </div>
+
+    <!-- Valid rows preview (collapsible-feel: just a max-height scroll) -->
+    @if (csvPreviewValid.length > 0) {
+      <details class="bg-white border border-slate-100">
+        <summary class="cursor-pointer px-4 py-2 text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-colors">
+          Preview rows to import ({{ csvPreviewValid.length }})
+        </summary>
+        <ul class="list-none m-0 p-0 max-h-48 overflow-y-auto divide-y divide-slate-100">
+          @for (row of csvPreviewValid; track $index) {
+            <li class="px-4 py-2 text-sm text-slate-700 flex flex-col md:flex-row md:justify-between md:items-baseline gap-1">
+              <span class="font-medium">{{ row.firstName }} {{ row.lastName }}</span>
+              <span class="text-[10px] text-slate-400">
+                @if (row.countryOfResidence) { {{ row.countryOfResidence }} }
+                @if (row.notes) { · {{ row.notes }} }
+              </span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+
+    <!-- Skipped rows -->
+    @if (csvPreviewSkipped.length > 0) {
+      <details class="bg-amber-50 border border-amber-100" open>
+        <summary class="cursor-pointer px-4 py-2 text-[10px] uppercase tracking-widest text-amber-800 hover:bg-amber-100 transition-colors">
+          Rows being skipped ({{ csvPreviewSkipped.length }})
+        </summary>
+        <ul class="list-none m-0 p-0 max-h-32 overflow-y-auto divide-y divide-amber-200/40">
+          @for (row of csvPreviewSkipped; track $index) {
+            <li class="px-4 py-2 text-xs text-amber-900 flex justify-between gap-3">
+              <span class="font-mono truncate">{{ row.raw.FirstName || '(no first name)' }} {{ row.raw.LastName || '(no last name)' }}</span>
+              <span class="text-amber-700 italic shrink-0">{{ row.reason }}</span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+
+    <p class="text-xs text-slate-400 font-light">
+      Cancel does nothing. Confirm writes the {{ csvPreviewValid.length }} valid row{{ csvPreviewValid.length === 1 ? '' : 's' }} to the guest pool — skipped rows aren't touched and won't be created.
+    </p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <button
+        type="button"
+        (click)="cancelCsvImport()"
+        class="border border-slate-200 text-slate-600 px-5 py-2 text-xs uppercase tracking-widest hover:border-slate-400 transition-colors">
+        Cancel
+      </button>
+      <button
+        type="button"
+        (click)="confirmCsvImport()"
+        [disabled]="csvPreviewValid.length === 0 || csvImportInProgress"
+        class="bg-slate-900 text-white px-5 py-2 text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        @if (csvImportInProgress) {
+          Importing…
+        } @else {
+          Import {{ csvPreviewValid.length }} guest{{ csvPreviewValid.length === 1 ? '' : 's' }}
+        }
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

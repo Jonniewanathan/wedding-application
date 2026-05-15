@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Table, TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Observable } from 'rxjs';
@@ -23,10 +24,15 @@ interface CsvGuestRow {
   Notes?: string;   // Optional in CSV
 }
 
+interface CsvSkippedRow {
+  reason: string;
+  raw: CsvGuestRow;
+}
+
 @Component({
   selector: 'app-guest-pool',
   standalone: true,
-  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, InputTextModule, InputGroupModule, InputGroupAddonModule],
+  imports: [CommonModule, TableModule, ButtonModule, TooltipModule, DialogModule, InputTextModule, InputGroupModule, InputGroupAddonModule],
   templateUrl: './guest-pool.component.html',
 })
 export class GuestPool implements OnInit {
@@ -38,6 +44,15 @@ export class GuestPool implements OnInit {
 
   unassignedGuests$!: Observable<Guest[]>;
   dialogRef: DynamicDialogRef | null = null;
+
+  // CSV preview state — populated by handleCsvUpload, consumed by the
+  // preview dialog in the template, written through to Firestore only
+  // when the admin confirms.
+  csvPreviewOpen = false;
+  csvPreviewFileName = '';
+  csvPreviewValid: Partial<Guest>[] = [];
+  csvPreviewSkipped: CsvSkippedRow[] = [];
+  csvImportInProgress = false;
 
   ngOnInit(): void {
     this.unassignedGuests$ = this.firestoreService.getUnassignedGuests();
@@ -56,12 +71,15 @@ export class GuestPool implements OnInit {
     table.filterGlobal(value, 'contains');
   }
 
+  /**
+   * Parses the uploaded CSV and opens the preview dialog. The actual
+   * write to Firestore happens only after the admin confirms via
+   * confirmCsvImport(). Reset the input here so re-uploading the same
+   * file later is possible.
+   */
   async handleCsvUpload(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-
-    if (!input.files || input.files.length === 0) {
-      return;
-    }
+    if (!input.files || input.files.length === 0) return;
 
     const file: File = input.files[0];
     const text: string = await file.text();
@@ -76,36 +94,65 @@ export class GuestPool implements OnInit {
       console.warn('CSV parse warnings', parseResult.errors);
     }
 
-    const newGuests: Partial<Guest>[] = (parseResult.data || [])
-      .filter(row => row.FirstName && row.LastName)
-      .map(row => ({
-        firstName: row.FirstName.trim(),
-        lastName: row.LastName.trim(),
+    const valid: Partial<Guest>[] = [];
+    const skipped: CsvSkippedRow[] = [];
+
+    for (const row of parseResult.data || []) {
+      const firstName = row.FirstName?.trim() || '';
+      const lastName = row.LastName?.trim() || '';
+      if (!firstName || !lastName) {
+        skipped.push({ reason: 'Missing first or last name', raw: row });
+        continue;
+      }
+      valid.push({
+        firstName,
+        lastName,
         countryOfResidence: row.Country?.trim() || '',
         notes: row.Notes?.trim() || ''
-      }));
-
-    if (newGuests.length > 0) {
-      try {
-        await this.firestoreService.addGuestsBatch(newGuests);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Import Successful',
-          detail: `Successfully imported ${newGuests.length} guests.`
-        });
-      } catch (err) {
-        this.handleError(err, 'CSV Import Failed');
-      }
-    } else {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'No Data',
-        detail: 'No valid guests found in CSV. Check headers (FirstName, LastName, Country, Notes).'
       });
     }
 
-    // Reset input
+    this.csvPreviewFileName = file.name;
+    this.csvPreviewValid = valid;
+    this.csvPreviewSkipped = skipped;
+    this.csvPreviewOpen = true;
+
+    // Reset the input so the same file can be re-uploaded later.
     input.value = '';
+  }
+
+  async confirmCsvImport(): Promise<void> {
+    if (this.csvImportInProgress) return;
+    if (this.csvPreviewValid.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'No data',
+        detail: 'CSV had no valid rows to import.'
+      });
+      this.cancelCsvImport();
+      return;
+    }
+    this.csvImportInProgress = true;
+    try {
+      await this.firestoreService.addGuestsBatch(this.csvPreviewValid);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Import successful',
+        detail: `Imported ${this.csvPreviewValid.length} guest${this.csvPreviewValid.length === 1 ? '' : 's'}.`
+      });
+      this.cancelCsvImport();
+    } catch (err) {
+      this.handleError(err, 'CSV import failed');
+    } finally {
+      this.csvImportInProgress = false;
+    }
+  }
+
+  cancelCsvImport(): void {
+    this.csvPreviewOpen = false;
+    this.csvPreviewFileName = '';
+    this.csvPreviewValid = [];
+    this.csvPreviewSkipped = [];
   }
 
   openAddGuestForm(): void {
