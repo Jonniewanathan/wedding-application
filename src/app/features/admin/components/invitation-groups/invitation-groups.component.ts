@@ -21,6 +21,7 @@ import { InvitationFormComponent } from '../../../../shared/components/invitatio
 import { Guest } from '../../../../shared/models/guest.model';
 import {InputGroupAddon} from 'primeng/inputgroupaddon';
 import {InputGroup} from 'primeng/inputgroup';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-invitation-groups',
@@ -143,7 +144,7 @@ export class InvitationGroupsComponent implements OnInit {
   }
 
   async showQrCodeDialog(invitation: Invitation) {
-    const url = `https://wedding.jonathanquirke.com/invite/${invitation.invitationCode}`;
+    const url = `${environment.siteBaseUrl}/invite/${invitation.invitationCode}`;
     try {
       let qrCodeDataUrl = '';
       await QRCode.toDataURL(url, { errorCorrectionLevel: 'H', width: 256 })
