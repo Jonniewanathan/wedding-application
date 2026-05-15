@@ -58,9 +58,10 @@ describe('Admin', () => {
   let routerSpy: jasmine.SpyObj<Router>;
   let firestoreSpy: jasmine.SpyObj<FirestoreService>;
 
-  function build(unassigned: Guest[], invitations: Invitation[]) {
+  function build(unassigned: Guest[], invitations: Invitation[], allGuests: Guest[] = []) {
     firestoreSpy.getUnassignedGuests.and.returnValue(of(unassigned));
     firestoreSpy.getInvitations.and.returnValue(of(invitations));
+    firestoreSpy.getAllGuests.and.returnValue(of(allGuests));
     fixture = TestBed.createComponent(Admin);
     component = fixture.componentInstance;
   }
@@ -73,10 +74,12 @@ describe('Admin', () => {
 
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getUnassignedGuests',
-      'getInvitations'
+      'getInvitations',
+      'getAllGuests'
     ]);
     firestoreSpy.getUnassignedGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
+    firestoreSpy.getAllGuests.and.returnValue(of([]));
 
     const realMessage = new MessageService();
     const realConfirm = new ConfirmationService();
@@ -150,6 +153,20 @@ describe('Admin', () => {
       build([], [makeInv('a', 'responded'), makeInv('b', 'responded')]);
       expect(component.invitationCount()).toBe(2);
       expect(component.pendingInvitationCount()).toBe(0);
+    });
+
+    it('should count attending guests with no tableName as unseated', () => {
+      build(
+        [],
+        [],
+        [
+          { id: '1', firstName: 'A', lastName: 'A', isAttending: true, tableName: 'T1', createdAt: ts() },
+          { id: '2', firstName: 'B', lastName: 'B', isAttending: true, tableName: null, createdAt: ts() },
+          { id: '3', firstName: 'C', lastName: 'C', isAttending: true, tableName: '   ', createdAt: ts() },
+          { id: '4', firstName: 'D', lastName: 'D', isAttending: false, tableName: null, createdAt: ts() }
+        ]
+      );
+      expect(component.unseatedAttendingCount()).toBe(2);
     });
   });
 });

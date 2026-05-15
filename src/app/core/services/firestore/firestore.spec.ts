@@ -50,6 +50,7 @@ describe('FirestoreService', () => {
     expect(typeof service.setInvitationOutreachStage).toBe('function');
     expect(typeof service.backfillRsvpSubmittedAt).toBe('function');
     expect(typeof service.moveGuestToInvitation).toBe('function');
+    expect(typeof service.setGuestTable).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');
     expect(typeof service.unassignGuest).toBe('function');
     expect(typeof service.getInvitations).toBe('function');

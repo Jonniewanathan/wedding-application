@@ -56,7 +56,10 @@
         [class.text-slate-900]="activeTabIndex === 2"
         [class.font-medium]="activeTabIndex === 2"
         class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
-        Stats & Export
+        Seating
+        @if (unseatedAttendingCount() > 0) {
+          <span class="ml-1 text-[10px] text-amber-700 normal-case tracking-normal">({{ unseatedAttendingCount() }} unseated)</span>
+        }
       </button>
       <button
         (click)="activeTabIndex = 3"
@@ -64,6 +67,15 @@
         [class.border-slate-900]="activeTabIndex === 3"
         [class.text-slate-900]="activeTabIndex === 3"
         [class.font-medium]="activeTabIndex === 3"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Stats & Export
+      </button>
+      <button
+        (click)="activeTabIndex = 4"
+        [class.border-b-2]="activeTabIndex === 4"
+        [class.border-slate-900]="activeTabIndex === 4"
+        [class.text-slate-900]="activeTabIndex === 4"
+        [class.font-medium]="activeTabIndex === 4"
         class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
         Stats V2
         <span class="ml-1 text-[8px] text-amber-600 uppercase tracking-widest">Preview</span>
@@ -79,11 +91,14 @@
     <div [class.hidden]="activeTabIndex !== 1">
       <app-invitation-groups></app-invitation-groups>
     </div>
-    <!-- IMPORTANT FIX: Use *ngIf for charts. Chart.js fails to initialize correctly if its container starts with display: none -->
     @if (activeTabIndex === 2) {
+      <app-seating-chart></app-seating-chart>
+    }
+    <!-- IMPORTANT FIX: Use *ngIf for charts. Chart.js fails to initialize correctly if its container starts with display: none -->
+    @if (activeTabIndex === 3) {
       <app-stats></app-stats>
     }
-    @if (activeTabIndex === 3) {
+    @if (activeTabIndex === 4) {
       <app-stats-v2></app-stats-v2>
     }
   </div>

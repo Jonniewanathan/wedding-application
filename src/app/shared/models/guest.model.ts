@@ -19,6 +19,11 @@ export interface Guest {
   countryOfResidence?: string;
   notes?: string;
 
+  // Day-of seating. Free-text so the admin can use either numbers
+  // ("Table 1") or named tables ("Sunflower"). Null/missing means the
+  // guest hasn't been seated yet.
+  tableName?: string | null;
+
   type?: string;
 
   createdAt: Timestamp;

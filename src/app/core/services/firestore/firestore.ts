@@ -69,7 +69,7 @@ export class FirestoreService {
     };
 
     // Dynamically add fields to update object to avoid overwriting with undefined
-    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes'];
+    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes', 'tableName'];
 
     fields.forEach(field => {
       const value = guest[field];
@@ -230,6 +230,20 @@ export class FirestoreService {
     batch.delete(invitationRef);
 
     return batch.commit();
+  }
+
+  /**
+   * Convenience setter for the per-guest day-of seating field. Pass
+   * null to clear the assignment ("unseat" the guest). Doesn't go
+   * through updateGuestDetails so we don't need to construct a full
+   * partial guest object at the call site.
+   */
+  setGuestTable(guestId: string, tableName: string | null): Promise<void> {
+    const docRef = doc(this.firestore, `guests/${guestId}`);
+    return updateDoc(docRef, {
+      tableName,
+      updatedAt: serverTimestamp()
+    });
   }
 
   /**

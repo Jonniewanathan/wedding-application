@@ -13,6 +13,7 @@ import { Invitation } from '../../shared/models/invitation.model';
 // Components
 import { GuestPool } from './components/guest-pool/guest-pool.component';
 import { InvitationGroups } from './components/invitation-groups/invitation-groups.component';
+import { SeatingChart } from './components/seating-chart/seating-chart';
 import { StatsComponent } from './components/stats/stats.component';
 import { StatsV2 } from './components/stats-v2/stats-v2';
 
@@ -25,7 +26,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPool, InvitationGroups, StatsComponent, StatsV2
+    GuestPool, InvitationGroups, SeatingChart, StatsComponent, StatsV2
   ],
   providers: [
     DialogService, ConfirmationService, MessageService, AdminStateService
@@ -45,6 +46,10 @@ export class Admin {
     this.firestoreService.getUnassignedGuests(),
     { initialValue: [] }
   );
+  private readonly allGuests: Signal<Guest[]> = toSignal(
+    this.firestoreService.getAllGuests(),
+    { initialValue: [] }
+  );
   private readonly allInvitations: Signal<Invitation[]> = toSignal(
     this.firestoreService.getInvitations(),
     { initialValue: [] }
@@ -54,6 +59,12 @@ export class Admin {
   readonly invitationCount = computed(() => this.allInvitations().length);
   readonly pendingInvitationCount = computed(
     () => this.allInvitations().filter(inv => inv.status !== 'responded').length
+  );
+  /** Attending guests with no tableName — drives the Seating tab badge. */
+  readonly unseatedAttendingCount = computed(
+    () => this.allGuests().filter(
+      g => g.isAttending === true && (!g.tableName || g.tableName.trim().length === 0)
+    ).length
   );
 
   logout(): void {
