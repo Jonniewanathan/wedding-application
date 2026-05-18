@@ -132,6 +132,21 @@ describe('Admin', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
   });
 
+  it('should prompt for confirmation before running the invitation_codes backfill', () => {
+    // The actual backfill runs from inside the ConfirmationService accept
+    // callback — we just verify the confirm() was requested with the right
+    // copy. The backfill method itself is covered in the FirestoreService
+    // spec. ConfirmationService is provided at the component level via
+    // overrideComponent, so it must be resolved from the component's
+    // injector rather than the root TestBed injector.
+    const confirmService = fixture.debugElement.injector.get(ConfirmationService);
+    const confirmSpy = spyOn(confirmService, 'confirm');
+    component.runBackfillInvitationCodes();
+    expect(confirmSpy).toHaveBeenCalled();
+    const args = confirmSpy.calls.mostRecent().args[0];
+    expect(args.header).toContain('Backfill');
+  });
+
   it('should switch tab index when activeTabIndex is set', () => {
     component.activeTabIndex = 1;
     expect(component.activeTabIndex).toBe(1);

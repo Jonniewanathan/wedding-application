@@ -13,11 +13,21 @@
       </h1>
     </div>
 
-    <button
-      (click)="logout()"
-      class="text-xs uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors border-b border-transparent hover:border-red-600 pb-1">
-      Log Out
-    </button>
+    <div class="flex items-center gap-6">
+      <button
+        (click)="runBackfillInvitationCodes()"
+        [disabled]="backfillingCodes"
+        title="One-shot: create missing invitation_codes lookup docs before deploying stricter Firestore rules. Idempotent."
+        class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors border-b border-transparent hover:border-slate-800 pb-1 disabled:opacity-50 disabled:cursor-wait">
+        {{ backfillingCodes ? 'Backfilling…' : 'Backfill codes' }}
+      </button>
+
+      <button
+        (click)="logout()"
+        class="text-xs uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors border-b border-transparent hover:border-red-600 pb-1">
+        Log Out
+      </button>
+    </div>
   </header>
 
   <!-- Custom Tabs for Eager Loading -->

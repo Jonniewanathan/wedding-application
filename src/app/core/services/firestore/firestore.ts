@@ -202,6 +202,20 @@ export class FirestoreService {
       updatedAt: null
     })) as DocumentReference<Invitation>;
 
+    // Paired index doc so the guest-facing /invite/:code lookup can be a
+    // single getDoc rather than a list query — that's what lets Firestore
+    // rules keep the invitations collection locked down for unauthenticated
+    // callers. If this write fails the invitation is still usable by admin;
+    // backfillInvitationCodes() will heal it on the next run.
+    try {
+      await setDoc(doc(this.firestore, `invitation_codes/${uniqueCode}`), {
+        invitationId: ref.id,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.warn('invitation_codes lookup write failed', uniqueCode, err);
+    }
+
     this.logSilently({
       action: 'invitation_created',
       subject: { type: 'invitation', id: ref.id, name: details.displayName },
@@ -343,14 +357,37 @@ export class FirestoreService {
   }
 
   async getInvitationByCode(code: string): Promise<(Invitation & { id: string }) | null> {
+    // Preferred path: O(1) lookup through invitation_codes/{code}. Both the
+    // index doc and the invitation doc are single-doc gets, which is what
+    // Firestore rules can safely allow for unauthenticated /invite/:code
+    // visitors without opening the invitations collection to list queries.
+    const lookupRef = doc(this.firestore, `invitation_codes/${code}`);
+    const lookupSnap = await getDoc(lookupRef);
+
+    if (lookupSnap.exists()) {
+      const invitationId = lookupSnap.data()['invitationId'] as string | undefined;
+      if (invitationId) {
+        const inviteRef = doc(this.firestore, `invitations/${invitationId}`);
+        const inviteSnap = await getDoc(inviteRef);
+        if (inviteSnap.exists()) {
+          return { id: inviteSnap.id, ...inviteSnap.data() } as Invitation & { id: string };
+        }
+      }
+    }
+
+    // Fallback for invitations that pre-date the lookup collection. Will
+    // succeed only while Firestore rules still permit list queries on
+    // invitations; once rules are tightened this branch is unreachable
+    // and can be deleted. backfillInvitationCodes() heals these legacy
+    // invitations so the preferred path resolves on subsequent reads.
     const invitationsCollection = collection(this.firestore, 'invitations');
     const q = query(invitationsCollection, where('invitationCode', '==', code));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) return null;
 
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as (Invitation & { id: string });
+    const legacyDoc = querySnapshot.docs[0];
+    return { id: legacyDoc.id, ...legacyDoc.data() } as (Invitation & { id: string });
   }
 
   async deleteInvitationAndUnassignGuests(
@@ -378,6 +415,17 @@ export class FirestoreService {
 
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.delete(invitationRef);
+
+    // Read the invitation first to find the paired lookup doc. We do this
+    // outside the batch — it's a read — but include the lookup delete in
+    // the batch so the invitation and its index doc disappear atomically.
+    const invitationSnap = await getDoc(invitationRef);
+    const invitationCode = invitationSnap.exists()
+      ? (invitationSnap.data()['invitationCode'] as string | undefined)
+      : undefined;
+    if (invitationCode) {
+      batch.delete(doc(this.firestore, `invitation_codes/${invitationCode}`));
+    }
 
     await batch.commit();
 
@@ -476,6 +524,27 @@ export class FirestoreService {
     return collectionData(q, { idField: 'id' }) as Observable<Guest[]>;
   }
 
+  /**
+   * Fetch a set of guests by ID using parallel single-doc gets, preserving
+   * the input array's order in the result.
+   *
+   * The guest-facing RSVP form uses this rather than the streaming
+   * getGuestsForInvitation() above so that Firestore rules can keep `list`
+   * on the guests collection admin-only — unauthenticated visitors are
+   * only granted `get` on a specific known id. Missing/deleted guests are
+   * skipped silently rather than throwing; the form still renders for the
+   * remaining members of the party.
+   */
+  async getGuestsForInvitationByIds(guestIds: string[]): Promise<Guest[]> {
+    if (guestIds.length === 0) return [];
+    const snaps = await Promise.all(
+      guestIds.map(id => getDoc(doc(this.firestore, `guests/${id}`)))
+    );
+    return snaps
+      .filter(snap => snap.exists())
+      .map(snap => ({ id: snap.id, ...snap.data() } as Guest));
+  }
+
   async submitRsvpForGuests(
     invitationId: string,
     guests: Guest[],
@@ -552,5 +621,69 @@ export class FirestoreService {
   getAllGuests(): Observable<Guest[]> {
     const collectionRef = collection(this.firestore, 'guests');
     return collectionData(collectionRef, { idField: 'id' }) as Observable<Guest[]>;
+  }
+
+  /**
+   * One-shot migration: ensure every existing invitation has a paired
+   * invitation_codes/{code} lookup document. Safe to run repeatedly —
+   * existing lookup docs are detected and skipped. Required once after
+   * deploying the lookup-doc read pattern but before tightening Firestore
+   * rules to block `list` queries on invitations (which the legacy
+   * by-code fallback in getInvitationByCode relies on).
+   */
+  async backfillInvitationCodes(): Promise<{
+    scanned: number;
+    created: number;
+    skipped: number;
+    failed: number;
+  }> {
+    const invitationsSnapshot = await getDocs(collection(this.firestore, 'invitations'));
+    let created = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const invitationDoc of invitationsSnapshot.docs) {
+      const code = invitationDoc.data()['invitationCode'] as string | undefined;
+      if (!code) {
+        // Pathological — an invitation without a code can't be looked up
+        // by guests anyway. Count it as a skip and move on.
+        skipped++;
+        continue;
+      }
+
+      const lookupRef = doc(this.firestore, `invitation_codes/${code}`);
+      const lookupSnap = await getDoc(lookupRef);
+      if (lookupSnap.exists()) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        await setDoc(lookupRef, {
+          invitationId: invitationDoc.id,
+          createdAt: serverTimestamp()
+        });
+        created++;
+      } catch (err) {
+        console.warn('backfill failed for', code, err);
+        failed++;
+      }
+    }
+
+    const result = {
+      scanned: invitationsSnapshot.size,
+      created,
+      skipped,
+      failed
+    };
+
+    this.logSilently({
+      action: 'invitation_codes_backfilled',
+      subject: { type: 'invitation', id: 'all', name: 'invitation_codes lookup collection' },
+      summary: `Backfilled invitation_codes — scanned ${result.scanned}, created ${result.created}, skipped ${result.skipped}, failed ${result.failed}.`,
+      details: result
+    });
+
+    return result;
   }
 }

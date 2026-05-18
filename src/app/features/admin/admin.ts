@@ -38,8 +38,11 @@ export class Admin {
   private authService = inject(AuthService);
   private router = inject(Router);
   private firestoreService = inject(FirestoreService);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
 
   activeTabIndex = 0;
+  backfillingCodes = false;
 
   // Live counts surfaced on the tab labels so the admin sees outstanding
   // work at a glance without switching tabs.
@@ -71,6 +74,49 @@ export class Admin {
   logout(): void {
     this.authService.logout().then(() => {
       this.router.navigate(['/login']).catch(err => console.error(err));
+    });
+  }
+
+  /**
+   * One-shot maintenance: walk existing invitations and create the
+   * invitation_codes/{code} lookup docs introduced for the Firestore
+   * rules tightening. Idempotent — safe to re-run. Must be invoked
+   * before deploying stricter rules, otherwise legacy invitations will
+   * stop resolving via the /invite/:code page.
+   */
+  runBackfillInvitationCodes(): void {
+    this.confirmationService.confirm({
+      header: 'Backfill invitation codes?',
+      message:
+        'Creates an invitation_codes/{code} lookup doc for every invitation that ' +
+        'doesn’t already have one. Safe to run multiple times. Run this once before ' +
+        'deploying the stricter Firestore rules.',
+      acceptLabel: 'Run backfill',
+      rejectLabel: 'Cancel',
+      accept: async () => {
+        this.backfillingCodes = true;
+        try {
+          const result = await this.firestoreService.backfillInvitationCodes();
+          this.messageService.add({
+            severity: result.failed > 0 ? 'warn' : 'success',
+            summary: 'Backfill complete',
+            detail:
+              `Scanned ${result.scanned} · Created ${result.created} · ` +
+              `Skipped ${result.skipped} · Failed ${result.failed}`,
+            life: 8000
+          });
+        } catch (err) {
+          console.error('backfillInvitationCodes failed', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Backfill failed',
+            detail: 'Check the browser console for details.',
+            life: 6000
+          });
+        } finally {
+          this.backfillingCodes = false;
+        }
+      }
     });
   }
 }

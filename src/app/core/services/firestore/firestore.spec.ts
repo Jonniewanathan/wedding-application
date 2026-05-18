@@ -62,8 +62,14 @@ describe('FirestoreService', () => {
     expect(typeof service.getInvitationByCode).toBe('function');
     expect(typeof service.deleteInvitationAndUnassignGuests).toBe('function');
     expect(typeof service.getGuestsForInvitation).toBe('function');
+    expect(typeof service.getGuestsForInvitationByIds).toBe('function');
     expect(typeof service.getAllGuests).toBe('function');
     expect(typeof service.submitRsvpForGuests).toBe('function');
     expect(typeof service.addGuestsBatch).toBe('function');
+    expect(typeof service.backfillInvitationCodes).toBe('function');
+  });
+
+  it('should resolve to an empty array when getGuestsForInvitationByIds is called with no ids', async () => {
+    await expectAsync(service.getGuestsForInvitationByIds([])).toBeResolvedTo([]);
   });
 });
