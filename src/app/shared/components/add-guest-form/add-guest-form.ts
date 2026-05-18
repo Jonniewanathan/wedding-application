@@ -20,7 +20,7 @@ import {Textarea} from 'primeng/textarea';
   ],
   templateUrl: './add-guest-form.html',
 })
-export class AddGuestFormComponent implements OnInit {
+export class AddGuestForm implements OnInit {
   private fb = inject(FormBuilder);
   public dialogRef = inject(DynamicDialogRef);
 

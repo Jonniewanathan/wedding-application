@@ -1,36 +1,39 @@
 <p-toast></p-toast>
-<p-confirmDialog [style]="{width: '50vw'}" rejectButtonStyleClass="p-button-text text-slate-500" acceptButtonStyleClass="bg-slate-900 border-slate-900 text-white"></p-confirmDialog>
+<p-confirmDialog [style]="{width: '90vw', maxWidth: '500px'}" rejectButtonStyleClass="p-button-text text-slate-500" acceptButtonStyleClass="bg-slate-900 border-slate-900 text-white"></p-confirmDialog>
 
-<div class="min-h-screen bg-white text-slate-900 p-6 md:p-12">
+<div class="min-h-screen bg-white text-slate-900 p-4 md:p-6 lg:p-12 pb-24">
 
-  <header class="flex flex-col md:flex-row justify-between items-end border-b border-slate-100 pb-8 mb-10">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-100 pb-6 md:pb-8 mb-8 md:mb-10 gap-4">
     <div>
       <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-500 mb-2">
         Admin Suite
       </span>
-      <h1 class="text-4xl md:text-5xl font-serif font-medium italic text-slate-900 leading-none">
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-serif font-medium italic text-slate-900 leading-none">
         Guest Management
       </h1>
     </div>
 
     <button
       (click)="logout()"
-      class="mt-6 md:mt-0 text-xs uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors border-b border-transparent hover:border-red-600 pb-1">
+      class="text-xs uppercase tracking-widest text-slate-400 hover:text-red-600 transition-colors border-b border-transparent hover:border-red-600 pb-1">
       Log Out
     </button>
   </header>
 
   <!-- Custom Tabs for Eager Loading -->
-  <div class="editorial-tabs mb-4">
-    <div class="p-tablist flex space-x-4 border-b border-slate-200">
+  <div class="editorial-tabs mb-4 w-full overflow-x-auto border-b border-slate-200">
+    <div class="p-tablist flex space-x-6 min-w-max">
       <button
         (click)="activeTabIndex = 0"
         [class.border-b-2]="activeTabIndex === 0"
         [class.border-slate-900]="activeTabIndex === 0"
         [class.text-slate-900]="activeTabIndex === 0"
         [class.font-medium]="activeTabIndex === 0"
-        class="pb-2 text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
         Guest Pool
+        @if (unassignedCount() > 0) {
+          <span class="ml-1 text-[10px] text-amber-700 normal-case tracking-normal">({{ unassignedCount() }})</span>
+        }
       </button>
       <button
         (click)="activeTabIndex = 1"
@@ -38,20 +41,78 @@
         [class.border-slate-900]="activeTabIndex === 1"
         [class.text-slate-900]="activeTabIndex === 1"
         [class.font-medium]="activeTabIndex === 1"
-        class="pb-2 text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest">
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
         Invitation Groups
+        @if (invitationCount() > 0) {
+          <span class="ml-1 text-[10px] text-slate-400 normal-case tracking-normal">
+            ({{ invitationCount() }}<span *ngIf="pendingInvitationCount() > 0"> · <span class="text-amber-700">{{ pendingInvitationCount() }} pending</span></span>)
+          </span>
+        }
+      </button>
+      <button
+        (click)="activeTabIndex = 2"
+        [class.border-b-2]="activeTabIndex === 2"
+        [class.border-slate-900]="activeTabIndex === 2"
+        [class.text-slate-900]="activeTabIndex === 2"
+        [class.font-medium]="activeTabIndex === 2"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Seating
+        @if (unseatedAttendingCount() > 0) {
+          <span class="ml-1 text-[10px] text-amber-700 normal-case tracking-normal">({{ unseatedAttendingCount() }} unseated)</span>
+        }
+      </button>
+      <button
+        (click)="activeTabIndex = 3"
+        [class.border-b-2]="activeTabIndex === 3"
+        [class.border-slate-900]="activeTabIndex === 3"
+        [class.text-slate-900]="activeTabIndex === 3"
+        [class.font-medium]="activeTabIndex === 3"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Stats & Export
+      </button>
+      <button
+        (click)="activeTabIndex = 4"
+        [class.border-b-2]="activeTabIndex === 4"
+        [class.border-slate-900]="activeTabIndex === 4"
+        [class.text-slate-900]="activeTabIndex === 4"
+        [class.font-medium]="activeTabIndex === 4"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Stats V2
+        <span class="ml-1 text-[8px] text-amber-600 uppercase tracking-widest">Preview</span>
+      </button>
+      <button
+        (click)="activeTabIndex = 5"
+        [class.border-b-2]="activeTabIndex === 5"
+        [class.border-slate-900]="activeTabIndex === 5"
+        [class.text-slate-900]="activeTabIndex === 5"
+        [class.font-medium]="activeTabIndex === 5"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Activity
       </button>
     </div>
   </div>
 
-  <div>
+  <div class="mt-4">
     <!-- Render both, but hide the inactive one -->
-    <div [style.display]="activeTabIndex === 0 ? 'block' : 'none'">
+    <div [class.hidden]="activeTabIndex !== 0">
       <app-guest-pool></app-guest-pool>
     </div>
-    <div [style.display]="activeTabIndex === 1 ? 'block' : 'none'">
+    <div [class.hidden]="activeTabIndex !== 1">
       <app-invitation-groups></app-invitation-groups>
     </div>
+    @if (activeTabIndex === 2) {
+      <app-seating-chart></app-seating-chart>
+    }
+    <!-- IMPORTANT FIX: Use *ngIf for charts. Chart.js fails to initialize correctly if its container starts with display: none -->
+    @if (activeTabIndex === 3) {
+      <app-stats></app-stats>
+    }
+    @if (activeTabIndex === 4) {
+      <app-stats-v2></app-stats-v2>
+    }
+    @if (activeTabIndex === 5) {
+      <app-activity-log></app-activity-log>
+    }
   </div>
 
 </div>

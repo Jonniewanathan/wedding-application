@@ -25,6 +25,7 @@
     "@primeuix/themes": "^1.2.5",
     "@tailwindcss/postcss": "^4.1.8",
     "@types/papaparse": "^5.3.16",
+    "chart.js": "^4.5.1",
     "firebase": "^11.9.0",
     "papaparse": "^5.5.3",
     "postcss": "^8.5.4",

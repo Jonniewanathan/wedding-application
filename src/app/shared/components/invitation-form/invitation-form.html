@@ -1,16 +1,26 @@
-<div class="bg-white p-2">
+<div class="bg-white p-4 md:p-6 w-full">
 
-  <div class="text-center mb-8">
-    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Creation</span>
-    <h2 class="text-3xl font-serif font-medium italic text-slate-900">New Invitation</h2>
+  <div class="text-center mb-6 md:mb-8">
+    <span class="block text-[10px] md:text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">Group Creation</span>
+    <h2 class="text-2xl md:text-3xl font-serif font-medium italic text-slate-900">{{ isEditMode ? 'Edit Invitation' : 'New Invitation' }}</h2>
   </div>
 
-  <div class="mb-8 p-4 bg-slate-50 border border-slate-100">
-    <p class="text-xs uppercase tracking-widest text-slate-500 mb-3 text-center">Grouping These Guests</p>
-    <div class="flex flex-wrap justify-center gap-2">
+  <div class="mb-6 md:mb-8 p-4 bg-slate-50 border border-slate-100">
+    <div class="flex justify-between items-center mb-3">
+      <p class="text-[10px] md:text-xs uppercase tracking-widest text-slate-500 text-center flex-grow">Grouping These Guests</p>
+      <span class="text-[10px] text-slate-400 italic">Drag to reorder</span>
+    </div>
+
+    <div
+      cdkDropList
+      (cdkDropListDropped)="drop($event)"
+      class="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
       @for(guest of guestsToAssign; track guest.id){
-        <div class="bg-white border border-slate-200 px-3 py-1 text-sm text-slate-700 shadow-sm">
-          {{ guest.firstName }} {{ guest.lastName }}
+        <div
+          cdkDrag
+          class="bg-white border border-slate-200 px-3 py-2 text-xs md:text-sm text-slate-700 shadow-sm flex items-center justify-between cursor-move hover:border-slate-400 transition-colors">
+          <span>{{ guest.firstName }} {{ guest.lastName }}</span>
+          <i class="pi pi-bars text-slate-400"></i>
         </div>
       }
     </div>
@@ -19,21 +29,55 @@
   <form [formGroup]="invitationForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
 
     <div class="flex flex-col gap-2">
-      <label for="displayName" class="text-xs font-sans uppercase tracking-widest text-slate-500">Group Display Name</label>
+      <label for="displayName" class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Group Display Name</label>
       <input
         id="displayName"
         type="text"
         pInputText
         formControlName="displayName"
-        class="w-full text-center font-serif text-xl placeholder:italic placeholder:text-slate-300"
+        class="w-full text-center font-serif text-lg md:text-xl placeholder:italic placeholder:text-slate-300 p-3"
         placeholder="e.g. The Smith Family"
       />
-      <small class="text-center text-slate-400 text-xs mt-1">This is the name they will see on the welcome screen.</small>
+      <small class="text-center text-slate-400 text-[10px] md:text-xs mt-1">This is the name they will see on the welcome screen.</small>
     </div>
 
-    <div class="flex items-center justify-between mt-6 pt-6 border-t border-slate-100">
-      <button type="button" (click)="onCancel()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">Cancel</button>
-      <button type="submit" [disabled]="invitationForm.invalid" class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50">Generate Invitation</button>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex flex-col gap-2">
+        <label for="invitationPhone" class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Phone (optional)</label>
+        <input
+          id="invitationPhone"
+          type="tel"
+          pInputText
+          formControlName="phoneNumber"
+          class="w-full text-sm p-3 placeholder:italic placeholder:text-slate-300"
+          placeholder="+353 85 123 4567"
+        />
+        <small class="text-slate-400 text-[10px] md:text-xs">Used to pre-fill the WhatsApp link. Include country code.</small>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="invitationEmail" class="text-[10px] md:text-xs font-sans uppercase tracking-widest text-slate-500">Email (optional)</label>
+        <input
+          id="invitationEmail"
+          type="email"
+          pInputText
+          formControlName="email"
+          class="w-full text-sm p-3 placeholder:italic placeholder:text-slate-300"
+          placeholder="them@example.com"
+        />
+        @if (invitationForm.get('email')?.invalid && invitationForm.get('email')?.touched) {
+          <small class="text-red-500 text-[10px] md:text-xs">Not a valid email address.</small>
+        } @else {
+          <small class="text-slate-400 text-[10px] md:text-xs">Not used yet — captured for future follow-up.</small>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-col-reverse sm:flex-row items-center justify-between mt-4 pt-6 border-t border-slate-100 gap-4">
+      <button type="button" (click)="onCancel()" class="w-full sm:w-auto text-[10px] md:text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors py-3">Cancel</button>
+      <button type="submit" [disabled]="invitationForm.invalid" class="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50 text-center">
+        {{ isEditMode ? 'Save Changes' : 'Generate Invitation' }}
+      </button>
     </div>
 
   </form>

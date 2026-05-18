@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 
 // Services
 import { FirestoreService } from '../../../core/services/firestore/firestore';
@@ -14,7 +14,9 @@ import { PanelModule } from 'primeng/panel';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import {Image} from 'primeng/image';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
+import {LanguageService} from '../../../core/services/language/language';
+import {ScrollRevealDirective} from '../../../core/directives/scroll-reveal';
 
 @Component({
   selector: 'app-invitation',
@@ -29,17 +31,19 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
     ButtonModule,
     ProgressSpinnerModule,
     Image,
-    TranslateModule
+    TranslateModule,
+    ScrollRevealDirective
   ],
   templateUrl: './invitation.html',
   styleUrl: './invitation.scss'
 })
 export class Invitation implements OnInit {
   private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private firestore = inject(FirestoreService);
   private guestSession = inject(GuestSessionService);
-  private translate = inject(TranslateService);
+  public languageService = inject(LanguageService);
+
+  coupleNames = 'Marta & Jonathan';
 
   // State
   isLoading = true;

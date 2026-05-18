@@ -1,0 +1,210 @@
+<div class="py-4 md:py-6 min-h-[500px]">
+
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
+    <p class="text-sm text-slate-500 font-light max-w-md w-full text-center md:text-left">
+      An overview of your guest list, dietary requirements, and logistics.
+    </p>
+
+    <button
+      (click)="exportRsvpData()"
+      class="w-full md:w-auto bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors shadow-sm">
+      <i class="pi pi-download mr-2"></i> Export Attending Guests CSV
+    </button>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-12">
+    @for (stat of stats(); track stat.title) {
+      <div
+        class="bg-white p-4 md:p-6 border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center cursor-pointer hover:border-slate-300 transition-colors"
+        (click)="openModal(stat.title)">
+        <span class="text-[10px] md:text-xs uppercase tracking-widest text-slate-400 mb-2">{{ stat.title }}</span>
+        <span class="text-3xl md:text-4xl font-serif text-slate-800">{{ stat.value }}</span>
+      </div>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12 mb-12">
+
+    <!-- Attendance Chart -->
+    <div class="bg-slate-50 p-6 md:p-8 border border-slate-100 flex flex-col items-center">
+      <h3 class="text-base md:text-lg font-serif text-slate-800 mb-6 md:mb-8 italic text-center border-b border-slate-200 pb-4 w-full">Attendance Overview</h3>
+      <div class="w-full h-[250px] md:h-[300px] flex justify-center items-center">
+        <p-chart type="pie" [data]="attendanceChartData()" [options]="options" width="100%" height="100%"></p-chart>
+      </div>
+    </div>
+
+    <!-- Dietary Chart -->
+    <div class="bg-slate-50 p-6 md:p-8 border border-slate-100 flex flex-col items-center">
+      <h3 class="text-base md:text-lg font-serif text-slate-800 mb-6 md:mb-8 italic text-center border-b border-slate-200 pb-4 w-full">Dietary Requirements Breakdown</h3>
+      @if (dietaryChartData()) {
+        <div class="w-full h-[250px] md:h-[300px] flex justify-center items-center">
+          <p-chart type="pie" [data]="dietaryChartData()" [options]="options" width="100%" height="100%"></p-chart>
+        </div>
+      } @else {
+        <div class="h-[150px] md:h-[200px] flex items-center justify-center text-slate-400 font-light italic text-sm">
+          No dietary data recorded yet.
+        </div>
+      }
+    </div>
+
+    <!-- Bus Chart -->
+    <div class="bg-slate-50 p-6 md:p-8 border border-slate-100 flex flex-col items-center">
+      <h3 class="text-base md:text-lg font-serif text-slate-800 mb-6 md:mb-8 italic text-center border-b border-slate-200 pb-4 w-full">Bus Pickup Locations</h3>
+
+      @if (busChartData()) {
+        <div class="w-full h-[250px] md:h-[300px] flex justify-center items-center">
+          <p-chart type="pie" [data]="busChartData()" [options]="options" width="100%" height="100%"></p-chart>
+        </div>
+      } @else {
+        <div class="h-[150px] md:h-[200px] flex items-center justify-center text-slate-400 font-light italic text-sm">
+          No bus transport requested yet.
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 md:gap-12 pb-12">
+
+    <!-- Dietary Table -->
+    <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
+      <div class="p-6 border-b border-slate-100">
+        <h3 class="font-serif text-lg text-slate-800 italic">Dietary Requirements List</h3>
+      </div>
+      <p-table [value]="guestsByDietary()" rowGroupMode="subheader" groupRowsBy="dietaryCategory" sortField="dietaryCategory" sortMode="single" dataKey="dietaryCategory" class="editorial-table">
+        <ng-template #header>
+          <tr class="text-[10px] uppercase tracking-widest text-slate-400">
+            <th class="px-6 py-3 font-normal text-left">Guest Name</th>
+            <th class="px-6 py-3 font-normal text-left">Notes / Allergies</th>
+          </tr>
+        </ng-template>
+        <ng-template #groupheader let-item let-expanded="expanded">
+          <tr class="bg-slate-50 border-y border-slate-100">
+            <td colspan="2" class="px-4 py-2">
+              <button type="button" pButton pRipple [pRowToggler]="item" class="p-button-text p-button-rounded p-button-plain p-button-sm mr-2">
+                <i [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+              </button>
+              <span class="font-serif italic text-slate-700 text-sm">{{item.dietaryCategory}}</span>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #expandedrow let-item>
+          <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50 transition-colors">
+            <td class="px-6 py-3 pl-14 font-medium">{{item.fullName}}</td>
+            <td class="px-6 py-3 text-xs text-slate-400 italic">{{item.details}}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <div class="flex flex-col gap-8 md:gap-12">
+        <!-- Allergies Table -->
+        <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <h3 class="font-serif text-lg text-slate-800 italic">Severe Allergies</h3>
+          </div>
+          <p-table [value]="guestsByAllergy()" rowGroupMode="subheader" groupRowsBy="allergyCategory" sortField="allergyCategory" sortMode="single" dataKey="allergyCategory" class="editorial-table">
+            <ng-template #header>
+              <tr class="text-[10px] uppercase tracking-widest text-slate-400">
+                <th class="px-6 py-3 font-normal text-left">Guest Name</th>
+                <th class="px-6 py-3 font-normal text-left">Specific Notes</th>
+              </tr>
+            </ng-template>
+            <ng-template #groupheader let-item let-expanded="expanded">
+              <tr class="bg-slate-50 border-y border-slate-100">
+                <td colspan="2" class="px-4 py-2">
+                  <button type="button" pButton pRipple [pRowToggler]="item" class="p-button-text p-button-rounded p-button-plain p-button-sm mr-2">
+                    <i [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+                  </button>
+                  <span class="font-serif italic text-slate-700 text-sm text-red-600">{{item.allergyCategory}}</span>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #expandedrow let-item>
+              <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50 transition-colors">
+                <td class="px-6 py-3 pl-14 font-medium">{{item.fullName}}</td>
+                <td class="px-6 py-3 text-xs text-slate-400 italic">{{item.details}}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <!-- Bus Table -->
+        <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <h3 class="font-serif text-lg text-slate-800 italic">Bus Pickup Manifest</h3>
+          </div>
+          <p-table [value]="guestsByBus()" rowGroupMode="subheader" groupRowsBy="pickupLocation" sortField="pickupLocation" sortMode="single" dataKey="pickupLocation" class="editorial-table">
+            <ng-template #header>
+              <tr class="text-[10px] uppercase tracking-widest text-slate-400">
+                <th class="px-6 py-3 font-normal text-left">Guest Name</th>
+              </tr>
+            </ng-template>
+            <ng-template #groupheader let-item let-expanded="expanded">
+              <tr class="bg-slate-50 border-y border-slate-100">
+                <td class="px-4 py-2">
+                  <button type="button" pButton pRipple [pRowToggler]="item" class="p-button-text p-button-rounded p-button-plain p-button-sm mr-2">
+                    <i [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+                  </button>
+                  <span class="font-serif italic text-slate-700 text-sm"><i class="pi pi-map-marker text-[10px] mr-1 opacity-50"></i> {{item.pickupLocation}}</span>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #expandedrow let-item>
+              <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50 transition-colors">
+                <td class="px-6 py-3 pl-14 font-medium">{{item.fullName}}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+    </div>
+  </div>
+
+  <!-- Guest Messages Table -->
+  <div class="mt-8">
+    <h3 class="text-lg font-serif text-slate-800 mb-4 italic text-center">Guest Messages</h3>
+    @if(invitationsWithMessages().length > 0) {
+      <p-table [value]="invitationsWithMessages()" class="editorial-table">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="w-1/3">From Group</th>
+            <th>Message</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-invitation>
+          <tr>
+            <td class="font-serif italic text-slate-700">{{ invitation.displayName }}</td>
+            <td class="text-slate-600 font-light leading-relaxed">{{ invitation.message }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    } @else {
+      <p class="text-center text-slate-400 italic py-8">No messages from guests yet.</p>
+    }
+  </div>
+</div>
+
+<!-- Modal for viewing guest lists -->
+<p-dialog closeOnEscape="true" closable="true" [(visible)]="displayModal" [header]="modalTitle + ' Guests'" [modal]="true" [style]="{width: '90vw', maxWidth: '500px'}" styleClass="editorial-dialog" [draggable]="false" [resizable]="false">
+  <div class="p-4">
+    @if (modalGuests.length > 0) {
+      <ul class="list-none p-0 m-0 divide-y divide-slate-100">
+        @for (guest of modalGuests; track guest.id) {
+          <li class="py-3 flex justify-between items-center">
+            <span class="font-medium text-slate-800">{{ guest.firstName }} {{ guest.lastName }}</span>
+
+            @if(guest.isAttending === true) {
+                <span class="text-[10px] uppercase tracking-widest text-green-600 bg-green-50 px-2 py-1 rounded-sm">Attending</span>
+            } @else if(guest.isAttending === false) {
+                <span class="text-[10px] uppercase tracking-widest text-red-600 bg-red-50 px-2 py-1 rounded-sm">Declined</span>
+            } @else {
+                <span class="text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1 rounded-sm">Pending</span>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="text-center text-slate-500 italic py-8">No guests found in this category.</p>
+    }
+  </div>
+</p-dialog>

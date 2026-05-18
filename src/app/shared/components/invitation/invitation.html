@@ -1,5 +1,22 @@
 <div class="flex flex-col items-center justify-center py-8 px-4">
-  <p-image [src]="'assets/images/timeline.jpeg'"></p-image>
+  <header class="pt-20 px-6 text-center max-w-5xl mx-auto" appScrollReveal>
+
+    <span class="block text-xs md:text-sm font-sans uppercase tracking-[0.3em] text-slate-500 mb-6">
+      {{ 'INVITATION.SUBTITLE' | translate }}
+    </span>
+
+    <h1 class="text-5xl md:text-7xl lg:text-8xl font-serif font-medium italic text-slate-900 mb-8 leading-none tracking-tight">
+      {{ coupleNames }}
+    </h1>
+
+    <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6 text-lg md:text-2xl font-serif text-slate-600 font-light reveal-delay-100">
+      <span>{{ 'INVITATION.DATE' | translate }}</span>
+      <span class="hidden md:inline-block w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
+      <span>{{ 'INVITATION.LOCATION' | translate }}</span>
+    </div>
+
+  </header>
+  <p-image appScrollReveal [src]="languageService.currentLang === 'es' ? 'assets/images/timeline_es.png' : 'assets/images/timeline.png'"></p-image>
   <p-button
     [label]="'INVITATION.RSVP_NOW' | translate"
     routerLink="/rsvp"

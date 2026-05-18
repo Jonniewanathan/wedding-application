@@ -1,114 +1,138 @@
-<div class="bg-white p-2">
+<div class="bg-white p-4 md:p-8">
 
-  <div class="text-center mb-8">
-    <span class="block text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">
-      {{ isEditMode ? 'Update Record' : 'Management' }}
+  <div class="text-center mb-6 md:mb-8">
+    <span class="block text-[10px] md:text-xs font-sans uppercase tracking-[0.2em] text-slate-400 mb-2">
+      {{ isEditMode ? 'Editing Guest' : 'New Guest' }}
     </span>
-    <h2 class="text-3xl font-serif font-medium italic text-slate-900">
-      {{ isEditMode ? 'Edit Guest Details' : 'Add New Guest' }}
+    <h2 class="text-2xl md:text-3xl font-serif font-medium italic text-slate-900">
+      {{ isEditMode ? guestToEdit?.firstName + ' ' + guestToEdit?.lastName : 'Guest Details' }}
     </h2>
   </div>
 
-  <form [formGroup]="guestForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-8">
+  <form [formGroup]="guestForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-6">
 
-    <div class="flex flex-col gap-6">
-      <h3 class="text-sm font-bold uppercase tracking-widest border-b border-slate-100 pb-2 mb-2 text-slate-800">
-        Personal Information
-      </h3>
-
-      <div class="grid grid-cols-2 gap-6">
+    <!-- Basic Info Section -->
+    <div class="border-b border-slate-100 pb-6">
+      <h3 class="text-xs uppercase tracking-widest text-slate-500 mb-4">Personal Information</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="flex flex-col gap-2">
-          <label for="firstName" class="text-xs font-sans uppercase tracking-widest text-slate-500">First Name</label>
-          <input id="firstName" type="text" pInputText formControlName="firstName" class="w-full" />
+          <label for="firstName" class="text-xs font-sans text-slate-600">First Name</label>
+          <input id="firstName" type="text" pInputText formControlName="firstName" class="w-full text-sm" />
         </div>
         <div class="flex flex-col gap-2">
-          <label for="lastName" class="text-xs font-sans uppercase tracking-widest text-slate-500">Last Name</label>
-          <input id="lastName" type="text" pInputText formControlName="lastName" class="w-full" />
+          <label for="lastName" class="text-xs font-sans text-slate-600">Last Name</label>
+          <input id="lastName" type="text" pInputText formControlName="lastName" class="w-full text-sm" />
         </div>
-      </div>
-
-      <div class="flex flex-col gap-2">
-        <label for="country" class="text-xs font-sans uppercase tracking-widest text-slate-500">Country of Residence</label>
-        <input id="country" type="text" pInputText formControlName="countryOfResidence" class="w-full" />
-      </div>
-
-      <div class="flex flex-col gap-2">
-        <label for="notes" class="text-xs font-sans uppercase tracking-widest text-slate-500">Admin Notes</label>
-        <textarea id="notes" pInputTextarea formControlName="notes" rows="2" class="w-full" placeholder="Internal use..."></textarea>
+        <div class="flex flex-col gap-2">
+          <label for="country" class="text-xs font-sans text-slate-600">Country of Residence</label>
+          <input id="country" type="text" pInputText formControlName="countryOfResidence" class="w-full text-sm" />
+        </div>
+        <div class="flex flex-col gap-2">
+          <label for="notes" class="text-xs font-sans text-slate-600">Admin Notes</label>
+          <input id="notes" type="text" pInputText formControlName="notes" class="w-full text-sm" />
+        </div>
       </div>
     </div>
 
-    @if (isEditMode) {
-      <div class="flex flex-col gap-6 bg-slate-50 p-4 -mx-4 md:mx-0 md:rounded-sm">
-        <h3 class="text-sm font-bold uppercase tracking-widest border-b border-slate-200 pb-2 mb-2 text-slate-800">
-          RSVP & Dietary
-        </h3>
+    <!-- RSVP & Logistics Section (Only in Edit Mode) -->
+    @if(isEditMode) {
+      <div class="border-b border-slate-100 pb-6">
+        <h3 class="text-xs uppercase tracking-widest text-slate-500 mb-4">RSVP & Logistics</h3>
 
-        <div class="flex flex-col gap-3">
-          <label class="text-xs font-sans uppercase tracking-widest text-slate-500">Attendance Status</label>
-          <div class="flex gap-6">
-            <div class="flex items-center gap-2">
-              <p-radioButton [value]="true" formControlName="isAttending" inputId="attending"></p-radioButton>
-              <label for="attending" class="text-sm">Attending</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <p-radioButton [value]="false" formControlName="isAttending" inputId="declined"></p-radioButton>
-              <label for="declined" class="text-sm">Declined</label>
-            </div>
-            <div class="flex items-center gap-2">
-              <p-radioButton [value]="null" formControlName="isAttending" inputId="pending"></p-radioButton>
-              <label for="pending" class="text-sm text-slate-400">Pending</label>
-            </div>
+        <!-- Attendance -->
+        <div class="mb-6">
+          <p class="text-sm text-slate-600 mb-3">Attendance Status</p>
+          <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
+            <label class="flex items-center gap-2 cursor-pointer p-2 -m-2 rounded hover:bg-slate-50 transition-colors w-fit">
+              <p-radioButton name="isAttending" [value]="true" formControlName="isAttending"></p-radioButton>
+              <span class="text-sm">Attending</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 -m-2 rounded hover:bg-slate-50 transition-colors w-fit">
+              <p-radioButton name="isAttending" [value]="false" formControlName="isAttending"></p-radioButton>
+              <span class="text-sm">Not Attending</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer p-2 -m-2 rounded hover:bg-slate-50 transition-colors w-fit">
+              <p-radioButton name="isAttending" [value]="null" formControlName="isAttending"></p-radioButton>
+              <span class="text-sm">Pending</span>
+            </label>
           </div>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <label class="text-xs font-sans uppercase tracking-widest text-slate-500">Preferences</label>
-          <div class="flex flex-wrap gap-2">
-            @for (opt of dietaryOptions; track opt.label) {
-              <p-checkbox name="dietaryPreferences"
-                          [value]="opt.value"
-                          formControlName="dietaryPreferences"
-                          class="chip-checkbox"
-                          id="{{opt.label + '_' + guestToEdit?.id}}"
-              >
-              </p-checkbox>
-              <label for="{{opt.label + '_' + guestToEdit?.id}}" class="ml-2">{{opt.label}}</label>
+        <!-- Bus Details (Conditional) -->
+        @if(guestForm.get('isAttending')?.value === true) {
+          <div class="mb-6 animate-fade-in bg-slate-50 p-4 border border-slate-100">
+            <p class="text-sm text-slate-600 mb-3">Shuttle Bus</p>
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-6">
+              <label class="flex items-center gap-2 cursor-pointer p-2 -m-2 rounded hover:bg-white transition-colors w-fit">
+                <p-radioButton name="needsBus" [value]="true" formControlName="needsBus"></p-radioButton>
+                <span class="text-sm">Needs Bus</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer p-2 -m-2 rounded hover:bg-white transition-colors w-fit">
+                <p-radioButton name="needsBus" [value]="false" formControlName="needsBus"></p-radioButton>
+                <span class="text-sm">Doesn't Need Bus</span>
+              </label>
+            </div>
+
+            @if(guestForm.get('needsBus')?.value === true) {
+              <div class="mt-4 sm:ml-8 animate-fade-in w-full max-w-xs">
+                <label for="busPickup" class="text-xs font-sans text-slate-600 mb-2 block">Pickup Location</label>
+                <p-select id="busPickup" [options]="busPickupOptions" formControlName="busPickupLocation" placeholder="Select a location" class="w-full text-sm !border-slate-300 block"></p-select>
+                @if (guestForm.get('busPickupLocation')?.invalid && guestForm.get('busPickupLocation')?.touched) {
+                  <small class="text-red-500 mt-1 block">Please select a location.</small>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Dietary Preferences -->
+        <div class="mb-6">
+          <p class="text-sm text-slate-600 mb-3">Dietary Preferences</p>
+          <div class="flex flex-wrap gap-x-6 gap-y-3">
+            @for(opt of dietaryOptions; track opt.value) {
+              <label class="flex items-center cursor-pointer p-1 -m-1 rounded hover:bg-slate-50 transition-colors">
+                <p-checkbox [value]="opt.value" formControlName="dietaryPreferences" class="mr-2"></p-checkbox>
+                <span class="text-sm">{{ opt.labelKey | translate }}</span>
+              </label>
             }
           </div>
         </div>
 
-        <div class="flex flex-col gap-3">
-          <label class="text-xs font-sans uppercase tracking-widest text-slate-500">Allergies</label>
-          <div class="flex flex-wrap gap-2">
-            @for (opt of allergyOptions; track opt.label) {
-              <p-checkbox name="allergies"
-                          [value]="opt.value"
-                          formControlName="allergies"
-                          class="chip-checkbox"
-                          id="{{opt.label + '_' + guestToEdit?.id}}"
-              >
-              </p-checkbox>
-              <label for="{{opt.label + '_' + guestToEdit?.id}}" class="ml-2">{{opt.label}}</label>
+        <!-- Allergies -->
+        <div class="mb-6">
+          <p class="text-sm text-slate-600 mb-3">Allergies</p>
+          <div class="flex flex-wrap gap-x-6 gap-y-3">
+            @for(opt of allergyOptions; track opt.value) {
+              <label class="flex items-center cursor-pointer p-1 -m-1 rounded hover:bg-slate-50 transition-colors">
+                <p-checkbox [value]="opt.value" formControlName="allergies" class="mr-2"></p-checkbox>
+                <span class="text-sm">{{ opt.labelKey | translate }}</span>
+              </label>
             }
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
-          <label for="dNotes" class="text-xs font-sans uppercase tracking-widest text-slate-500">Specific Dietary Notes</label>
-          <input id="dNotes" type="text" pInputText formControlName="dietaryNotes" class="w-full text-sm" placeholder="Details provided by guest..." />
+        <!-- Dietary Notes -->
+        <div>
+          <div class="flex justify-between items-baseline mb-2">
+            <label for="dietaryNotes" class="text-sm text-slate-600">Dietary Notes</label>
+            <span class="text-[10px] text-slate-400" [class.text-red-400]="guestForm.get('dietaryNotes')?.value?.length > 180">
+              {{ guestForm.get('dietaryNotes')?.value?.length || 0 }} / 200
+            </span>
+          </div>
+          <textarea id="dietaryNotes" pInputTextarea formControlName="dietaryNotes" rows="2" class="w-full text-sm" maxlength="200"></textarea>
         </div>
       </div>
     }
 
-    <div class="flex items-center justify-between mt-2 pt-6 border-t border-slate-100">
-      <button type="button" (click)="onCancel()" class="text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
-        Cancel
-      </button>
-
-      <button type="submit" [disabled]="guestForm.invalid || isLoading" class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50 flex items-center gap-2">
-        @if(isLoading) { <i class="pi pi-spin pi-spinner"></i> }
-        {{ isEditMode ? 'Update Guest' : 'Add Guest' }}
+    <!-- Action Buttons -->
+    <div class="flex flex-col-reverse sm:flex-row items-center justify-between mt-2 gap-4">
+      <button type="button" (click)="onCancel()" class="w-full sm:w-auto text-[10px] md:text-xs uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors py-3">Cancel</button>
+      <button type="submit" [disabled]="guestForm.invalid || isLoading" class="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors disabled:opacity-50">
+        @if(isLoading) {
+          <i class="pi pi-spin pi-spinner"></i>
+        } @else {
+          {{ isEditMode ? 'Save Changes' : 'Add Guest' }}
+        }
       </button>
     </div>
 

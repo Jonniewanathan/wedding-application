@@ -1,26 +1,21 @@
-<div class="py-6">
+<div class="py-4 md:py-6">
 
-  <div class="flex justify-between items-center mb-6">
-    <p class="text-sm text-slate-500 font-light max-w-md">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <p class="text-sm text-slate-500 font-light max-w-md w-full text-center md:text-left">
       Guests listed here are waiting to be grouped into an invitation. Select guests to create a new group.
     </p>
 
-    <div class="relative w-full md:w-auto">
-      <p-inputgroup>
-        <p-inputgroup-addon>
-          <i class="pi pi-search"></i>
-        </p-inputgroup-addon>
-        <input
-          type="text"
-          pInputText
-          (input)="filterGuests(dt, $event)"
-          placeholder="Search guests..."
-          class="pl-10 w-full md:w-64 text-sm border-slate-200"
-        />
-      </p-inputgroup>
+    <div class="w-full md:w-auto relative">
+      <i class="pi pi-search absolute left-3 top-3 text-slate-400"></i>
+      <input
+        type="text"
+        (input)="filterGuests(dt, $event)"
+        placeholder="Search guests..."
+        class="pl-10 w-full md:w-64 text-sm border-slate-200 p-2"
+      />
     </div>
 
-    <div class="flex gap-3">
+    <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
       <input
         type="file"
         #csvInput
@@ -31,13 +26,13 @@
 
       <button
         (click)="csvInput.click()"
-        class="bg-white border border-slate-200 text-slate-800 px-4 py-3 text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm">
+        class="w-full sm:w-auto bg-white border border-slate-200 text-slate-800 px-4 py-3 text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm">
         <i class="pi pi-upload mr-2"></i> Upload CSV
       </button>
 
       <button
         (click)="openAddGuestForm()"
-        class="bg-slate-900 text-white px-6 py-3 text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-colors shadow-lg shadow-slate-200">
+        class="w-full sm:w-auto bg-slate-900 text-white px-6 py-3 text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-colors shadow-lg shadow-slate-200">
         + Add New Guest
       </button>
     </div>
@@ -50,24 +45,15 @@
            [paginator]="true"
            [rows]="10"
            class="editorial-table"
-           [globalFilterFields]="['firstName', 'lastName', 'countryOfResidence']">
+           [globalFilterFields]="['firstName', 'lastName', 'countryOfResidence']"
+           breakpoint="960px">
 
     <ng-template pTemplate="header">
       <tr>
         <th style="width: 3rem"><p-tableHeaderCheckbox></p-tableHeaderCheckbox></th>
-
-        <th pSortableColumn="firstName" class="cursor-pointer hover:text-slate-900 transition-colors">
-          First Name <p-sortIcon field="firstName"></p-sortIcon>
-        </th>
-
-        <th pSortableColumn="lastName" class="cursor-pointer hover:text-slate-900 transition-colors">
-          Last Name <p-sortIcon field="lastName"></p-sortIcon>
-        </th>
-
-        <th pSortableColumn="countryOfResidence" class="cursor-pointer hover:text-slate-900 transition-colors">
-          Country <p-sortIcon field="countryOfResidence"></p-sortIcon>
-        </th>
-
+        <th pSortableColumn="firstName">First Name <p-sortIcon field="firstName"></p-sortIcon></th>
+        <th pSortableColumn="lastName">Last Name <p-sortIcon field="lastName"></p-sortIcon></th>
+        <th pSortableColumn="countryOfResidence">Country <p-sortIcon field="countryOfResidence"></p-sortIcon></th>
         <th>Status</th>
         <th class="text-right">Action</th>
       </tr>
@@ -76,30 +62,24 @@
     <ng-template pTemplate="body" let-guest>
       <tr class="hover:bg-slate-50 transition-colors">
         <td><p-tableCheckbox [value]="guest"></p-tableCheckbox></td>
-
-        <td class="font-semibold text-slate-900">{{ guest.firstName }}</td>
-
-        <td class="font-semibold text-slate-900">{{ guest.lastName }}</td>
-
-        <td>{{ guest.countryOfResidence || '-' }}</td>
-
+        <td>
+          {{ guest.firstName }}
+        </td>
+        <td>
+          {{ guest.lastName }}
+        </td>
+        <td>
+          {{ guest.countryOfResidence || '-' }}
+        </td>
         <td>
           <span class="text-[10px] uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1">Unassigned</span>
         </td>
         <td class="text-right">
           <div class="flex justify-end gap-2">
-
-            <button
-              (click)="onEditGuest(guest)"
-              class="text-slate-300 hover:text-slate-900 transition-colors p-2"
-              pTooltip="Edit Details">
+            <button (click)="onEditGuest(guest)" class="text-slate-300 hover:text-slate-900 transition-colors p-2" pTooltip="Edit Details" tooltipPosition="top">
               <i class="pi pi-pencil"></i>
             </button>
-
-            <button
-              (click)="onDeleteUnassignedGuest(guest)"
-              class="text-slate-300 hover:text-red-500 transition-colors p-2"
-              pTooltip="Remove Guest">
+            <button (click)="onDeleteUnassignedGuest(guest)" class="text-slate-300 hover:text-red-500 transition-colors p-2" pTooltip="Remove Guest" tooltipPosition="top">
               <i class="pi pi-trash"></i>
             </button>
           </div>
@@ -109,7 +89,7 @@
   </p-table>
 
   <!-- sticky footer for actions based on selection -->
-  <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 flex justify-center items-center gap-6"
+  <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-50 flex flex-col md:flex-row justify-center items-center gap-2 md:gap-6"
        *ngIf="selectedGuests && selectedGuests.length > 0">
 
     <span class="text-xs text-slate-500 uppercase tracking-widest font-medium">
@@ -118,9 +98,112 @@
 
     <button
       (click)="openInvitationForm()"
-      class="bg-slate-900 text-white px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-slate-800 transition-colors shadow-lg">
+      class="w-full md:w-auto bg-slate-900 text-white px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-slate-800 transition-colors shadow-lg">
       Create Invitation Group &rarr;
     </button>
   </div>
 
 </div>
+
+<!-- ─────────── CSV Import Preview Dialog ─────────── -->
+<p-dialog
+  [(visible)]="csvPreviewOpen"
+  [modal]="true"
+  [closable]="false"
+  [draggable]="false"
+  [resizable]="false"
+  header="Review CSV import"
+  [style]="{width: '90vw', maxWidth: '640px'}"
+  styleClass="editorial-dialog">
+
+  <div class="p-2 md:p-4 flex flex-col gap-5">
+    <div>
+      <span class="block text-[10px] uppercase tracking-widest text-slate-400 mb-1">File</span>
+      <span class="text-sm text-slate-700 font-mono break-all">{{ csvPreviewFileName }}</span>
+    </div>
+
+    <!-- Summary counts -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-slate-50 border border-slate-100 p-4 text-center">
+        <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Will import</span>
+        <span class="text-3xl font-serif text-slate-800">{{ csvPreviewValid.length }}</span>
+      </div>
+      <div
+        class="border p-4 text-center"
+        [class.bg-amber-50]="csvPreviewSkipped.length > 0"
+        [class.border-amber-100]="csvPreviewSkipped.length > 0"
+        [class.bg-slate-50]="csvPreviewSkipped.length === 0"
+        [class.border-slate-100]="csvPreviewSkipped.length === 0">
+        <span class="text-[10px] uppercase tracking-widest block mb-1"
+          [class.text-amber-700]="csvPreviewSkipped.length > 0"
+          [class.text-slate-400]="csvPreviewSkipped.length === 0">
+          Skipped
+        </span>
+        <span class="text-3xl font-serif text-slate-800">{{ csvPreviewSkipped.length }}</span>
+      </div>
+    </div>
+
+    <!-- Valid rows preview (collapsible-feel: just a max-height scroll) -->
+    @if (csvPreviewValid.length > 0) {
+      <details class="bg-white border border-slate-100">
+        <summary class="cursor-pointer px-4 py-2 text-[10px] uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-colors">
+          Preview rows to import ({{ csvPreviewValid.length }})
+        </summary>
+        <ul class="list-none m-0 p-0 max-h-48 overflow-y-auto divide-y divide-slate-100">
+          @for (row of csvPreviewValid; track $index) {
+            <li class="px-4 py-2 text-sm text-slate-700 flex flex-col md:flex-row md:justify-between md:items-baseline gap-1">
+              <span class="font-medium">{{ row.firstName }} {{ row.lastName }}</span>
+              <span class="text-[10px] text-slate-400">
+                @if (row.countryOfResidence) { {{ row.countryOfResidence }} }
+                @if (row.notes) { · {{ row.notes }} }
+              </span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+
+    <!-- Skipped rows -->
+    @if (csvPreviewSkipped.length > 0) {
+      <details class="bg-amber-50 border border-amber-100" open>
+        <summary class="cursor-pointer px-4 py-2 text-[10px] uppercase tracking-widest text-amber-800 hover:bg-amber-100 transition-colors">
+          Rows being skipped ({{ csvPreviewSkipped.length }})
+        </summary>
+        <ul class="list-none m-0 p-0 max-h-32 overflow-y-auto divide-y divide-amber-200/40">
+          @for (row of csvPreviewSkipped; track $index) {
+            <li class="px-4 py-2 text-xs text-amber-900 flex justify-between gap-3">
+              <span class="font-mono truncate">{{ row.raw.FirstName || '(no first name)' }} {{ row.raw.LastName || '(no last name)' }}</span>
+              <span class="text-amber-700 italic shrink-0">{{ row.reason }}</span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+
+    <p class="text-xs text-slate-400 font-light">
+      Cancel does nothing. Confirm writes the {{ csvPreviewValid.length }} valid row{{ csvPreviewValid.length === 1 ? '' : 's' }} to the guest pool — skipped rows aren't touched and won't be created.
+    </p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <button
+        type="button"
+        (click)="cancelCsvImport()"
+        class="border border-slate-200 text-slate-600 px-5 py-2 text-xs uppercase tracking-widest hover:border-slate-400 transition-colors">
+        Cancel
+      </button>
+      <button
+        type="button"
+        (click)="confirmCsvImport()"
+        [disabled]="csvPreviewValid.length === 0 || csvImportInProgress"
+        class="bg-slate-900 text-white px-5 py-2 text-xs uppercase tracking-widest hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        @if (csvImportInProgress) {
+          Importing…
+        } @else {
+          Import {{ csvPreviewValid.length }} guest{{ csvPreviewValid.length === 1 ? '' : 's' }}
+        }
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,9 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { FirestoreService } from '../../../core/services/firestore/firestore';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { Guest } from '../../models/guest.model';
+import { ALLERGY_OPTIONS, DIETARY_OPTIONS } from '../../models/dietary-options';
 
 // PrimeNG Modules
 import { InputTextModule } from 'primeng/inputtext';
@@ -11,6 +13,7 @@ import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { CheckboxModule } from 'primeng/checkbox';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-guest-form',
@@ -18,16 +21,18 @@ import { CheckboxModule } from 'primeng/checkbox';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    TranslateModule,
     InputTextModule,
     TextareaModule,
     ButtonModule,
     RadioButtonModule,
-    CheckboxModule
+    CheckboxModule,
+    SelectModule
   ],
   templateUrl: './guest-form.html',
-  styleUrl: './guest-form.scss' // Ensure you have the chip styles here
+  styleUrl: './guest-form.scss'
 })
-export class GuestFormComponent implements OnInit {
+export class GuestForm implements OnInit {
   private fb = inject(FormBuilder);
   private firestoreService = inject(FirestoreService);
   public dialogRef = inject(DynamicDialogRef);
@@ -38,20 +43,15 @@ export class GuestFormComponent implements OnInit {
   isEditMode = false;
   isLoading = false;
 
-  // Options matching the public RSVP page
-  dietaryOptions = [
-    { label: 'Vegetarian', value: 'Vegetarian' },
-    { label: 'Vegan', value: 'Vegan' },
-    { label: 'Pescatarian', value: 'Pescatarian' },
-    { label: 'Gluten Free', value: 'Gluten Free' },
-    { label: 'Dairy Free', value: 'Dairy Free' }
-  ];
+  // Sourced from the shared list so admin and RSVP forms agree on what
+  // values can appear in dietaryPreferences[] / allergies[].
+  readonly dietaryOptions = DIETARY_OPTIONS;
+  readonly allergyOptions = ALLERGY_OPTIONS;
 
-  allergyOptions = [
-    { label: 'Peanuts', value: 'Peanuts' },
-    { label: 'Tree Nuts', value: 'Tree Nuts' },
-    { label: 'Shellfish', value: 'Shellfish' },
-    { label: 'Eggs', value: 'Eggs' }
+  busPickupOptions = [
+    { label: 'Punta Umbría', value: 'Punta Umbría' },
+    { label: 'Valverde Del Camino', value: 'Valverde Del Camino' },
+    { label: 'Huelva', value: 'Huelva' }
   ];
 
   ngOnInit(): void {
@@ -65,12 +65,49 @@ export class GuestFormComponent implements OnInit {
       countryOfResidence: [this.guestToEdit?.countryOfResidence || ''],
       notes: [this.guestToEdit?.notes || ''],
 
-      // RSVP Details (Only relevant if editing, but safe to init for adding too)
-      isAttending: [this.guestToEdit?.isAttending ?? null], // null = pending
+      // RSVP Details
+      isAttending: [this.guestToEdit?.isAttending ?? null],
+      needsBus: [this.guestToEdit?.needsBus ?? null],
+      busPickupLocation: [this.guestToEdit?.busPickupLocation ?? null],
       dietaryPreferences: [this.guestToEdit?.dietaryPreferences || []],
       allergies: [this.guestToEdit?.allergies || []],
-      dietaryNotes: [this.guestToEdit?.dietaryNotes || '']
+      dietaryNotes: [this.guestToEdit?.dietaryNotes || '', Validators.maxLength(200)]
     });
+
+    // Add dynamic validators based on attendance and bus needs
+    this.setupConditionalValidators();
+  }
+
+  private setupConditionalValidators(): void {
+    const isAttendingControl = this.guestForm.get('isAttending');
+    const needsBusControl = this.guestForm.get('needsBus');
+    const busPickupControl = this.guestForm.get('busPickupLocation');
+
+    isAttendingControl?.valueChanges.subscribe(isAttending => {
+      if (isAttending === true) {
+        // If attending, they might need a bus
+      } else {
+        // If not attending, they definitely don't need a bus
+        needsBusControl?.setValue(null, { emitEvent: false });
+        busPickupControl?.setValue(null, { emitEvent: false });
+        busPickupControl?.clearValidators();
+      }
+      needsBusControl?.updateValueAndValidity({ emitEvent: false });
+    });
+
+    needsBusControl?.valueChanges.subscribe(needsBus => {
+      if (needsBus === true && isAttendingControl?.value === true) {
+        busPickupControl?.setValidators(Validators.required);
+      } else {
+        busPickupControl?.clearValidators();
+        busPickupControl?.setValue(null, { emitEvent: false });
+      }
+      busPickupControl?.updateValueAndValidity({ emitEvent: false });
+    });
+
+    // Initial check
+    isAttendingControl?.updateValueAndValidity();
+    needsBusControl?.updateValueAndValidity();
   }
 
   async onSubmit() {
@@ -87,7 +124,7 @@ export class GuestFormComponent implements OnInit {
           ...formValue
         });
       } else {
-        // --- ADD MODE: Adds basic info (RSVP usually null here) ---
+        // --- ADD MODE: Adds basic info ---
         await this.firestoreService.addGuest(
           formValue.firstName,
           formValue.lastName,

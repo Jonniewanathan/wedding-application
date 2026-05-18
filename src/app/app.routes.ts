@@ -1,40 +1,57 @@
 import { Routes } from '@angular/router';
-import {SaveTheDate} from './shared/components/save-the-date/save-the-date';
-import {TravelInfo} from './shared/components/travel-info/travel-info';
-import {LocalAttractions} from './shared/components/local-attractions/local-attractions';
-import {Rsvp} from './shared/components/rsvp/rsvp';
-import {PhotoShare} from './shared/components/photo-share/photo-share';
-import {Invitation} from './shared/components/invitation/invitation';
-import {LoginComponent} from './features/login/login';
-import {AdminComponent} from './features/admin/admin';
-import {authGuard} from './core/guards/auth/auth-guard';
-import {MainLayout} from './core/layout/main-layout/main-layout';
-import {guestGuard} from './core/guards/guest/guest-guard';
+import { SaveTheDate } from './shared/components/save-the-date/save-the-date';
+import { authGuard } from './core/guards/auth/auth-guard';
+import { MainLayout } from './core/layout/main-layout/main-layout';
+import { guestGuard } from './core/guards/guest/guest-guard';
 
 export const routes: Routes = [
   {
     path: '',
     component: MainLayout,
     children: [
-      {path: 'login', component: LoginComponent},
+      {
+        path: 'login',
+        loadComponent: () =>
+          import('./features/login/login').then(m => m.Login)
+      },
       {
         path: 'admin',
-        component: AdminComponent,
-        canActivate: [authGuard] // <-- Apply the guard here
+        loadComponent: () =>
+          import('./features/admin/admin').then(m => m.Admin),
+        canActivate: [authGuard]
       },
-      {path: 'save-the-date', component: SaveTheDate},
-      // Define routes for other components as they are implemented
-      {path: 'invite/:code', component: Invitation},
+      // SaveTheDate stays eager — it's the default landing route, so its
+      // bundle is fetched on first paint anyway. Lazy-loading it would
+      // only add a microsecond of redirect overhead with no payload win.
+      { path: 'save-the-date', component: SaveTheDate },
+      {
+        path: 'invite/:code',
+        loadComponent: () =>
+          import('./shared/components/invitation/invitation').then(m => m.Invitation)
+      },
       {
         path: 'rsvp',
-        component: Rsvp,
-        canActivate: [guestGuard] // Only RSVP is protected
+        loadComponent: () =>
+          import('./shared/components/rsvp/rsvp').then(m => m.Rsvp),
+        canActivate: [guestGuard]
       },
-      {path: 'travel-info', component: TravelInfo},
-      {path: 'local-attractions', component: LocalAttractions},
-      {path: 'photo-share', component: PhotoShare},
-      {path: '', redirectTo: '/save-the-date', pathMatch: 'full'}, // Default route
-      {path: '**', redirectTo: '/save-the-date'} // Redirect any unknown paths
-    ],
+      {
+        path: 'travel-info',
+        loadComponent: () =>
+          import('./shared/components/travel-info/travel-info').then(m => m.TravelInfo)
+      },
+      {
+        path: 'local-attractions',
+        loadComponent: () =>
+          import('./shared/components/local-attractions/local-attractions').then(m => m.LocalAttractions)
+      },
+      {
+        path: 'photo-share',
+        loadComponent: () =>
+          import('./shared/components/photo-share/photo-share').then(m => m.PhotoShare)
+      },
+      { path: '', redirectTo: '/save-the-date', pathMatch: 'full' },
+      { path: '**', redirectTo: '/save-the-date' }
+    ]
   }
 ];

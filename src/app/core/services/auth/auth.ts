@@ -1,6 +1,12 @@
-import { Injectable, inject } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from '@angular/fire/auth';
-import { Observable } from 'rxjs';
+import { Injectable, Signal, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  Auth,
+  User,
+  authState,
+  signInWithEmailAndPassword,
+  signOut
+} from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -8,26 +14,23 @@ import { Observable } from 'rxjs';
 export class AuthService {
   private auth: Auth = inject(Auth);
 
-  // Observable to track the current user's authentication state
-  public readonly currentUser$: Observable<User | null>;
+  /**
+   * Signal mirror of the Firebase auth state. Null while auth is still
+   * initialising; the User object once a session is restored or signed in.
+   *
+   * For synchronous decisions (e.g. route guards) read auth.currentUser
+   * directly after `await auth.authStateReady()` — the signal updates
+   * asynchronously when authState emits, which lags signInWithEmailAndPassword
+   * resolving.
+   */
+  readonly currentUser: Signal<User | null> = toSignal(authState(this.auth), {
+    initialValue: null
+  });
 
-  constructor() {
-    this.currentUser$ = new Observable(subscriber => {
-      // onAuthStateChanged returns an unsubscribe function
-      const unsubscribe = onAuthStateChanged(this.auth, user => {
-        subscriber.next(user);
-      });
-      // This will be called when the observable is unsubscribed
-      return unsubscribe;
-    });
-  }
-
-  // Login method
   login(email: string, password: string) {
     return signInWithEmailAndPassword(this.auth, email, password);
   }
 
-  // Logout method
   logout() {
     return signOut(this.auth);
   }

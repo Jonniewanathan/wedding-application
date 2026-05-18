@@ -1,0 +1,151 @@
+<div class="py-4 md:py-6 min-h-[500px]">
+
+  <div class="mb-8 max-w-2xl">
+    <p class="text-sm text-slate-500 font-light">
+      Assign attending guests to tables. Use anything for the table name —
+      numbers ("Table 1"), names ("Sunflower"), or family labels ("Smith family").
+      Sort respects natural ordering so "Table 2" comes before "Table 10".
+    </p>
+  </div>
+
+  <!-- ─────────── Unseated guests ─────────── -->
+  <div class="bg-white border border-slate-100 shadow-sm mb-10 overflow-hidden">
+    <div class="px-4 md:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+      <div>
+        <h3 class="font-serif italic text-base md:text-lg text-slate-800">Unseated guests</h3>
+        <p class="text-xs text-slate-400 font-light mt-1">
+          Attending guests with no table assigned.
+        </p>
+      </div>
+      @if (unseatedGuests().length > 0) {
+        <span class="text-[10px] uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1">
+          {{ unseatedGuests().length }}
+        </span>
+      } @else {
+        <span class="text-[10px] uppercase tracking-widest text-green-700 bg-green-50 border border-green-100 px-2 py-1">
+          All seated
+        </span>
+      }
+    </div>
+
+    @if (unseatedGuests().length === 0) {
+      <p class="text-center text-slate-400 italic py-8 text-sm">
+        Everyone attending has a table. Nice work.
+      </p>
+    } @else {
+      <ul class="divide-y divide-slate-100">
+        @for (row of unseatedGuests(); track row.guest.id) {
+          <li
+            class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-colors"
+            [ngClass]="row.isShaded
+              ? '!bg-slate-50 !border-slate-200'
+              : 'bg-white'">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-slate-800">{{ row.guest.firstName }} {{ row.guest.lastName }}</span>
+              <span class="text-[10px] uppercase tracking-widest text-slate-400 mt-0.5">{{ row.invitationDisplayName }}</span>
+            </div>
+
+            @if (editingGuestId() === row.guest.id) {
+              <div class="flex items-center gap-2 w-full md:w-auto">
+                <input
+                  type="text"
+                  [(ngModel)]="editingDraft"
+                  (keydown.enter)="saveEdit(row.guest)"
+                  (keydown.escape)="cancelEdit()"
+                  placeholder="Table name"
+                  class="flex-1 md:w-48 text-sm border border-slate-300 px-3 py-1.5 outline-none focus:border-slate-600"
+                  autofocus>
+                <button
+                  (click)="saveEdit(row.guest)"
+                  class="bg-slate-900 text-white px-3 py-1.5 text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors">
+                  Save
+                </button>
+                <button
+                  (click)="cancelEdit()"
+                  class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-2">
+                  Cancel
+                </button>
+              </div>
+            } @else {
+              <button
+                (click)="beginEdit(row.guest)"
+                class="text-[10px] uppercase tracking-widest text-slate-500 border border-slate-200 hover:border-slate-400 hover:text-slate-900 px-3 py-1.5 transition-colors">
+                Assign table
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- ─────────── Tables ─────────── -->
+  @if (tables().length === 0) {
+    <div class="bg-slate-50 border border-slate-100 p-8 text-center">
+      <p class="text-sm text-slate-500 font-light italic">
+        No tables yet. Assign one above to get started.
+      </p>
+    </div>
+  } @else {
+    <div class="mb-4 flex items-baseline justify-between">
+      <h3 class="font-serif italic text-base md:text-lg text-slate-800">Tables</h3>
+      <span class="text-xs text-slate-400 font-light">
+        {{ tables().length }} table{{ tables().length === 1 ? '' : 's' }} ·
+        {{ totalSeatedCount() }} guest{{ totalSeatedCount() === 1 ? '' : 's' }} seated
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+      @for (table of tables(); track table.name) {
+        <div class="bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div class="px-4 py-3 border-b border-slate-100 flex items-baseline justify-between gap-2">
+            <h4 class="font-serif italic text-slate-800 text-base">{{ table.name }}</h4>
+            <span class="text-[10px] uppercase tracking-widest text-slate-400">
+              {{ table.guests.length }} seat{{ table.guests.length === 1 ? '' : 's' }}
+            </span>
+          </div>
+          <ul class="divide-y divide-slate-50 flex-1">
+            @for (guest of table.guests; track guest.id) {
+              <li class="px-4 py-2 flex items-center justify-between gap-2 group">
+                @if (editingGuestId() === guest.id) {
+                  <input
+                    type="text"
+                    [(ngModel)]="editingDraft"
+                    (keydown.enter)="saveEdit(guest)"
+                    (keydown.escape)="cancelEdit()"
+                    class="flex-1 text-sm border border-slate-300 px-2 py-1 outline-none focus:border-slate-600">
+                  <button
+                    (click)="saveEdit(guest)"
+                    class="text-[10px] uppercase tracking-widest text-slate-900 hover:text-slate-700 transition-colors">
+                    Save
+                  </button>
+                  <button
+                    (click)="cancelEdit()"
+                    class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
+                    Cancel
+                  </button>
+                } @else {
+                  <span class="text-sm text-slate-700">{{ guest.firstName }} {{ guest.lastName }}</span>
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      (click)="beginEdit(guest)"
+                      class="text-slate-400 hover:text-slate-800 transition-colors p-1"
+                      pTooltip="Change table" tooltipPosition="top">
+                      <i class="pi pi-pencil text-[10px]"></i>
+                    </button>
+                    <button
+                      (click)="unseatGuest(guest)"
+                      class="text-slate-400 hover:text-red-600 transition-colors p-1"
+                      pTooltip="Unseat" tooltipPosition="top">
+                      <i class="pi pi-times text-[10px]"></i>
+                    </button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -1,23 +1,22 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../../services/auth/auth';
+import { Auth, authState } from '@angular/fire/auth';
 import { map, take } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(AuthService);
+export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
 
-  return authService.currentUser$.pipe(
-    take(1), // Take the first value emitted and complete
+  // Subscribe to authState and take the first emission. This matches the
+  // pattern the guard had before the signal migration and avoids any race
+  // between toSignal updates and the moment the guard runs after login.
+  return authState(inject(Auth)).pipe(
+    take(1),
     map(user => {
-      // Check if the user object exists
       if (user) {
-        return true; // User is logged in, allow access
-      } else {
-        // User is not logged in, redirect to the login page
-        router.navigate(['/login']);
-        return false;
+        return true;
       }
+      router.navigate(['/login']);
+      return false;
     })
   );
 };

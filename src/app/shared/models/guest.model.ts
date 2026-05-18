@@ -5,11 +5,12 @@ export interface Guest {
   firstName: string;
   lastName: string;
 
-  // FIX: Explicitly allow null
   invitationId?: string | null;
-
-  // FIX: Explicitly allow null
   isAttending?: boolean | null;
+
+  // New bus fields
+  needsBus?: boolean | null;
+  busPickupLocation?: string | null;
 
   dietaryPreferences?: string[];
   allergies?: string[];
@@ -18,7 +19,12 @@ export interface Guest {
   countryOfResidence?: string;
   notes?: string;
 
-  type?: string; // Added this to satisfy the overlap check
+  // Day-of seating. Free-text so the admin can use either numbers
+  // ("Table 1") or named tables ("Sunflower"). Null/missing means the
+  // guest hasn't been seated yet.
+  tableName?: string | null;
+
+  type?: string;
 
   createdAt: Timestamp;
   updatedAt?: Timestamp | null;
