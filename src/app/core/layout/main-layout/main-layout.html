@@ -65,11 +65,25 @@
     <div class="flex items-center gap-4">
 
       <!-- Mobile Language Switcher (Compact) -->
-      <button
-        (click)="switchLanguage(languageService.currentLang === 'en' ? 'es' : 'en')"
-        class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors border border-slate-200 px-2 py-1 rounded-sm">
-        {{ languageService.currentLang === 'en' ? 'ES' : 'EN' }}
-      </button>
+      <div class="flex items-center gap-1.5 border border-slate-200 px-2 py-1 rounded-sm">
+        <button
+          (click)="switchLanguage('en')"
+          [class.font-bold]="languageService.currentLang === 'en'"
+          [class.text-slate-900]="languageService.currentLang === 'en'"
+          [class.text-slate-400]="languageService.currentLang !== 'en'"
+          class="text-xs uppercase tracking-widest hover:text-slate-900 transition-colors">
+          EN
+        </button>
+        <span class="text-slate-300 text-xs">/</span>
+        <button
+          (click)="switchLanguage('es')"
+          [class.font-bold]="languageService.currentLang === 'es'"
+          [class.text-slate-900]="languageService.currentLang === 'es'"
+          [class.text-slate-400]="languageService.currentLang !== 'es'"
+          class="text-xs uppercase tracking-widest hover:text-slate-900 transition-colors">
+          ES
+        </button>
+      </div>
 
       <!-- Admin Quick Link (Mobile) -->
       @if (currentUser()) {
