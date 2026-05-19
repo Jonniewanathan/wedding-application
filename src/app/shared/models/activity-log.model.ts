@@ -58,4 +58,5 @@ export type ActivityAction =
   | 'outreach_marked'
   | 'outreach_cleared'
   | 'rsvp_submitted'
-  | 'rsvp_timestamps_backfilled';
+  | 'rsvp_timestamps_backfilled'
+  | 'invitation_codes_backfilled';

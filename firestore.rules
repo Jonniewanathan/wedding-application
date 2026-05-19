@@ -1,0 +1,151 @@
+rules_version = '2';
+
+// =============================================================================
+// Wedding application Firestore rules
+// -----------------------------------------------------------------------------
+// Threat model (see /audit notes — Path A):
+//   * Admin   = authenticated Firebase Auth user (email/password). Trusted.
+//   * Guest   = unauthenticated visitor holding an unguessable UUID invitation
+//               code. May read their own invitation, may update RSVP fields
+//               on their own invitation and their own guests.
+//   * Public  = anyone with a direct link. May only `get` (never `list`) the
+//               invitation_codes and invitations collections; never reads
+//               guests by listing.
+//
+// Read path:
+//   /invite/:code →  getDoc(invitation_codes/{code}) →  getDoc(invitations/{id})
+//                                                  →  parallel getDoc(guests/{guestId}) per id
+//   All single-doc gets, so we never need to allow `list` on these collections
+//   for unauthenticated callers.
+//
+// Write path:
+//   RSVP form  →  updateDoc(invitations/{id})  with hasOnly([rsvp fields])
+//             →  updateDoc(guests/{guestId})   with hasOnly([rsvp fields])
+//             →  addDoc(activity_log/...)      with shape constraints
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // -------------------------------------------------------------------------
+    // invitation_codes/{code} → { invitationId, createdAt }
+    // Pure lookup index. Public single-doc get; nothing else for non-admins.
+    // Listing this collection would leak the entire code-space, so it is
+    // strictly admin-only.
+    // -------------------------------------------------------------------------
+    match /invitation_codes/{code} {
+      allow get:    if true;
+      allow list:   if isAdmin();
+      allow write:  if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // invitations/{invitationId}
+    // -------------------------------------------------------------------------
+    match /invitations/{invitationId} {
+      // Public get: required for /invite/:code resolution after the lookup
+      // doc points here. The doc itself is not sensitive — guests reading
+      // their own invitation see the same fields they'd see on the page.
+      allow get:   if true;
+
+      // Never expose the collection: an attacker with `list` could
+      // enumerate every guest party, including emails and phone numbers.
+      allow list:  if isAdmin();
+
+      // Admin-only structural mutations.
+      allow create, delete: if isAdmin();
+
+      // Guest RSVP submission: an unauthenticated visitor may update only
+      // the fields the RSVP form actually writes, and may not change the
+      // code that anchors the invitation. Admins may update anything.
+      allow update: if isAdmin() || (
+        changedKeys().hasOnly([
+          'hasResponded',
+          'status',
+          'message',
+          'rsvpSubmittedAt',
+          'updatedAt'
+        ])
+        && request.resource.data.invitationCode == resource.data.invitationCode
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // guests/{guestId}
+    // -------------------------------------------------------------------------
+    match /guests/{guestId} {
+      // Public get: the RSVP form fetches each guest by id (sourced from
+      // the invitation's guestIds[] array). Guest IDs are 20-char
+      // Firestore auto-IDs — unguessable by enumeration.
+      allow get:   if true;
+
+      // Admin-only list / structural mutations. Listing guests would
+      // expose every party member with their dietary requirements and
+      // attendance status, even if no contact details are on this doc.
+      allow list:  if isAdmin();
+      allow create, delete: if isAdmin();
+
+      // Guest RSVP submission: an unauthenticated visitor may update only
+      // the fields the RSVP form actually writes, and may not reassign a
+      // guest to a different invitation.
+      allow update: if isAdmin() || (
+        changedKeys().hasOnly([
+          'firstName',
+          'lastName',
+          'isAttending',
+          'needsBus',
+          'busPickupLocation',
+          'dietaryPreferences',
+          'allergies',
+          'dietaryNotes',
+          'updatedAt'
+        ])
+        && request.resource.data.invitationId == resource.data.invitationId
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // activity_log/{entryId}
+    // Append-only audit trail. Read is admin-only (sensitive — contains
+    // names and actions). Create is open so guest RSVP submissions can
+    // record themselves, but constrained to the documented entry shape so
+    // unauthenticated writers can't smuggle arbitrary payloads. Updates
+    // and deletes are denied to everyone, including admins.
+    // -------------------------------------------------------------------------
+    match /activity_log/{entryId} {
+      allow read: if isAdmin();
+
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'action', 'subject', 'summary', 'actor', 'details', 'timestamp'
+        ])
+        && request.resource.data.keys().hasAll([
+          'action', 'subject', 'summary', 'actor', 'timestamp'
+        ])
+        && request.resource.data.action is string
+        && request.resource.data.summary is string
+        && request.resource.data.summary.size() <= 500
+        && request.resource.data.actor.role in ['admin', 'guest', 'system']
+        && request.resource.data.subject.type in ['guest', 'invitation']
+        // Only admins (and system, which only runs from admin contexts)
+        // may claim non-guest actor roles. Unauthenticated writers are
+        // capped at role:'guest' so they can't forge admin actions in
+        // the feed. The actor.label is still client-supplied so this is
+        // not cryptographic — admins should treat the feed as advisory.
+        && (request.resource.data.actor.role == 'guest' || request.auth != null)
+        // Timestamp must be the server sentinel — clients cannot backdate
+        // entries. request.time is the moment Firestore stamps the doc.
+        && request.resource.data.timestamp == request.time;
+
+      allow update, delete: if false;
+    }
+  }
+}

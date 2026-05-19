@@ -7,7 +7,6 @@ import { GuestSessionService } from '../../../core/services/auth/guest-session/g
 import { Invitation } from '../../models/invitation.model';
 import { Guest } from '../../models/guest.model';
 import { ALLERGY_OPTIONS, DIETARY_OPTIONS } from '../../models/dietary-options';
-import { take } from 'rxjs/operators';
 
 // PrimeNG
 import { ButtonModule } from 'primeng/button';
@@ -73,29 +72,35 @@ export class Rsvp implements OnInit {
       return;
     }
 
-    // IMPORTANT FIX: Re-fetch the invitation from Firestore to ensure we have the absolute latest data.
-    this.firestoreService.getInvitationByCode(this.invitation.invitationCode).then(freshInvitation => {
-        if(freshInvitation) {
-            this.invitation = freshInvitation;
-            this.guestSession.login(freshInvitation);
+    // Re-fetch the invitation from Firestore to ensure we have the
+    // absolute latest data (the session copy is stripped of timestamps
+    // and may be stale).
+    this.firestoreService
+      .getInvitationByCode(this.invitation.invitationCode)
+      .then(freshInvitation => {
+        if (freshInvitation) {
+          this.invitation = freshInvitation;
+          this.guestSession.login(freshInvitation);
         }
-        // 2. Load the guests for this invitation
-        this.loadGuests(this.invitation!.id);
-    });
+        return this.loadGuests();
+      });
   }
 
-  loadGuests(invitationId: string) {
-    // FIX: Use take(1) to prevent the form from completely rebuilding if an admin edits a guest while the user is filling out the form
-    this.firestoreService.getGuestsForInvitation(invitationId).pipe(take(1)).subscribe({
-      next: (guests) => {
-        this.initForm(guests);
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading guests', err);
-        this.isLoading = false;
-      }
-    });
+  async loadGuests(): Promise<void> {
+    // One-shot parallel fetch of the invitation's guests by id. We use
+    // the invitation.guestIds[] order directly — no separate sort step
+    // needed, since the source of truth is already ordered. The
+    // collection-level list query is reserved for admin paths so
+    // Firestore rules can keep `list` locked down for guests.
+    const guestIds = this.invitation?.guestIds ?? [];
+    try {
+      const guests = await this.firestoreService.getGuestsForInvitationByIds(guestIds);
+      this.initForm(guests);
+    } catch (err) {
+      console.error('Error loading guests', err);
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   initForm(guests: Guest[]) {
