@@ -30,6 +30,9 @@
   }
 
   <!-- ─────────────────────────── Hero ─────────────────────────── -->
+  <div class="border-t border-slate-200 pt-6 mb-6">
+    <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">RSVP Overview</span>
+  </div>
   <div class="bg-slate-50 border border-slate-100 p-6 md:p-10 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
     <div>
       <span class="block text-[10px] md:text-xs uppercase tracking-[0.3em] text-slate-400 mb-2">Attending</span>
@@ -49,9 +52,11 @@
         <span>{{ responseRate() }}%</span>
       </div>
       <div class="w-full h-2 bg-slate-200 overflow-hidden">
-        <div class="h-full bg-slate-900 transition-all duration-500" [style.width.%]="responseRate()"></div>
+        <div class="h-full bg-blue-500 transition-all duration-500" [style.width.%]="responseRate()"></div>
       </div>
       <p class="mt-2 text-xs text-slate-500 font-light">
+        {{ attendingCount() + declinedCount() }} of {{ totalInvited() }} responded
+        <span class="text-slate-300 mx-1">·</span>
         {{ pendingCount() }} pending · {{ declinedCount() }} declined
       </p>
     </div>
@@ -59,21 +64,21 @@
 
   <!-- ─────────────────────────── Secondary KPI strip ─────────────────────────── -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-10">
-    <div class="bg-white p-4 border border-slate-100 text-center">
+    <div class="bg-white p-4 border border-slate-100 border-l-4 border-l-slate-300 text-center">
       <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Total invited</span>
       <span class="text-2xl font-serif text-slate-800">{{ totalInvited() }}</span>
     </div>
-    <div class="bg-white p-4 border border-slate-100 text-center">
+    <div class="bg-white p-4 border border-slate-100 border-l-4 border-l-green-500 text-center">
       <span class="text-[10px] uppercase tracking-widest text-green-600 block mb-1">Attending</span>
-      <span class="text-2xl font-serif text-slate-800">{{ attendingCount() }}</span>
+      <span class="text-2xl font-serif text-green-700">{{ attendingCount() }}</span>
     </div>
-    <div class="bg-white p-4 border border-slate-100 text-center">
-      <span class="text-[10px] uppercase tracking-widest text-red-500 block mb-1">Declined</span>
-      <span class="text-2xl font-serif text-slate-800">{{ declinedCount() }}</span>
+    <div class="bg-white p-4 border border-slate-100 border-l-4 border-l-orange-500 text-center">
+      <span class="text-[10px] uppercase tracking-widest text-orange-500 block mb-1">Declined</span>
+      <span class="text-2xl font-serif text-orange-600">{{ declinedCount() }}</span>
     </div>
-    <div class="bg-white p-4 border border-slate-100 text-center">
+    <div class="bg-white p-4 border border-slate-100 border-l-4 border-l-amber-400 text-center">
       <span class="text-[10px] uppercase tracking-widest text-slate-400 block mb-1">Pending</span>
-      <span class="text-2xl font-serif text-slate-800">{{ pendingCount() }}</span>
+      <span class="text-2xl font-serif text-amber-600">{{ pendingCount() }}</span>
     </div>
   </div>
 
@@ -87,7 +92,7 @@
         </p>
       </div>
       @if (followUps().length > 0) {
-        <span class="text-[10px] uppercase tracking-widest text-red-600 bg-red-50 border border-red-100 px-2 py-1">
+        <span class="text-[10px] uppercase tracking-widest text-orange-700 bg-orange-50 border border-orange-100 px-2 py-1">
           {{ followUps().length }} item{{ followUps().length === 1 ? '' : 's' }}
         </span>
       }
@@ -100,17 +105,20 @@
     } @else {
       <ul class="divide-y divide-slate-100">
         @for (entry of followUps(); track entry.invitation.id) {
-          <li class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <li class="pl-4 md:pl-6 pr-4 md:pr-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 border-l-4"
+            [class.border-l-orange-500]="entry.reasonKey === 'not-sent'"
+            [class.border-l-amber-400]="entry.reasonKey === 'first-reminder-due' || entry.reasonKey === 'second-reminder-due'"
+            [class.border-l-slate-300]="entry.reasonKey === 'no-response-after-reminders'">
             <div>
               <span class="font-serif italic text-slate-800">{{ entry.invitation.displayName }}</span>
               <span class="block md:inline md:ml-3 text-xs text-slate-400 font-mono">{{ entry.invitation.invitationCode }}</span>
             </div>
-            <div class="flex items-center gap-3 text-xs">
+            <div class="flex items-center gap-3 text-xs flex-wrap">
               <span
                 class="uppercase tracking-widest px-2 py-1 border"
-                [class.text-red-600]="entry.reasonKey === 'not-sent'"
-                [class.bg-red-50]="entry.reasonKey === 'not-sent'"
-                [class.border-red-100]="entry.reasonKey === 'not-sent'"
+                [class.text-orange-700]="entry.reasonKey === 'not-sent'"
+                [class.bg-orange-50]="entry.reasonKey === 'not-sent'"
+                [class.border-orange-100]="entry.reasonKey === 'not-sent'"
                 [class.text-amber-700]="entry.reasonKey !== 'not-sent' && entry.reasonKey !== 'no-response-after-reminders'"
                 [class.bg-amber-50]="entry.reasonKey !== 'not-sent' && entry.reasonKey !== 'no-response-after-reminders'"
                 [class.border-amber-100]="entry.reasonKey !== 'not-sent' && entry.reasonKey !== 'no-response-after-reminders'"
@@ -124,6 +132,12 @@
                   {{ entry.daysSinceLastContact }} day{{ entry.daysSinceLastContact === 1 ? '' : 's' }} ago
                 </span>
               }
+              @if (whatsAppLink(entry.invitation); as link) {
+                <a [href]="link" target="_blank" rel="noopener"
+                   class="uppercase tracking-widest px-2 py-1 border border-green-100 bg-green-50 text-green-700 hover:bg-green-100 transition-colors">
+                  <i class="pi pi-whatsapp mr-1"></i> WhatsApp
+                </a>
+              }
             </div>
           </li>
         }
@@ -131,13 +145,58 @@
     }
   </div>
 
+  <!-- ─────────────────────────── Attendee roster ─────────────────────────── -->
+  <div class="border-t border-slate-200 pt-6 mb-6 flex items-center justify-between cursor-pointer select-none"
+       (click)="rosterExpanded = !rosterExpanded">
+    <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">Attendees</span>
+    <i [class]="rosterExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'" class="text-[10px] text-slate-400"></i>
+  </div>
+  @if (rosterExpanded) {
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-12">
+    @for (group of invitationGroups(); track group.invitation.id) {
+      <div class="bg-white border border-slate-100 p-4" [class.opacity-40]="group.attendingCount === 0">
+        <div class="flex items-start justify-between mb-3">
+          <span class="font-serif italic text-slate-800 text-sm leading-tight">{{ group.invitation.displayName }}</span>
+          <span class="text-[10px] uppercase tracking-widest px-2 py-0.5 shrink-0 ml-2"
+            [class.bg-green-50]="group.attendingCount > 0"
+            [class.text-green-700]="group.attendingCount > 0"
+            [class.bg-slate-100]="group.attendingCount === 0"
+            [class.text-slate-400]="group.attendingCount === 0">
+            {{ group.attendingCount }} / {{ group.guests.length }}
+          </span>
+        </div>
+        <ul class="space-y-1.5">
+          @for (guest of group.guests; track guest.id) {
+            <li class="flex items-center gap-2 text-xs">
+              <i class="shrink-0 text-[11px]"
+                 [class]="guest.isAttending === true ? 'pi pi-check text-green-600' : guest.isAttending === false ? 'pi pi-times text-orange-500' : 'pi pi-minus text-slate-400'">
+              </i>
+              <span [class.text-slate-700]="guest.isAttending === true"
+                    [class.text-slate-400]="guest.isAttending !== true"
+                    [class.line-through]="guest.isAttending === false">
+                {{ guest.firstName }} {{ guest.lastName }}
+              </span>
+              @if (guest.isAttending === true && (guest.dietaryPreferences || []).includes("Children's Meal")) {
+                <span class="text-[9px] text-slate-400 italic">child</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+  }
+
   <!-- ─────────────────────────── Charts ─────────────────────────── -->
+  <div class="border-t border-slate-200 pt-6 mb-6">
+    <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">Response Tracking</span>
+  </div>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
 
     <!-- Attendance stacked bar -->
     <div class="bg-slate-50 p-6 border border-slate-100">
       <h3 class="text-base font-serif italic text-slate-800 mb-4">Attendance overview</h3>
-      <div class="w-full h-[120px]">
+      <div class="w-full h-[160px]">
         <p-chart type="bar" [data]="attendanceStackedBarData()" [options]="attendanceStackedBarOptions"></p-chart>
       </div>
     </div>
@@ -155,6 +214,32 @@
         </div>
       }
     </div>
+
+  </div>
+
+  <!-- ─────────────────────────── Export + Tables ─────────────────────────── -->
+  <div class="border-t border-slate-200 pt-6 mb-6">
+    <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">Catering &amp; Logistics</span>
+  </div>
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-10">
+    <p class="text-sm text-slate-500 font-light">
+      Export raw data as CSV, or print a formatted per-table catering sheet for the venue.
+    </p>
+    <div class="flex gap-3 shrink-0">
+      <button
+        (click)="printCateringSheet()"
+        class="bg-white border border-slate-300 text-slate-700 px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-50 transition-colors">
+        <i class="pi pi-print mr-2"></i> Print catering sheet
+      </button>
+      <button
+        (click)="exportRsvpData()"
+        class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors">
+        <i class="pi pi-download mr-2"></i> Export CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
 
     <!-- Bus pickup ranked bar with total seats callout -->
     <div class="bg-slate-50 p-6 border border-slate-100">
@@ -205,25 +290,14 @@
 
   </div>
 
-  <!-- ─────────────────────────── Export ─────────────────────────── -->
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-10">
-    <p class="text-sm text-slate-500 font-light">
-      Export the full attending-guest catering sheet (dietary, allergies, transport, notes) as CSV.
-    </p>
-    <button
-      (click)="exportRsvpData()"
-      class="bg-slate-900 text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-slate-700 transition-colors">
-      <i class="pi pi-download mr-2"></i> Export attending guests
-    </button>
-  </div>
-
   <!-- ─────────────────────────── Tables ─────────────────────────── -->
   <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-12">
 
     <!-- Dietary requirements list -->
     <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
-      <div class="p-6 border-b border-slate-100">
+      <div class="p-6 border-b border-slate-100 flex items-center justify-between">
         <h3 class="font-serif text-lg text-slate-800 italic">Dietary requirements list</h3>
+        <span class="text-[10px] uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-1">{{ guestsByDietary().length }} guests</span>
       </div>
       <p-table [value]="guestsByDietary()" rowGroupMode="subheader" groupRowsBy="dietaryCategory" sortField="dietaryCategory" sortMode="single" dataKey="dietaryCategory" class="editorial-table">
         <ng-template #header>
@@ -243,7 +317,7 @@
           </tr>
         </ng-template>
         <ng-template #expandedrow let-item>
-          <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
+          <tr [ngClass]="item.isShaded ? '!bg-blue-50 !border-blue-100' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
             <td class="px-6 py-3 pl-14 font-medium">{{ item.fullName }}</td>
             <td class="px-6 py-3 text-xs text-slate-400 italic">{{ item.details }}</td>
           </tr>
@@ -256,7 +330,10 @@
       <!-- Allergies & dietary notes -->
       <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
         <div class="p-6 border-b border-slate-100">
-          <h3 class="font-serif text-lg text-slate-800 italic">Allergies &amp; dietary notes</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="font-serif text-lg text-slate-800 italic">Allergies &amp; dietary notes</h3>
+            <span class="text-[10px] uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-1">{{ guestsByAllergy().length }} guests</span>
+          </div>
           <p class="text-xs text-slate-400 font-light mt-1">
             Severity is in the "Specific notes" column — those are free-text notes from the guest.
           </p>
@@ -279,7 +356,7 @@
             </tr>
           </ng-template>
           <ng-template #expandedrow let-item>
-            <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
+            <tr [ngClass]="item.isShaded ? '!bg-blue-50 !border-blue-100' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
               <td class="px-6 py-3 pl-14 font-medium">{{ item.fullName }}</td>
               <td class="px-6 py-3 text-xs text-slate-400 italic">{{ item.details }}</td>
             </tr>
@@ -289,8 +366,9 @@
 
       <!-- Bus pickup manifest -->
       <div class="bg-white border border-slate-100 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-slate-100">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
           <h3 class="font-serif text-lg text-slate-800 italic">Bus pickup manifest</h3>
+          <span class="text-[10px] uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-1">{{ guestsByBus().length }} guests</span>
         </div>
         <p-table [value]="guestsByBus()" rowGroupMode="subheader" groupRowsBy="pickupLocation" sortField="pickupLocation" sortMode="single" dataKey="pickupLocation" class="editorial-table">
           <ng-template #header>
@@ -309,7 +387,7 @@
             </tr>
           </ng-template>
           <ng-template #expandedrow let-item>
-            <tr [ngClass]="item.isShaded ? '!bg-slate-50 !border-slate-300' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
+            <tr [ngClass]="item.isShaded ? '!bg-blue-50 !border-blue-100' : 'bg-white'" class="text-sm text-slate-600 border-b border-slate-50">
               <td class="px-6 py-3 pl-14 font-medium">{{ item.fullName }}</td>
             </tr>
           </ng-template>
@@ -319,21 +397,59 @@
     </div>
   </div>
 
+  <!-- ─────────────────────────── Seating ─────────────────────────── -->
+  @if (tableAssignments().total > 0) {
+    <div class="border-t border-slate-200 pt-6 mb-6">
+      <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">Seating</span>
+    </div>
+    <div class="bg-white border border-slate-100 shadow-sm p-6 mb-10">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-serif text-lg text-slate-800 italic">Table assignments</h3>
+        @if (tableAssignments().unassignedCount > 0) {
+          <span class="text-[10px] uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-100 px-2 py-1">
+            {{ tableAssignments().unassignedCount }} unassigned
+          </span>
+        } @else {
+          <span class="text-[10px] uppercase tracking-widest bg-green-50 text-green-700 border border-green-100 px-2 py-1">
+            All seated
+          </span>
+        }
+      </div>
+      @if (tableAssignments().byTable.length > 0) {
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          @for (entry of tableAssignments().byTable; track entry[0]) {
+            <div class="bg-slate-50 border border-slate-100 p-3 text-center">
+              <span class="block text-2xl font-serif text-slate-800">{{ entry[1] }}</span>
+              <span class="block text-[10px] uppercase tracking-widest text-slate-400 mt-1">{{ entry[0] }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-sm text-slate-400 italic font-light">No guests have been assigned to tables yet.</p>
+      }
+    </div>
+  }
+
   <!-- ─────────────────────────── Guest messages ─────────────────────────── -->
-  <div class="mt-8">
-    <h3 class="text-lg font-serif text-slate-800 mb-4 italic text-center">Guest messages</h3>
+  <div class="border-t border-slate-200 pt-6 mb-6 mt-4 flex items-center gap-3">
+    <span class="text-[11px] uppercase tracking-[0.3em] text-slate-500 font-medium">Guest Messages</span>
+    @if (invitationsWithMessages().length > 0) {
+      <span class="text-[9px] text-slate-300">· {{ invitationsWithMessages().length }}</span>
+    }
+  </div>
+  <div class="mt-4">
     @if (invitationsWithMessages().length > 0) {
       <p-table [value]="invitationsWithMessages()" class="editorial-table">
         <ng-template pTemplate="header">
-          <tr>
-            <th class="w-1/3">From group</th>
-            <th>Message</th>
+          <tr class="text-[10px] uppercase tracking-widest text-slate-400">
+            <th class="px-6 py-3 font-normal text-left w-1/3">From group</th>
+            <th class="px-6 py-3 font-normal text-left">Message</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-invitation>
           <tr>
-            <td class="font-serif italic text-slate-700">{{ invitation.displayName }}</td>
-            <td class="text-slate-600 font-light leading-relaxed">{{ invitation.message }}</td>
+            <td class="px-6 py-3 font-serif italic text-slate-700">{{ invitation.displayName }}</td>
+            <td class="px-6 py-3 text-slate-600 font-light leading-relaxed">{{ invitation.message }}</td>
           </tr>
         </ng-template>
       </p-table>
