@@ -66,6 +66,14 @@ html, body, app-root {
   border: 1px solid #e2e8f0;
 }
 
+/* 2a. Banded table rows (guest pool, invitation groups) */
+.row-banded .p-datatable-tbody > tr:nth-child(even) {
+  background-color: #eff6ff !important; /* blue-50 */
+}
+.row-banded .p-datatable-tbody > tr:nth-child(even):hover {
+  background-color: #dbeafe !important; /* blue-100 */
+}
+
 /* 2. Tables (Minimalist) */
 .p-datatable .p-datatable-thead > tr > th {
   background: white !important;

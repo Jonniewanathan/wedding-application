@@ -44,7 +44,7 @@
            dataKey="id"
            [paginator]="true"
            [rows]="10"
-           class="editorial-table"
+           class="editorial-table row-banded"
            [globalFilterFields]="['firstName', 'lastName', 'countryOfResidence']"
            breakpoint="960px">
 
@@ -60,7 +60,7 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-guest>
-      <tr class="hover:bg-slate-50 transition-colors">
+      <tr class="hover:bg-blue-100 transition-colors">
         <td><p-tableCheckbox [value]="guest"></p-tableCheckbox></td>
         <td>
           {{ guest.firstName }}

@@ -20,6 +20,12 @@ interface FollowUpEntry {
   daysSinceLastContact: number | null;
 }
 
+interface InvitationGroup {
+  invitation: Invitation;
+  guests: Guest[];
+  attendingCount: number;
+}
+
 @Component({
   selector: 'app-stats-v2',
   standalone: true,
@@ -35,6 +41,8 @@ export class StatsV2 {
 
   /** One-shot backfill UI state. */
   backfillRunning = false;
+
+  rosterExpanded = true;
 
   readonly allGuests: Signal<Guest[]> = toSignal(
     this.firestoreService.getAllGuests(),
@@ -150,6 +158,75 @@ export class StatsV2 {
       if (orderDelta !== 0) return orderDelta;
       return (b.daysSinceLastContact ?? 0) - (a.daysSinceLastContact ?? 0);
     });
+  });
+
+  // -------------------------------------------------------------------------
+  // Attendee roster — guests grouped by invitation, sorted by attending count
+  // -------------------------------------------------------------------------
+
+  readonly invitationGroups = computed<InvitationGroup[]>(() => {
+    const guestsByInvite = new Map<string, Guest[]>();
+    for (const g of this.allGuests()) {
+      if (!g.invitationId) continue;
+      const arr = guestsByInvite.get(g.invitationId) ?? [];
+      arr.push(g);
+      guestsByInvite.set(g.invitationId, arr);
+    }
+    return this.allInvitations()
+      .map(inv => {
+        const guests = guestsByInvite.get(inv.id) ?? [];
+        return { invitation: inv, guests, attendingCount: guests.filter(g => g.isAttending === true).length };
+      })
+      .filter(group => group.guests.length > 0)
+      .sort((a, b) => {
+        if (b.attendingCount !== a.attendingCount) return b.attendingCount - a.attendingCount;
+        return a.invitation.displayName.localeCompare(b.invitation.displayName);
+      });
+  });
+
+  // -------------------------------------------------------------------------
+  // Table assignments — summary of seating progress for attending guests
+  // -------------------------------------------------------------------------
+
+  readonly tableAssignments = computed(() => {
+    const attending = this.allGuests().filter(g => g.isAttending === true);
+    const assigned = attending.filter(g => g.tableName?.trim());
+    const byTable = assigned.reduce((acc, g) => {
+      const t = g.tableName as string;
+      acc[t] = (acc[t] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return {
+      total: attending.length,
+      assignedCount: assigned.length,
+      unassignedCount: attending.length - assigned.length,
+      byTable: Object.entries(byTable).sort((a, b) => a[0].localeCompare(b[0]))
+    };
+  });
+
+  // -------------------------------------------------------------------------
+  // Catering manifest — attending guests grouped by table, sorted for print
+  // -------------------------------------------------------------------------
+
+  readonly cateringManifest = computed(() => {
+    const attending = this.allGuests().filter(g => g.isAttending === true);
+    const grouped = new Map<string, Guest[]>();
+    for (const g of attending) {
+      const table = g.tableName?.trim() || 'Unassigned';
+      const arr = grouped.get(table) ?? [];
+      arr.push(g);
+      grouped.set(table, arr);
+    }
+    return [...grouped.entries()]
+      .sort(([a], [b]) => {
+        if (a === 'Unassigned') return 1;
+        if (b === 'Unassigned') return -1;
+        return a.localeCompare(b, undefined, { numeric: true });
+      })
+      .map(([tableName, guests]) => ({
+        tableName,
+        guests: [...guests].sort((a, b) => a.lastName.localeCompare(b.lastName))
+      }));
   });
 
   // -------------------------------------------------------------------------
@@ -493,6 +570,78 @@ export class StatsV2 {
   // -------------------------------------------------------------------------
   // Actions
   // -------------------------------------------------------------------------
+
+  whatsAppLink(inv: Invitation): string | null {
+    if (!inv.phoneNumber) return null;
+    const cleaned = inv.phoneNumber.replace(/\D/g, '');
+    if (!cleaned) return null;
+    return `https://wa.me/${cleaned}`;
+  }
+
+  printCateringSheet(): void {
+    const manifest = this.cateringManifest();
+    const total = this.attendingCount();
+    const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const tableRows = (guests: Guest[]) =>
+      guests.map(g => {
+        const dietary = g.dietaryPreferences?.length ? g.dietaryPreferences.join(', ') : '—';
+        const allergies = g.allergies?.length ? g.allergies.join(', ') : '—';
+        const notes = g.dietaryNotes || '—';
+        const isChild = (g.dietaryPreferences || []).includes("Children's Meal");
+        const allergyClass = allergies !== '—' ? ' class="allergy"' : '';
+        return `<tr>
+          <td>${g.firstName} ${g.lastName}${isChild ? ' <span class="child">(child)</span>' : ''}</td>
+          <td>${dietary}</td>
+          <td${allergyClass}>${allergies}</td>
+          <td>${notes}</td>
+        </tr>`;
+      }).join('');
+
+    const sections = manifest.map(({ tableName, guests }) => `
+      <div class="table-section">
+        <h2>${tableName} <span class="count">(${guests.length} guest${guests.length !== 1 ? 's' : ''})</span></h2>
+        <table>
+          <thead><tr><th>Guest</th><th>Dietary</th><th>Allergies</th><th>Notes</th></tr></thead>
+          <tbody>${tableRows(guests)}</tbody>
+        </table>
+      </div>`).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Catering Sheet</title>
+  <style>
+    body { font-family: Georgia, 'Times New Roman', serif; font-size: 11pt; color: #1a1a1a; margin: 0; padding: 1.5cm 2cm; }
+    h1 { font-size: 20pt; font-weight: normal; border-bottom: 2px solid #1a1a1a; padding-bottom: 0.4rem; margin-bottom: 0.2rem; }
+    .subtitle { font-size: 9pt; color: #666; margin-bottom: 2rem; font-style: italic; }
+    h2 { font-size: 13pt; font-weight: normal; font-style: italic; border-bottom: 1px solid #ccc; padding-bottom: 0.2rem; margin: 1.5rem 0 0.5rem; }
+    .count { font-size: 9pt; color: #999; font-style: normal; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
+    th { text-align: left; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.12em; color: #666; border-bottom: 1px solid #999; padding: 3px 8px 3px 0; }
+    td { padding: 5px 8px 5px 0; font-size: 10pt; border-bottom: 1px solid #eee; vertical-align: top; }
+    tr:nth-child(even) td { background-color: #f0f5ff; }
+    .allergy { color: #c2410c; font-weight: 600; }
+    .child { font-size: 8pt; color: #999; font-style: italic; font-weight: normal; }
+    .table-section { page-break-inside: avoid; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <h1>Catering Sheet</h1>
+  <p class="subtitle">Generated ${date} &nbsp;·&nbsp; ${total} attending guest${total !== 1 ? 's' : ''}</p>
+  ${sections}
+  <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  }
 
   exportRsvpData(): void {
     const attendingGuests = this.allGuests().filter(g => g.isAttending === true);
