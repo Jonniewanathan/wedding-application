@@ -1,0 +1,215 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN VIEW                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="screen-view flex flex-col" style="height: calc(100vh - 220px); min-height: 500px;">
+
+  <!-- Toolbar -->
+  <div class="flex items-center justify-between px-1 py-3 border-b border-slate-100 shrink-0">
+    <div class="flex items-center gap-4">
+      <span class="text-xs text-slate-400 font-light">
+        {{ tables().length }} table{{ tables().length === 1 ? '' : 's' }}
+        &nbsp;·&nbsp;
+        {{ totalSeated() }}&thinsp;/&thinsp;{{ totalCap() }} seated
+      </span>
+      @if (unseatedCount() > 0) {
+        <span class="text-[10px] uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5">
+          {{ unseatedCount() }} unseated
+        </span>
+      }
+      <span class="text-[10px] text-slate-300 uppercase tracking-widest">
+        {{ GRID_SIZE }}px grid · drag to arrange · snaps on release
+      </span>
+    </div>
+    <button
+      (click)="print()"
+      class="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-900 border border-slate-300 hover:border-slate-900 px-4 py-2 transition-colors">
+      <i class="pi pi-print text-xs"></i>
+      Print / Save PDF
+    </button>
+  </div>
+
+  <!-- Canvas — scrollable, fills remaining space -->
+  <div class="flex-1 overflow-auto bg-slate-100">
+    <div
+      #canvasSurface
+      class="canvas-surface relative shrink-0"
+      [style.width.px]="CANVAS_WIDTH"
+      [style.height.px]="CANVAS_HEIGHT">
+
+      @if (tables().length === 0) {
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <p class="text-sm text-slate-400 italic font-light">
+            Add tables in the Seating tab, then arrange them here.
+          </p>
+        </div>
+      }
+
+      @for (tableView of tables(); track tableView.table.id) {
+        @let pos = tablePositions().get(tableView.table.id) ?? { x: 40, y: 40 };
+        <div
+          cdkDrag
+          [cdkDragFreeDragPosition]="pos"
+          [cdkDragBoundary]="canvasSurface"
+          (cdkDragEnded)="onDragEnded($event, tableView.table)"
+          class="absolute select-none cursor-grab active:cursor-grabbing"
+          style="left: 0; top: 0"
+          [attr.data-table-id]="tableView.table.id">
+
+          <!-- Drag handle — full visual area -->
+          <div class="flex flex-col items-center">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block pointer-events-none shrink-0">
+            </app-table-visual>
+            <span class="mt-1 text-[10px] text-slate-500 uppercase tracking-widest pointer-events-none whitespace-nowrap">
+              {{ tableView.table.name }}
+            </span>
+          </div>
+
+          <!-- Drag preview -->
+          <div *cdkDragPreview class="flex flex-col items-center opacity-80">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block shrink-0">
+            </app-table-visual>
+            <span class="mt-1 text-[10px] text-slate-500 uppercase tracking-widest whitespace-nowrap">
+              {{ tableView.table.name }}
+            </span>
+          </div>
+
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PRINT LAYOUT — hidden on screen, rendered on print                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="print-root">
+
+  <!-- ── Page 1: Visual Floor Plan ── -->
+  <div class="print-page">
+
+    <header class="print-header">
+      <h1 class="print-h1">Wedding Table Layout &amp; Floor Plan</h1>
+      <p class="print-subtitle">For venue setup crew — do not distribute to guests</p>
+    </header>
+
+    <!-- Canvas scaled to fit page width -->
+    <div class="print-canvas-outer">
+      <div class="print-canvas-inner">
+
+        @for (tableView of tables(); track tableView.table.id) {
+          @let pos = tablePositions().get(tableView.table.id) ?? { x: 40, y: 40 };
+          <div
+            class="print-table-chip"
+            [style.left.px]="pos.x"
+            [style.top.px]="pos.y">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block shrink-0">
+            </app-table-visual>
+            <span class="print-table-chip-label">{{ tableView.table.name }}</span>
+          </div>
+        }
+
+      </div>
+    </div>
+
+    <!-- Summary legend below map -->
+    <div class="print-legend">
+      <span>{{ tables().length }} tables</span>
+      <span>{{ totalSeated() }}&thinsp;/&thinsp;{{ totalCap() }} seats filled</span>
+      @if (unseatedCount() > 0) {
+        <span class="print-warning">{{ unseatedCount() }} attending guest{{ unseatedCount() === 1 ? '' : 's' }} not yet seated</span>
+      }
+    </div>
+  </div>
+
+  <!-- ── Page 2+: Catering & Dietary Sheet ── -->
+  <div class="print-page print-page-break">
+
+    <header class="print-header">
+      <h1 class="print-h1">Catering &amp; Dietary Reference Sheet</h1>
+      <p class="print-subtitle">For catering team use only — confirm with planner on the day</p>
+    </header>
+
+    @for (view of cateringViews(); track view.table.id) {
+      <section class="print-section">
+        <div class="print-section-heading">
+          <span class="print-section-name">{{ view.table.name }}</span>
+          <span class="print-section-meta">
+            {{ view.table.shape | titlecase }} &nbsp;·&nbsp;
+            {{ view.table.shape === 'round' ? 'Ø' : '' }}
+            {{ view.occupancy }}&thinsp;/&thinsp;{{ view.table.capacity }} guests
+          </span>
+          @if (view.isOverCapacity) {
+            <span class="print-over-capacity">OVER CAPACITY</span>
+          }
+        </div>
+
+        @if (view.rows.length === 0) {
+          <p class="print-empty">No guests assigned to this table.</p>
+        } @else {
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th class="col-name">Guest Name</th>
+                <th class="col-diet">Dietary Preferences</th>
+                <th class="col-allergy">Allergies</th>
+                <th class="col-notes">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of view.rows; track row.id) {
+                <tr [class.print-row-flagged]="row.hasDietary">
+                  <td>{{ row.firstName }} {{ row.lastName }}</td>
+                  <td>{{ row.dietaryPreferences?.join(', ') || '—' }}</td>
+                  <td>{{ row.allergies?.join(', ') || '—' }}</td>
+                  <td>{{ row.dietaryNotes || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+
+    @if (unseatedGuests().length > 0) {
+      <section class="print-section">
+        <div class="print-section-heading">
+          <span class="print-section-name">Unseated Attending Guests</span>
+          <span class="print-section-meta">{{ unseatedGuests().length }} guest{{ unseatedGuests().length === 1 ? '' : 's' }} without a table assignment</span>
+        </div>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th class="col-name">Guest Name</th>
+              <th class="col-diet">Dietary Preferences</th>
+              <th class="col-allergy">Allergies</th>
+              <th class="col-notes">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of unseatedGuests(); track g.id) {
+              <tr [class.print-row-flagged]="!!(g.dietaryPreferences?.length || g.allergies?.length || g.dietaryNotes)">
+                <td>{{ g.firstName }} {{ g.lastName }}</td>
+                <td>{{ g.dietaryPreferences?.join(', ') || '—' }}</td>
+                <td>{{ g.allergies?.join(', ') || '—' }}</td>
+                <td>{{ g.dietaryNotes || '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+  </div><!-- /catering page -->
+</div><!-- /print-root -->

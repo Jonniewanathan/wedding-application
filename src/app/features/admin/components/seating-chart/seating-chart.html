@@ -1,20 +1,86 @@
 <div class="py-4 md:py-6 min-h-[500px]">
 
-  <div class="mb-8 max-w-2xl">
-    <p class="text-sm text-slate-500 font-light">
-      Assign attending guests to tables. Use anything for the table name —
-      numbers ("Table 1"), names ("Sunflower"), or family labels ("Smith family").
-      Sort respects natural ordering so "Table 2" comes before "Table 10".
-    </p>
+  <!-- ─────────── Top bar ─────────── -->
+  <div class="flex items-center justify-between mb-6">
+    <span class="text-xs text-slate-400 font-light">
+      {{ plannerState.totalSeated() }} / {{ plannerState.totalCapacity() }} seats filled
+    </span>
+    @if (!showAddForm()) {
+      <button
+        (click)="openAddForm()"
+        class="text-[10px] uppercase tracking-widest text-slate-900 border border-slate-300 hover:border-slate-900 px-4 py-2 transition-colors">
+        + Add table
+      </button>
+    }
   </div>
+
+  <!-- ─────────── Add table form ─────────── -->
+  @if (showAddForm()) {
+    <div class="bg-slate-50 border border-slate-200 p-4 mb-6 flex flex-col md:flex-row md:items-end gap-3">
+      <div class="flex-1">
+        <label class="block text-[10px] uppercase tracking-widest text-slate-400 mb-1">Name</label>
+        <input
+          type="text"
+          [ngModel]="newTableName()"
+          (ngModelChange)="newTableName.set($event)"
+          (keydown.enter)="submitAddForm()"
+          (keydown.escape)="cancelAddForm()"
+          placeholder="e.g. Table 1 or Sunflower"
+          autofocus
+          class="w-full text-sm border border-slate-300 px-3 py-2 outline-none focus:border-slate-600 bg-white">
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase tracking-widest text-slate-400 mb-1">Shape</label>
+        <div class="flex">
+          <button
+            (click)="newTableShape.set('round')"
+            [ngClass]="newTableShape() === 'round' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+            class="text-[10px] uppercase tracking-widest border border-slate-300 px-3 py-2 transition-colors border-r-0">
+            Round
+          </button>
+          <button
+            (click)="newTableShape.set('rectangle')"
+            [ngClass]="newTableShape() === 'rectangle' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+            class="text-[10px] uppercase tracking-widest border border-slate-300 px-3 py-2 transition-colors">
+            Rectangle
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase tracking-widest text-slate-400 mb-1">Capacity</label>
+        <input
+          type="number"
+          [ngModel]="newTableCapacity()"
+          (ngModelChange)="newTableCapacity.set(+$event)"
+          min="1" max="50"
+          class="w-20 text-sm border border-slate-300 px-3 py-2 outline-none focus:border-slate-600 bg-white text-center">
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="submitAddForm()"
+          [disabled]="saving() || !newTableName().trim()"
+          class="text-[10px] uppercase tracking-widest bg-slate-900 text-white px-4 py-2 hover:bg-slate-700 transition-colors disabled:opacity-40 disabled:cursor-wait">
+          Save
+        </button>
+        <button
+          (click)="cancelAddForm()"
+          class="text-[10px] uppercase tracking-widest text-slate-500 border border-slate-200 px-4 py-2 hover:border-slate-400 hover:text-slate-800 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- ─────────── Unseated guests ─────────── -->
   <div class="bg-white border border-slate-100 shadow-sm mb-10 overflow-hidden">
     <div class="px-4 md:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
       <div>
         <h3 class="font-serif italic text-base md:text-lg text-slate-800">Unseated guests</h3>
-        <p class="text-xs text-slate-400 font-light mt-1">
-          Attending guests with no table assigned.
+        <p class="hidden md:block text-xs text-slate-400 font-light mt-1">
+          Drag a guest onto a table card to seat them.
+        </p>
+        <p class="md:hidden text-xs text-slate-400 font-light mt-1">
+          Use the dropdown to assign a table.
         </p>
       </div>
       @if (unseatedGuests().length > 0) {
@@ -33,46 +99,51 @@
         Everyone attending has a table. Nice work.
       </p>
     } @else {
-      <ul class="divide-y divide-slate-100">
+      <ul
+        id="unseated-pool"
+        cdkDropList
+        [cdkDropListConnectedTo]="tableListIds()"
+        [cdkDropListData]="$any([])"
+        (cdkDropListDropped)="onDrop($event, null)"
+        class="divide-y divide-slate-100 min-h-[48px]">
         @for (row of unseatedGuests(); track row.guest.id) {
           <li
-            class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-colors"
-            [ngClass]="row.isShaded
-              ? '!bg-blue-50 !border-blue-100'
-              : 'bg-white'">
-            <div class="flex flex-col">
-              <span class="text-sm font-medium text-slate-800">{{ row.guest.firstName }} {{ row.guest.lastName }}</span>
-              <span class="text-[10px] uppercase tracking-widest text-slate-400 mt-0.5">{{ row.invitationDisplayName }}</span>
+            cdkDrag
+            [cdkDragData]="row.guest"
+            class="px-4 md:px-6 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 transition-colors cursor-grab active:cursor-grabbing"
+            [ngClass]="row.isShaded ? '!bg-blue-50 !border-blue-100' : 'bg-white'">
+
+            <div class="flex items-center gap-3">
+              <span class="hidden md:flex items-center text-slate-300">
+                <i class="pi pi-grip-vertical text-xs"></i>
+              </span>
+              <div class="flex flex-col">
+                <span class="text-sm font-medium text-slate-800">
+                  {{ row.guest.firstName }} {{ row.guest.lastName }}
+                </span>
+                <span class="text-[10px] uppercase tracking-widest text-slate-400 mt-0.5">
+                  {{ row.invitationDisplayName }}
+                </span>
+              </div>
             </div>
 
-            @if (editingGuestId() === row.guest.id) {
-              <div class="flex items-center gap-2 w-full md:w-auto">
-                <input
-                  type="text"
-                  [(ngModel)]="editingDraft"
-                  (keydown.enter)="saveEdit(row.guest)"
-                  (keydown.escape)="cancelEdit()"
-                  placeholder="Table name"
-                  class="flex-1 md:w-48 text-sm border border-slate-300 px-3 py-1.5 outline-none focus:border-slate-600"
-                  autofocus>
-                <button
-                  (click)="saveEdit(row.guest)"
-                  class="bg-slate-900 text-white px-3 py-1.5 text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-colors">
-                  Save
-                </button>
-                <button
-                  (click)="cancelEdit()"
-                  class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors px-2">
-                  Cancel
-                </button>
-              </div>
-            } @else {
-              <button
-                (click)="beginEdit(row.guest)"
-                class="text-[10px] uppercase tracking-widest text-slate-500 border border-slate-200 hover:border-slate-400 hover:text-slate-900 px-3 py-1.5 transition-colors">
-                Assign table
-              </button>
-            }
+            <!-- Mobile: dropdown to assign table -->
+            <div class="md:hidden w-full">
+              <p-select
+                [options]="tableSelectOptions()"
+                [ngModel]="row.guest.tableId"
+                (ngModelChange)="assignGuestToTable(row.guest, $event)"
+                placeholder="Assign to table…"
+                styleClass="w-full text-sm"
+                appendTo="body">
+              </p-select>
+            </div>
+
+            <!-- Drag preview shown while dragging -->
+            <div *cdkDragPreview
+              class="bg-slate-900 text-white text-sm px-3 py-1.5 shadow-lg rounded-sm">
+              {{ row.guest.firstName }} {{ row.guest.lastName }}
+            </div>
           </li>
         }
       </ul>
@@ -83,7 +154,7 @@
   @if (tables().length === 0) {
     <div class="bg-slate-50 border border-slate-100 p-8 text-center">
       <p class="text-sm text-slate-500 font-light italic">
-        No tables yet. Assign one above to get started.
+        No tables yet. Use "Add table" above to get started.
       </p>
     </div>
   } @else {
@@ -96,56 +167,148 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-      @for (table of tables(); track table.name) {
-        <div class="bg-white border border-slate-100 shadow-sm overflow-hidden flex flex-col">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-baseline justify-between gap-2">
-            <h4 class="font-serif italic text-slate-800 text-base">{{ table.name }}</h4>
-            <span class="text-[10px] uppercase tracking-widest text-slate-400">
-              {{ table.guests.length }} seat{{ table.guests.length === 1 ? '' : 's' }}
-            </span>
-          </div>
-          <ul class="divide-y divide-slate-50 flex-1">
-            @for (guest of table.guests; track guest.id) {
-              <li class="px-4 py-2 flex items-center justify-between gap-2 group">
-                @if (editingGuestId() === guest.id) {
-                  <input
-                    type="text"
-                    [(ngModel)]="editingDraft"
-                    (keydown.enter)="saveEdit(guest)"
-                    (keydown.escape)="cancelEdit()"
-                    class="flex-1 text-sm border border-slate-300 px-2 py-1 outline-none focus:border-slate-600">
+      @for (tableView of tables(); track tableView.table.id) {
+        <div
+          class="bg-white border shadow-sm flex flex-col"
+          [ngClass]="tableView.isOverCapacity ? 'border-red-200' : 'border-slate-100'">
+
+          <!-- Card header: static or edit form -->
+          @if (editingTableId() === tableView.table.id) {
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 space-y-2">
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  [ngModel]="editTableName()"
+                  (ngModelChange)="editTableName.set($event)"
+                  (keydown.enter)="saveEditTable()"
+                  (keydown.escape)="cancelEditTable()"
+                  autofocus
+                  class="flex-1 text-sm border border-slate-300 px-2 py-1.5 outline-none focus:border-slate-600 bg-white">
+                <input
+                  type="number"
+                  [ngModel]="editTableCapacity()"
+                  (ngModelChange)="editTableCapacity.set(+$event)"
+                  min="1" max="50"
+                  class="w-16 text-sm border border-slate-300 px-2 py-1.5 outline-none focus:border-slate-600 bg-white text-center">
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex">
                   <button
-                    (click)="saveEdit(guest)"
-                    class="text-[10px] uppercase tracking-widest text-slate-900 hover:text-slate-700 transition-colors">
+                    (click)="editTableShape.set('round')"
+                    [ngClass]="editTableShape() === 'round' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                    class="text-[10px] uppercase tracking-widest border border-slate-300 px-2 py-1 transition-colors border-r-0">
+                    Round
+                  </button>
+                  <button
+                    (click)="editTableShape.set('rectangle')"
+                    [ngClass]="editTableShape() === 'rectangle' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'"
+                    class="text-[10px] uppercase tracking-widest border border-slate-300 px-2 py-1 transition-colors">
+                    Rect
+                  </button>
+                </div>
+                <div class="flex gap-1">
+                  <button
+                    (click)="saveEditTable()"
+                    [disabled]="saving() || !editTableName().trim()"
+                    class="text-[10px] uppercase tracking-widest bg-slate-900 text-white px-3 py-1 hover:bg-slate-700 transition-colors disabled:opacity-40">
                     Save
                   </button>
                   <button
-                    (click)="cancelEdit()"
-                    class="text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-800 transition-colors">
+                    (click)="cancelEditTable()"
+                    class="text-[10px] uppercase tracking-widest text-slate-500 hover:text-slate-800 transition-colors px-2">
                     Cancel
                   </button>
-                } @else {
-                  <span class="text-sm text-slate-700">{{ guest.firstName }} {{ guest.lastName }}</span>
-                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      (click)="beginEdit(guest)"
-                      class="text-slate-400 hover:text-slate-800 transition-colors p-1"
-                      pTooltip="Change table" tooltipPosition="top">
-                      <i class="pi pi-pencil text-[10px]"></i>
-                    </button>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+              <div class="flex items-baseline gap-2 min-w-0">
+                <h4 class="font-serif italic text-slate-800 text-base truncate">{{ tableView.table.name }}</h4>
+                <span class="text-[10px] uppercase tracking-widest text-slate-400 shrink-0">
+                  {{ tableView.table.shape }}
+                </span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <span
+                  class="text-[10px] uppercase tracking-widest px-1.5 py-0.5"
+                  [ngClass]="tableView.isOverCapacity
+                    ? 'text-red-700 bg-red-50 border border-red-100'
+                    : 'text-slate-400'">
+                  {{ tableView.occupancy }}&thinsp;/&thinsp;{{ tableView.table.capacity }}
+                </span>
+                <button
+                  (click)="beginEditTable(tableView.table)"
+                  class="text-slate-400 hover:text-slate-800 transition-colors p-1"
+                  pTooltip="Edit table" tooltipPosition="top">
+                  <i class="pi pi-pencil text-[10px]"></i>
+                </button>
+                <button
+                  (click)="confirmDeleteTable(tableView.table, $event)"
+                  class="text-slate-400 hover:text-red-600 transition-colors p-1"
+                  pTooltip="Delete table" tooltipPosition="top">
+                  <i class="pi pi-trash text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Card body: visual + compact guest list, whole area is the CDK drop zone -->
+          <div
+            [id]="tableView.table.id"
+            cdkDropList
+            [cdkDropListConnectedTo]="connectedListIds(tableView.table.id)"
+            [cdkDropListData]="tableView.guests"
+            (cdkDropListDropped)="onDrop($event, tableView.table.id)"
+            class="flex-1 flex flex-col min-h-[60px]">
+
+            <!-- Table visual — centred, scrollable if wider than card -->
+            <div class="flex justify-center items-center py-4 px-2 overflow-x-auto">
+              <app-table-visual
+                [table]="tableView.table"
+                [guests]="tableView.guests"
+                class="shrink-0">
+              </app-table-visual>
+            </div>
+
+            <!-- Compact seated-guest list: drag handles + unseat buttons -->
+            @if (tableView.guests.length > 0) {
+              <div class="border-t border-slate-100 divide-y divide-slate-50 pb-1">
+                @for (guest of tableView.guests; track guest.id) {
+                  <div
+                    cdkDrag
+                    [cdkDragData]="guest"
+                    class="px-3 py-1.5 flex items-center justify-between gap-2 group cursor-grab active:cursor-grabbing hover:bg-slate-50 transition-colors">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="hidden md:flex text-slate-300">
+                        <i class="pi pi-grip-vertical text-[10px]"></i>
+                      </span>
+                      <span class="text-xs text-slate-600 truncate">
+                        {{ guest.firstName }} {{ guest.lastName }}
+                      </span>
+                    </div>
                     <button
                       (click)="unseatGuest(guest)"
-                      class="text-slate-400 hover:text-red-600 transition-colors p-1"
+                      class="text-slate-400 hover:text-red-600 transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0"
                       pTooltip="Unseat" tooltipPosition="top">
                       <i class="pi pi-times text-[10px]"></i>
                     </button>
+                    <div *cdkDragPreview
+                      class="bg-slate-900 text-white text-sm px-3 py-1.5 shadow-lg rounded-sm">
+                      {{ guest.firstName }} {{ guest.lastName }}
+                    </div>
                   </div>
                 }
-              </li>
+              </div>
+            } @else {
+              <div class="px-4 py-2 text-xs text-slate-300 italic text-center">
+                Drop guests here
+              </div>
             }
-          </ul>
+          </div>
         </div>
       }
     </div>
   }
+
 </div>

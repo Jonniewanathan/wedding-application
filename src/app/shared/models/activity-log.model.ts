@@ -39,7 +39,7 @@ export interface ActivityActor {
 }
 
 export interface ActivitySubject {
-  type: 'guest' | 'invitation';
+  type: 'guest' | 'invitation' | 'table';
   id: string;
   /** Denormalised display label so the feed renders fast without joins. */
   name: string;
@@ -59,4 +59,7 @@ export type ActivityAction =
   | 'outreach_cleared'
   | 'rsvp_submitted'
   | 'rsvp_timestamps_backfilled'
-  | 'invitation_codes_backfilled';
+  | 'invitation_codes_backfilled'
+  | 'table_created'
+  | 'table_updated'
+  | 'table_deleted';

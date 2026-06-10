@@ -3,6 +3,7 @@ import { Timestamp } from '@angular/fire/firestore';
 import { of } from 'rxjs';
 import { StatsV2 } from './stats-v2';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
+import { TablePlannerStateService } from '../../services/table-planner-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
 import { Invitation } from '../../../../shared/models/invitation.model';
 
@@ -52,15 +53,20 @@ describe('StatsV2', () => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getAllGuests',
       'getInvitations',
+      'getTables',
       'backfillRsvpSubmittedAt'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
+    firestoreSpy.getTables.and.returnValue(of([]));
     firestoreSpy.backfillRsvpSubmittedAt.and.returnValue(Promise.resolve());
 
     TestBed.configureTestingModule({
       imports: [StatsV2],
-      providers: [{ provide: FirestoreService, useValue: firestoreSpy }]
+      providers: [
+        { provide: FirestoreService, useValue: firestoreSpy },
+        TablePlannerStateService
+      ]
     });
   });
 

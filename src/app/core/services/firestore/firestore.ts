@@ -8,6 +8,7 @@ import {
 import { Observable } from 'rxjs';
 import { Invitation, InvitationOutreachStage } from '../../../shared/models/invitation.model';
 import { Guest } from '../../../shared/models/guest.model';
+import { Table } from '../../../shared/models/table.model';
 import { AuthService } from '../auth/auth';
 import {
   ActivityAction,
@@ -145,7 +146,7 @@ export class FirestoreService {
     };
 
     // Dynamically add fields to update object to avoid overwriting with undefined
-    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes', 'tableName'];
+    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes'];
 
     fields.forEach(field => {
       const value = guest[field];
@@ -438,31 +439,89 @@ export class FirestoreService {
     });
   }
 
-  /**
-   * Convenience setter for the per-guest day-of seating field. Pass
-   * null to clear the assignment ("unseat" the guest). Doesn't go
-   * through updateGuestDetails so we don't need to construct a full
-   * partial guest object at the call site.
-   */
-  async setGuestTable(
-    guestId: string,
-    tableName: string | null,
-    guestDisplayName?: string
+  // -------------------------------------------------------------------------
+  // Tables
+  // -------------------------------------------------------------------------
+
+  getTables(): Observable<Table[]> {
+    const ref = collection(this.firestore, 'tables');
+    return collectionData(ref, { idField: 'id' }) as Observable<Table[]>;
+  }
+
+  async createTable(data: Omit<Table, 'id' | 'createdAt' | 'updatedAt'>): Promise<DocumentReference> {
+    const ref = collection(this.firestore, 'tables');
+    const docRef = await addDoc(ref, {
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: null
+    });
+    this.logSilently({
+      action: 'table_created',
+      subject: { type: 'table', id: docRef.id, name: data.name },
+      summary: `Created table "${data.name}" (${data.shape}, capacity ${data.capacity}).`
+    });
+    return docRef;
+  }
+
+  async updateTable(
+    tableId: string,
+    data: Partial<Omit<Table, 'id' | 'createdAt'>>,
+    tableName?: string
   ): Promise<void> {
-    const docRef = doc(this.firestore, `guests/${guestId}`);
-    await updateDoc(docRef, {
-      tableName,
-      updatedAt: serverTimestamp()
+    const docRef = doc(this.firestore, `tables/${tableId}`);
+    await updateDoc(docRef, { ...data, updatedAt: serverTimestamp() });
+    const name = tableName ?? data.name ?? `table ${tableId}`;
+    this.logSilently({
+      action: 'table_updated',
+      subject: { type: 'table', id: tableId, name },
+      summary: `Updated table "${name}".`
+    });
+  }
+
+  async deleteTable(tableId: string, tableName?: string): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    // Unseat any guests currently assigned to this table
+    const guestsRef = collection(this.firestore, 'guests');
+    const q = query(guestsRef, where('tableId', '==', tableId));
+    const snap = await getDocs(q);
+    snap.forEach(guestDoc => {
+      batch.update(guestDoc.ref, { tableId: null, updatedAt: serverTimestamp() });
     });
 
-    const name = guestDisplayName ?? `guest ${guestId}`;
+    batch.delete(doc(this.firestore, `tables/${tableId}`));
+    await batch.commit();
+
+    const name = tableName ?? `table ${tableId}`;
     this.logSilently({
-      action: tableName ? 'guest_seated' : 'guest_unseated',
-      subject: { type: 'guest', id: guestId, name },
-      summary: tableName
-        ? `Seated ${name} at "${tableName}".`
-        : `Unseated ${name}.`,
-      details: { tableName }
+      action: 'table_deleted',
+      subject: { type: 'table', id: tableId, name },
+      summary: `Deleted table "${name}"; ${snap.size} guest${snap.size === 1 ? '' : 's'} unseated.`,
+      details: { unseatedCount: snap.size }
+    });
+  }
+
+  /**
+   * Assign or unassign a guest from a table by document ID. Pass null to
+   * unseat. Replaces the legacy string-based setGuestTable.
+   */
+  async setGuestTableById(
+    guestId: string,
+    tableId: string | null,
+    hints?: { guestName?: string; tableName?: string }
+  ): Promise<void> {
+    const docRef = doc(this.firestore, `guests/${guestId}`);
+    await updateDoc(docRef, { tableId, updatedAt: serverTimestamp() });
+
+    const guestName = hints?.guestName ?? `guest ${guestId}`;
+    const tableName = hints?.tableName;
+    this.logSilently({
+      action: tableId ? 'guest_seated' : 'guest_unseated',
+      subject: { type: 'guest', id: guestId, name: guestName },
+      summary: tableId
+        ? `Seated ${guestName}${tableName ? ` at "${tableName}"` : ''}.`
+        : `Unseated ${guestName}.`,
+      details: { tableId }
     });
   }
 

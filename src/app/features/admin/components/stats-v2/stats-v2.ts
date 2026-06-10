@@ -10,6 +10,7 @@ import { Ripple } from 'primeng/ripple';
 import * as Papa from 'papaparse';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
+import { TablePlannerStateService } from '../../services/table-planner-state.service';
 import { Guest } from '../../../../shared/models/guest.model';
 import { Invitation } from '../../../../shared/models/invitation.model';
 
@@ -34,6 +35,7 @@ interface InvitationGroup {
 })
 export class StatsV2 {
   private firestoreService = inject(FirestoreService);
+  private tablePlannerState = inject(TablePlannerStateService);
 
   // Tunables — when the follow-up panel decides a reminder is overdue.
   private readonly DAYS_AFTER_SEND_BEFORE_FIRST_REMINDER = 14;
@@ -190,10 +192,11 @@ export class StatsV2 {
 
   readonly tableAssignments = computed(() => {
     const attending = this.allGuests().filter(g => g.isAttending === true);
-    const assigned = attending.filter(g => g.tableName?.trim());
+    const assigned = attending.filter(g => !!g.tableId);
+    const tablesById = new Map(this.tablePlannerState.allTables().map(t => [t.id, t]));
     const byTable = assigned.reduce((acc, g) => {
-      const t = g.tableName as string;
-      acc[t] = (acc[t] || 0) + 1;
+      const name = tablesById.get(g.tableId!)?.name ?? g.tableId!;
+      acc[name] = (acc[name] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
     return {
@@ -210,9 +213,10 @@ export class StatsV2 {
 
   readonly cateringManifest = computed(() => {
     const attending = this.allGuests().filter(g => g.isAttending === true);
+    const tablesById = new Map(this.tablePlannerState.allTables().map(t => [t.id, t]));
     const grouped = new Map<string, Guest[]>();
     for (const g of attending) {
-      const table = g.tableName?.trim() || 'Unassigned';
+      const table = g.tableId ? (tablesById.get(g.tableId)?.name ?? g.tableId) : 'Unassigned';
       const arr = grouped.get(table) ?? [];
       arr.push(g);
       grouped.set(table, arr);

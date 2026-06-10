@@ -15,6 +15,7 @@ import { Admin } from './admin';
 import { AuthService } from '../../core/services/auth/auth';
 import { FirestoreService } from '../../core/services/firestore/firestore';
 import { AdminStateService } from './services/admin-state.service';
+import { TablePlannerStateService } from './services/table-planner-state.service';
 import { Guest } from '../../shared/models/guest.model';
 import { Invitation } from '../../shared/models/invitation.model';
 
@@ -31,6 +32,13 @@ class GuestPoolStubComponent {}
   standalone: true
 })
 class InvitationGroupsStubComponent {}
+
+@Component({
+  selector: 'app-floor-plan-canvas',
+  template: '<div data-test="stub-floor-plan-canvas"></div>',
+  standalone: true
+})
+class FloorPlanCanvasStubComponent {}
 
 function ts(): Timestamp {
   return { seconds: 0, nanoseconds: 0 } as unknown as Timestamp;
@@ -75,11 +83,13 @@ describe('Admin', () => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getUnassignedGuests',
       'getInvitations',
-      'getAllGuests'
+      'getAllGuests',
+      'getTables'
     ]);
     firestoreSpy.getUnassignedGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
     firestoreSpy.getAllGuests.and.returnValue(of([]));
+    firestoreSpy.getTables.and.returnValue(of([]));
 
     const realMessage = new MessageService();
     const realConfirm = new ConfirmationService();
@@ -101,13 +111,15 @@ describe('Admin', () => {
             ToastModule,
             ConfirmDialogModule,
             GuestPoolStubComponent,
-            InvitationGroupsStubComponent
+            InvitationGroupsStubComponent,
+            FloorPlanCanvasStubComponent
           ],
           providers: [
             { provide: DialogService, useValue: dialogSpy },
             { provide: ConfirmationService, useValue: realConfirm },
             { provide: MessageService, useValue: realMessage },
-            AdminStateService
+            AdminStateService,
+            TablePlannerStateService
           ]
         }
       })
@@ -170,15 +182,15 @@ describe('Admin', () => {
       expect(component.pendingInvitationCount()).toBe(0);
     });
 
-    it('should count attending guests with no tableName as unseated', () => {
+    it('should count attending guests with no tableId as unseated', () => {
       build(
         [],
         [],
         [
-          { id: '1', firstName: 'A', lastName: 'A', isAttending: true, tableName: 'T1', createdAt: ts() },
-          { id: '2', firstName: 'B', lastName: 'B', isAttending: true, tableName: null, createdAt: ts() },
-          { id: '3', firstName: 'C', lastName: 'C', isAttending: true, tableName: '   ', createdAt: ts() },
-          { id: '4', firstName: 'D', lastName: 'D', isAttending: false, tableName: null, createdAt: ts() }
+          { id: '1', firstName: 'A', lastName: 'A', isAttending: true, tableId: 't1', createdAt: ts() },
+          { id: '2', firstName: 'B', lastName: 'B', isAttending: true, tableId: null, createdAt: ts() },
+          { id: '3', firstName: 'C', lastName: 'C', isAttending: true, createdAt: ts() },
+          { id: '4', firstName: 'D', lastName: 'D', isAttending: false, tableId: null, createdAt: ts() }
         ]
       );
       expect(component.unseatedAttendingCount()).toBe(2);
