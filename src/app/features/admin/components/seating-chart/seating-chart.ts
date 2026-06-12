@@ -1,4 +1,4 @@
-import { Component, Signal, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, Signal, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
@@ -11,7 +11,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { TablePlannerStateService, SeatedTableView } from '../../services/table-planner-state.service';
-import { TableVisual } from '../../../../shared/components/table-visual/table-visual';
+import { SeatingDraftService } from '../../../../core/services/seating-draft/seating-draft.service';
+import { TableVisual, SeatDropEvent } from '../../../../shared/components/table-visual/table-visual';
 import { Guest } from '../../../../shared/models/guest.model';
 import { Table, TableShape } from '../../../../shared/models/table.model';
 import { Invitation } from '../../../../shared/models/invitation.model';
@@ -29,24 +30,72 @@ interface UnseatedRow {
   templateUrl: './seating-chart.html'
 })
 export class SeatingChart {
-  private readonly firestoreService = inject(FirestoreService);
-  private readonly messageService = inject(MessageService);
+  private readonly firestoreService  = inject(FirestoreService);
+  private readonly messageService    = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
-  readonly plannerState = inject(TablePlannerStateService);
+  readonly plannerState              = inject(TablePlannerStateService);
+  private readonly seatingDraft      = inject(SeatingDraftService);
 
   private readonly allInvitations: Signal<Invitation[]> = toSignal(
     this.firestoreService.getInvitations(),
     { initialValue: [] }
   );
 
-  // ── Derived signals ──────────────────────────────────────────────────────────
+  // ── Draft-aware effective state ───────────────────────────────────────────────
+
+  /**
+   * All guests with any pending draft changes applied on top of the
+   * Firestore values. Used as the source of truth for all UI rendering.
+   */
+  private readonly effectiveGuests = computed<Guest[]>(() => {
+    const guests  = this.plannerState.allGuests();
+    const pending = this.seatingDraft.pendingMap();
+    if (pending.size === 0) return guests;
+    return guests.map(g => {
+      if (!pending.has(g.id)) return g;
+      const { tableId, seatNumber } = pending.get(g.id)!;
+      return { ...g, tableId, seatNumber };
+    });
+  });
+
+  private readonly effectiveSeatedTables = computed<SeatedTableView[]>(() => {
+    const allTables = this.plannerState.allTables();
+    const attending = this.effectiveGuests().filter(g => g.isAttending === true);
+    const byTableId = new Map<string, Guest[]>();
+
+    for (const g of attending) {
+      if (!g.tableId) continue;
+      if (!byTableId.has(g.tableId)) byTableId.set(g.tableId, []);
+      byTableId.get(g.tableId)!.push(g);
+    }
+
+    return allTables.map(table => {
+      const seated = (byTableId.get(table.id) ?? []).sort((a, b) =>
+        `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+      );
+      return {
+        table,
+        guests: seated,
+        occupancy: seated.length,
+        isOverCapacity: seated.length > table.capacity
+      };
+    }).sort((a, b) =>
+      a.table.name.localeCompare(b.table.name, undefined, { numeric: true, sensitivity: 'base' })
+    );
+  });
+
+  private readonly effectiveUnseated = computed<Guest[]>(() =>
+    this.effectiveGuests().filter(g => g.isAttending === true && !g.tableId)
+  );
+
+  // ── Derived signals ───────────────────────────────────────────────────────────
 
   readonly unseatedGuests = computed<UnseatedRow[]>(() => {
-    const guests = this.plannerState.unseatedGuests()
+    const guests = this.effectiveUnseated()
       .slice()
       .sort((a, b) => {
-        const invA = a.invitationId ?? '�';
-        const invB = b.invitationId ?? '�';
+        const invA = a.invitationId ?? '￿';
+        const invB = b.invitationId ?? '￿';
         const cmp = invA.localeCompare(invB);
         if (cmp !== 0) return cmp;
         return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
@@ -69,8 +118,14 @@ export class SeatingChart {
     return rows;
   });
 
-  readonly tables = computed<SeatedTableView[]>(() => this.plannerState.seatedTables());
-  readonly totalSeatedCount = computed(() => this.plannerState.totalSeated());
+  readonly tables           = computed<SeatedTableView[]>(() => this.effectiveSeatedTables());
+  readonly totalSeatedCount = computed(() =>
+    this.effectiveGuests().filter(g => g.isAttending === true && g.tableId != null).length
+  );
+
+  readonly hasPendingChanges = computed(() => this.seatingDraft.hasPendingChanges());
+  readonly pendingCount      = computed(() => this.seatingDraft.pendingCount());
+  readonly savingSeating     = signal(false);
 
   readonly tableSelectOptions = computed(() =>
     this.plannerState.allTables().map(t => ({ label: t.name, value: t.id }))
@@ -78,8 +133,22 @@ export class SeatingChart {
 
   readonly tableListIds = computed(() => this.plannerState.allTables().map(t => t.id));
 
+  readonly allSeatSlotIds = computed(() =>
+    this.plannerState.allTables().flatMap(t =>
+      Array.from({ length: t.capacity }, (_, i) => `seat-${t.id}-${i + 1}`)
+    )
+  );
+
+  readonly unseatedPoolConnectedTo = computed(() =>
+    [...this.tableListIds(), ...this.allSeatSlotIds()]
+  );
+
   connectedListIds(excludeTableId: string): string[] {
-    return ['unseated-pool', ...this.tableListIds().filter(id => id !== excludeTableId)];
+    return [
+      'unseated-pool',
+      ...this.tableListIds().filter(id => id !== excludeTableId),
+      ...this.allSeatSlotIds()
+    ];
   }
 
   // ── Add table form ────────────────────────────────────────────────────────────
@@ -179,55 +248,69 @@ export class SeatingChart {
     }
   }
 
-  // ── Guest assignment ──────────────────────────────────────────────────────────
+  // ── Guest assignment (writes to draft; nothing hits Firestore until Save) ─────
 
-  async onDrop(event: CdkDragDrop<Guest[]>, targetTableId: string | null): Promise<void> {
+  private effectiveTableIdOf(guest: Guest): string | null {
+    const override = this.seatingDraft.pendingMap().get(guest.id);
+    return override !== undefined ? override.tableId : (guest.tableId ?? null);
+  }
+
+  onDrop(event: CdkDragDrop<Guest[]>, targetTableId: string | null): void {
     const guest: Guest = event.item.data;
-    if (guest.tableId === targetTableId) return;
-    const table = targetTableId
-      ? this.plannerState.allTables().find(t => t.id === targetTableId)
-      : null;
-    try {
-      await this.firestoreService.setGuestTableById(
-        guest.id, targetTableId,
-        { guestName: `${guest.firstName} ${guest.lastName}`, tableName: table?.name }
-      );
-    } catch (err) {
-      console.error('Failed to update seating', err);
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not update seating.' });
+    if (this.effectiveTableIdOf(guest) === targetTableId) return;
+    this.seatingDraft.markGuest(guest.id, targetTableId, null);
+  }
+
+  assignGuestToTable(guest: Guest, tableId: string | null): void {
+    if (this.effectiveTableIdOf(guest) === tableId) return;
+    this.seatingDraft.markGuest(guest.id, tableId, null);
+  }
+
+  onSeatAssigned({ guest, seatNumber }: SeatDropEvent, table: Table): void {
+    const currentOccupant = this.effectiveSeatedTables()
+      .find(v => v.table.id === table.id)
+      ?.guests.find(g => g.seatNumber === seatNumber && g.id !== guest.id) ?? null;
+
+    this.seatingDraft.markGuest(guest.id, table.id, seatNumber);
+
+    if (currentOccupant) {
+      this.seatingDraft.markGuest(currentOccupant.id, this.effectiveTableIdOf(currentOccupant), null);
     }
   }
 
-  async assignGuestToTable(guest: Guest, tableId: string | null): Promise<void> {
-    if (guest.tableId === tableId) return;
-    const table = tableId
-      ? this.plannerState.allTables().find(t => t.id === tableId)
-      : null;
-    try {
-      await this.firestoreService.setGuestTableById(
-        guest.id, tableId,
-        { guestName: `${guest.firstName} ${guest.lastName}`, tableName: table?.name }
-      );
-    } catch (err) {
-      console.error('Failed to assign guest', err);
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not assign guest.' });
-    }
+  unseatGuest(guest: Guest): void {
+    this.seatingDraft.markGuest(guest.id, null, null);
   }
 
-  async unseatGuest(guest: Guest): Promise<void> {
+  // ── Save ──────────────────────────────────────────────────────────────────────
+
+  async saveSeating(): Promise<void> {
+    const changes = this.seatingDraft.drain();
+    this.savingSeating.set(true);
     try {
-      await this.firestoreService.setGuestTableById(
-        guest.id, null,
-        { guestName: `${guest.firstName} ${guest.lastName}` }
-      );
+      await this.firestoreService.saveSeatingChanges(changes);
+      this.seatingDraft.clear();
       this.messageService.add({
         severity: 'success',
-        summary: 'Unseated',
-        detail: `${guest.firstName} ${guest.lastName} removed from their table.`
+        summary:  'Seating saved',
+        detail:   `${changes.length} guest assignment${changes.length === 1 ? '' : 's'} saved.`
       });
     } catch (err) {
-      console.error('Failed to unseat guest', err);
-      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Could not unseat guest.' });
+      console.error('Failed to save seating', err);
+      this.messageService.add({
+        severity: 'error',
+        summary:  'Save failed',
+        detail:   'Could not save seating changes. Please try again.'
+      });
+    } finally {
+      this.savingSeating.set(false);
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.seatingDraft.hasPendingChanges()) {
+      event.preventDefault();
     }
   }
 }

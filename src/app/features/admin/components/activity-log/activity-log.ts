@@ -58,6 +58,7 @@ export class ActivityLog {
       case 'guest_attendance_changed': return 'pi pi-check-circle';
       case 'guest_seated': return 'pi pi-tag';
       case 'guest_unseated': return 'pi pi-times';
+      case 'guest_seat_assigned': return 'pi pi-map-marker';
       case 'guest_moved': return 'pi pi-arrow-right-arrow-left';
       case 'guest_updated': return 'pi pi-pencil';
       case 'invitation_created': return 'pi pi-id-card';
@@ -67,6 +68,8 @@ export class ActivityLog {
       case 'outreach_cleared': return 'pi pi-times-circle';
       case 'rsvp_submitted': return 'pi pi-envelope';
       case 'rsvp_timestamps_backfilled': return 'pi pi-history';
+      case 'layout_saved':  return 'pi pi-save';
+      case 'seating_saved': return 'pi pi-users';
       default: return 'pi pi-circle';
     }
   }

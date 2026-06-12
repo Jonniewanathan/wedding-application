@@ -448,6 +448,59 @@ export class FirestoreService {
     return collectionData(ref, { idField: 'id' }) as Observable<Table[]>;
   }
 
+  async setSeatNumber(
+    guestId: string,
+    seatNumber: number | null,
+    hints?: { guestName?: string; tableName?: string }
+  ): Promise<void> {
+    const docRef = doc(this.firestore, `guests/${guestId}`);
+    await updateDoc(docRef, { seatNumber, updatedAt: serverTimestamp() });
+    const guestName = hints?.guestName ?? `guest ${guestId}`;
+    const tableName = hints?.tableName;
+    this.logSilently({
+      action: 'guest_seat_assigned',
+      subject: { type: 'guest', id: guestId, name: guestName },
+      summary: seatNumber
+        ? `Assigned ${guestName} to seat ${seatNumber}${tableName ? ` at "${tableName}"` : ''}.`
+        : `Cleared seat assignment for ${guestName}.`,
+      details: { seatNumber }
+    });
+  }
+
+  async saveSeatingChanges(
+    changes: { guestId: string; tableId: string | null; seatNumber: number | null }[]
+  ): Promise<void> {
+    const batch = writeBatch(this.firestore);
+    for (const { guestId, tableId, seatNumber } of changes) {
+      const ref = doc(this.firestore, `guests/${guestId}`);
+      batch.update(ref, { tableId, seatNumber: seatNumber ?? null, updatedAt: serverTimestamp() });
+    }
+    await batch.commit();
+    this.logSilently({
+      action: 'seating_saved',
+      subject: { type: 'guest', id: 'seating_plan', name: 'Seating Plan' },
+      summary: `Seating plan saved — ${changes.length} guest assignment${changes.length === 1 ? '' : 's'} updated.`,
+      details: { guestCount: changes.length }
+    });
+  }
+
+  async saveTablePositions(
+    updates: { tableId: string; name: string; x: number; y: number }[]
+  ): Promise<void> {
+    const batch = writeBatch(this.firestore);
+    for (const { tableId, x, y } of updates) {
+      const ref = doc(this.firestore, `tables/${tableId}`);
+      batch.update(ref, { positionX: x, positionY: y, updatedAt: serverTimestamp() });
+    }
+    await batch.commit();
+    this.logSilently({
+      action: 'layout_saved',
+      subject: { type: 'table', id: 'floor_plan', name: 'Floor Plan' },
+      summary: `Seating chart layout saved — ${updates.length} table position${updates.length === 1 ? '' : 's'} updated.`,
+      details: { tableCount: updates.length }
+    });
+  }
+
   async createTable(data: Omit<Table, 'id' | 'createdAt' | 'updatedAt'>): Promise<DocumentReference> {
     const ref = collection(this.firestore, 'tables');
     const docRef = await addDoc(ref, {

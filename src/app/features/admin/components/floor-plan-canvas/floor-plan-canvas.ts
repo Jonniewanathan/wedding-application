@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 
@@ -6,6 +6,7 @@ import { MessageService } from 'primeng/api';
 
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { TablePlannerStateService } from '../../services/table-planner-state.service';
+import { LayoutDraftService } from '../../../../core/services/layout-draft/layout-draft.service';
 import { TableVisual } from '../../../../shared/components/table-visual/table-visual';
 import { Table } from '../../../../shared/models/table.model';
 import { Guest } from '../../../../shared/models/guest.model';
@@ -42,9 +43,10 @@ interface CateringRow extends Guest {
   styleUrl:    './floor-plan-canvas.scss'
 })
 export class FloorPlanCanvas {
-  private readonly plannerState    = inject(TablePlannerStateService);
+  private readonly plannerState     = inject(TablePlannerStateService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly messageService   = inject(MessageService);
+  private readonly layoutDraft      = inject(LayoutDraftService);
 
   // Expose constants to template
   readonly GRID_SIZE     = GRID_SIZE;
@@ -58,7 +60,9 @@ export class FloorPlanCanvas {
    * round-trip completes. Prevents any flicker between drop and confirmation.
    */
   private readonly _localPositions =
-    signal<ReadonlyMap<string, { x: number; y: number }>>(new Map());
+    signal<ReadonlyMap<string, { x: number; y: number }>>(
+      new Map(this.layoutDraft.drain().map(({ tableId, x, y }) => [tableId, { x, y }]))
+    );
 
   /**
    * Resolved display position per table.
@@ -85,15 +89,18 @@ export class FloorPlanCanvas {
     return result;
   });
 
-  readonly tables       = computed(() => this.plannerState.seatedTables());
-  readonly totalSeated  = computed(() => this.plannerState.totalSeated());
-  readonly totalCap     = computed(() => this.plannerState.totalCapacity());
-  readonly unseatedCount = computed(() => this.plannerState.unseatedGuests().length);
+  readonly tables           = computed(() => this.plannerState.seatedTables());
+  readonly totalSeated      = computed(() => this.plannerState.totalSeated());
+  readonly totalCap         = computed(() => this.plannerState.totalCapacity());
+  readonly unseatedCount    = computed(() => this.plannerState.unseatedGuests().length);
+  readonly hasPendingChanges = computed(() => this.layoutDraft.hasPendingChanges());
+  readonly pendingCount      = computed(() => this.layoutDraft.pendingCount());
+
+  readonly saving = signal(false);
 
   // ── Drag + snap ───────────────────────────────────────────────────────────
 
   onDragEnded(event: CdkDragEnd, table: Table): void {
-    // getFreeDragPosition() returns the accumulated CDK position (initial + delta).
     const raw = event.source.getFreeDragPosition();
 
     const snappedX = Math.max(0, Math.min(snap(raw.x), CANVAS_WIDTH  - 60));
@@ -106,17 +113,47 @@ export class FloorPlanCanvas {
       return next;
     });
 
-    // 2. Persist asynchronously.
-    this.firestoreService
-      .updateTable(table.id, { positionX: snappedX, positionY: snappedY }, table.name)
-      .catch(err => {
-        console.error('Failed to save table position', err);
-        this.messageService.add({
-          severity: 'error',
-          summary:  'Position not saved',
-          detail:   `Could not save position for "${table.name}".`
-        });
+    // 2. Mark as pending — Firestore write deferred until Save Layout is clicked.
+    this.layoutDraft.mark(table.id, { x: snappedX, y: snappedY });
+  }
+
+  // ── Save layout ──────────────────────────────────────────────────────────
+
+  async saveLayout(): Promise<void> {
+    const allTables = this.plannerState.allTables();
+    const updates = this.layoutDraft.drain().map(({ tableId, x, y }) => ({
+      tableId,
+      name: allTables.find(t => t.id === tableId)?.name ?? tableId,
+      x,
+      y
+    }));
+
+    this.saving.set(true);
+    try {
+      await this.firestoreService.saveTablePositions(updates);
+      this.layoutDraft.clear();
+      this.messageService.add({
+        severity: 'success',
+        summary:  'Layout saved',
+        detail:   `${updates.length} table position${updates.length === 1 ? '' : 's'} saved.`
       });
+    } catch (err) {
+      console.error('Failed to save layout', err);
+      this.messageService.add({
+        severity: 'error',
+        summary:  'Save failed',
+        detail:   'Could not save the floor plan. Please try again.'
+      });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.layoutDraft.hasPendingChanges()) {
+      event.preventDefault();
+    }
   }
 
   // ── Catering sheet ─────────────────────────────────────────────────────────

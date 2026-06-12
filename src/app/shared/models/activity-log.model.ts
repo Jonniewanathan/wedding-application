@@ -50,6 +50,7 @@ export type ActivityAction =
   | 'guest_attendance_changed'
   | 'guest_seated'
   | 'guest_unseated'
+  | 'guest_seat_assigned'
   | 'guest_moved'
   | 'guest_updated'
   | 'invitation_created'
@@ -62,4 +63,6 @@ export type ActivityAction =
   | 'invitation_codes_backfilled'
   | 'table_created'
   | 'table_updated'
-  | 'table_deleted';
+  | 'table_deleted'
+  | 'layout_saved'
+  | 'seating_saved';

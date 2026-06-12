@@ -1,5 +1,6 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { Guest } from '../../models/guest.model';
 import { Table, TableShape } from '../../models/table.model';
 
@@ -45,15 +46,23 @@ export interface TableDimensions {
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
+export interface SeatDropEvent {
+  guest:      Guest;
+  seatNumber: number;
+}
+
 @Component({
   selector: 'app-table-visual',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DragDropModule],
   templateUrl: './table-visual.html'
 })
 export class TableVisual {
-  readonly table  = input.required<Table>();
-  readonly guests = input<Guest[]>([]);
+  readonly table       = input.required<Table>();
+  readonly guests      = input<Guest[]>([]);
+  readonly interactive = input<boolean>(false);
+
+  readonly seatAssigned = output<SeatDropEvent>();
 
   readonly SEAT_SIZE = SEAT_SIZE;
 
@@ -77,6 +86,11 @@ export class TableVisual {
   readonly tableSurfaceTop = computed(() =>
     (this.dimensions().containerHeight - this.dimensions().tableHeight) / 2
   );
+
+  onSeatDrop(event: CdkDragDrop<Guest[]>, seatNumber: number): void {
+    const guest = event.item.data as Guest;
+    this.seatAssigned.emit({ guest, seatNumber });
+  }
 }
 
 // ── Pure layout functions (exported for specs) ────────────────────────────────
@@ -120,8 +134,9 @@ export function computeSeats(table: Table, guests: Guest[], dims: TableDimension
   const cy = dims.containerHeight / 2;
   const cap = table.capacity;
 
+  // seatNumber is 1-based; slot index is 0-based.
   const makeSlot = (index: number, x: number, y: number): SeatSlot => {
-    const g = guests[index] ?? null;
+    const g = guests.find(g => g.seatNumber === index + 1) ?? null;
     return {
       index,
       left:     cx + x - SEAT_SIZE / 2,

@@ -21,6 +21,8 @@ export interface Guest {
 
   // Day-of seating. References tables/{id}. Null/missing means unseated.
   tableId?: string | null;
+  // 1-based seat position within the table (seat 1 = 12 o'clock for round tables).
+  seatNumber?: number | null;
 
   type?: string;
 
