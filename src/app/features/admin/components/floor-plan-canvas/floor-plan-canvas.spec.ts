@@ -85,12 +85,13 @@ describe('FloorPlanCanvas', () => {
 
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
-      'getAllGuests', 'getInvitations', 'getTables', 'updateTable'
+      'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
     firestoreSpy.getTables.and.returnValue(of([table1, table2]));
     firestoreSpy.updateTable.and.returnValue(Promise.resolve());
+    firestoreSpy.saveTablePositions.and.returnValue(Promise.resolve());
 
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
 
@@ -125,14 +126,15 @@ describe('FloorPlanCanvas', () => {
   // ── onDragEnded ─────────────────────────────────────────────────────────────
 
   describe('onDragEnded', () => {
-    it('snaps the position and saves to Firestore', () => {
+    it('saves snapped position to Firestore when saveLayout is called', async () => {
       component.onDragEnded(makeDragEnd(113, 47), table1);
       // snap(113, 20) = round(5.65) × 20 = 6 × 20 = 120
       // snap(47,  20) = round(2.35) × 20 = 2 × 20 = 40
-      expect(firestoreSpy.updateTable).toHaveBeenCalledWith(
-        't1',
-        jasmine.objectContaining({ positionX: 120, positionY: 40 }),
-        table1.name
+      await component.saveLayout();
+      expect(firestoreSpy.saveTablePositions).toHaveBeenCalledWith(
+        jasmine.arrayContaining([
+          jasmine.objectContaining({ tableId: 't1', x: 120, y: 40 })
+        ])
       );
     });
 
@@ -163,10 +165,10 @@ describe('FloorPlanCanvas', () => {
       expect(component.tablePositions().get('t1')?.y).toBe(CANVAS_HEIGHT - 60);
     });
 
-    it('shows an error toast when Firestore save fails', async () => {
-      firestoreSpy.updateTable.and.returnValue(Promise.reject(new Error('network error')));
+    it('shows an error toast when saveLayout Firestore write fails', async () => {
+      firestoreSpy.saveTablePositions.and.returnValue(Promise.reject(new Error('network error')));
       component.onDragEnded(makeDragEnd(100, 100), table1);
-      await Promise.resolve(); // flush microtasks
+      await component.saveLayout();
       expect(messageSpy.add).toHaveBeenCalledWith(
         jasmine.objectContaining({ severity: 'error' })
       );

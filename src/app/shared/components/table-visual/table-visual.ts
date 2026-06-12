@@ -134,9 +134,25 @@ export function computeSeats(table: Table, guests: Guest[], dims: TableDimension
   const cy = dims.containerHeight / 2;
   const cap = table.capacity;
 
+  // Split guests: explicitly seat-numbered ones go to their designated slot;
+  // the rest are assigned positionally to fill any remaining empty slots.
+  const bySlot = new Map<number, Guest>();
+  const unslotted: Guest[] = [];
+  for (const g of guests) {
+    if (g.seatNumber != null && g.seatNumber >= 1 && g.seatNumber <= cap) {
+      bySlot.set(g.seatNumber, g);
+    } else {
+      unslotted.push(g);
+    }
+  }
+  let nextUnslotted = 0;
+
   // seatNumber is 1-based; slot index is 0-based.
   const makeSlot = (index: number, x: number, y: number): SeatSlot => {
-    const g = guests.find(g => g.seatNumber === index + 1) ?? null;
+    let g = bySlot.get(index + 1) ?? null;
+    if (!g && nextUnslotted < unslotted.length) {
+      g = unslotted[nextUnslotted++];
+    }
     return {
       index,
       left:     cx + x - SEAT_SIZE / 2,

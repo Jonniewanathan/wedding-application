@@ -80,6 +80,7 @@
               "zone.js",
               "zone.js/testing"
             ],
+            "watch": false,
             "tsConfig": "tsconfig.spec.json",
             "assets": [
               {

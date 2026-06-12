@@ -58,7 +58,7 @@ describe('SeatingChart', () => {
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
       'getAllGuests', 'getInvitations', 'getTables',
-      'setGuestTableById', 'createTable', 'updateTable', 'deleteTable'
+      'setGuestTableById', 'createTable', 'updateTable', 'deleteTable', 'saveSeatingChanges'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
@@ -67,6 +67,7 @@ describe('SeatingChart', () => {
     firestoreSpy.createTable.and.returnValue(Promise.resolve({} as any));
     firestoreSpy.updateTable.and.returnValue(Promise.resolve());
     firestoreSpy.deleteTable.and.returnValue(Promise.resolve());
+    firestoreSpy.saveSeatingChanges.and.returnValue(Promise.resolve());
 
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
     confirmSpy = jasmine.createSpyObj<ConfirmationService>('ConfirmationService', ['confirm']);
@@ -308,24 +309,22 @@ describe('SeatingChart', () => {
   // ── Guest assignment (drag-drop) ──────────────────────────────────────────────
 
   describe('onDrop', () => {
-    it('should call setGuestTableById with the target table id', async () => {
+    it('should seat the guest at the target table', () => {
       const t1 = makeTable({ id: 't1', name: 'Table 1' });
       build([makeGuest({ id: '1', firstName: 'Alice', tableId: null })], [], [t1]);
       const guest = component.unseatedGuests()[0].guest;
-      await component.onDrop(makeDrop(guest), 't1');
-      expect(firestoreSpy.setGuestTableById).toHaveBeenCalledWith(
-        '1', 't1', jasmine.objectContaining({ guestName: 'Alice B' })
-      );
+      component.onDrop(makeDrop(guest), 't1');
+      expect(component.tables()[0].guests.map(g => g.id)).toContain('1');
+      expect(component.unseatedGuests().length).toBe(0);
     });
 
-    it('should call setGuestTableById with null to return to unseated', async () => {
+    it('should return the guest to unseated when target is null', () => {
       const t1 = makeTable({ id: 't1', name: 'Table 1' });
       build([makeGuest({ id: '1', firstName: 'Alice', tableId: 't1' })], [], [t1]);
       const guest = component.tables()[0].guests[0];
-      await component.onDrop(makeDrop(guest), null);
-      expect(firestoreSpy.setGuestTableById).toHaveBeenCalledWith(
-        '1', null, jasmine.objectContaining({ guestName: 'Alice B' })
-      );
+      component.onDrop(makeDrop(guest), null);
+      expect(component.unseatedGuests().map(r => r.guest.id)).toContain('1');
+      expect(component.tables()[0].guests.length).toBe(0);
     });
 
     it('should skip the write when the guest is already on the target table', async () => {
@@ -336,11 +335,12 @@ describe('SeatingChart', () => {
       expect(firestoreSpy.setGuestTableById).not.toHaveBeenCalled();
     });
 
-    it('should show an error toast when the write rejects', async () => {
-      firestoreSpy.setGuestTableById.and.returnValue(Promise.reject(new Error('boom')));
+    it('should show an error toast when saveSeating rejects', async () => {
+      firestoreSpy.saveSeatingChanges.and.returnValue(Promise.reject(new Error('boom')));
       build([makeGuest({ id: '1', firstName: 'Alice', tableId: null })]);
       const guest = component.unseatedGuests()[0].guest;
-      await component.onDrop(makeDrop(guest), 't1');
+      component.onDrop(makeDrop(guest), 't1');
+      await component.saveSeating();
       const last = messageSpy.add.calls.mostRecent().args[0] as any;
       expect(last.severity).toBe('error');
     });
@@ -349,14 +349,12 @@ describe('SeatingChart', () => {
   // ── Mobile assignment ─────────────────────────────────────────────────────────
 
   describe('assignGuestToTable', () => {
-    it('should call setGuestTableById with the chosen table id', async () => {
+    it('should seat the guest at the chosen table', () => {
       const t1 = makeTable({ id: 't1', name: 'Table 1' });
       build([makeGuest({ id: '1', firstName: 'Alice', tableId: null })], [], [t1]);
       const guest = component.unseatedGuests()[0].guest;
-      await component.assignGuestToTable(guest, 't1');
-      expect(firestoreSpy.setGuestTableById).toHaveBeenCalledWith(
-        '1', 't1', jasmine.objectContaining({ guestName: 'Alice B' })
-      );
+      component.assignGuestToTable(guest, 't1');
+      expect(component.tables()[0].guests.map(g => g.id)).toContain('1');
     });
 
     it('should skip the write when already on the same table', async () => {
@@ -376,16 +374,18 @@ describe('SeatingChart', () => {
       build([makeGuest({ id: '1', firstName: 'Alice', tableId: 't1' })], [], [t1]);
     });
 
-    it('should call setGuestTableById with null', async () => {
+    it('should move the guest to the unseated list', () => {
       const guest = component.tables()[0].guests[0];
-      await component.unseatGuest(guest);
-      expect(firestoreSpy.setGuestTableById).toHaveBeenCalledWith('1', null, { guestName: 'Alice B' });
+      component.unseatGuest(guest);
+      expect(component.unseatedGuests().map(r => r.guest.id)).toContain('1');
+      expect(component.tables()[0].guests.length).toBe(0);
     });
 
-    it('should surface an error toast when the write rejects', async () => {
-      firestoreSpy.setGuestTableById.and.returnValue(Promise.reject(new Error('boom')));
+    it('should surface an error toast when saveSeating rejects', async () => {
+      firestoreSpy.saveSeatingChanges.and.returnValue(Promise.reject(new Error('boom')));
       const guest = component.tables()[0].guests[0];
-      await component.unseatGuest(guest);
+      component.unseatGuest(guest);
+      await component.saveSeating();
       const last = messageSpy.add.calls.mostRecent().args[0] as any;
       expect(last.severity).toBe('error');
     });
