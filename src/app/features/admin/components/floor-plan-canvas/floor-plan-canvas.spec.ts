@@ -24,6 +24,16 @@ function makeTable(overrides: Partial<Table> & { id: string }): Table {
   return { name: 'T', shape: 'round', capacity: 8, createdAt: ts(), ...overrides };
 }
 
+function makeGuest(overrides: Partial<Guest> & { id: string }): Guest {
+  return {
+    firstName: 'Guest',
+    lastName: overrides.id,
+    isAttending: true,
+    createdAt: ts(),
+    ...overrides
+  };
+}
+
 function makeDragEnd(x: number, y: number): CdkDragEnd {
   return {
     source: { getFreeDragPosition: () => ({ x, y }) } as any,
@@ -182,6 +192,91 @@ describe('FloorPlanCanvas', () => {
         expect(pos.x % GRID_SIZE).withContext(`x=${pos.x} from raw=${v}`).toBe(0);
         expect(pos.y % GRID_SIZE).withContext(`y=${pos.y} from raw=${v}`).toBe(0);
       }
+    });
+  });
+
+  // ── cateringViews ────────────────────────────────────────────────────────────
+  //
+  // These need a guest list present at TablePlannerStateService construction
+  // time, which the shared `component` from the outer beforeEach already
+  // locked in as empty. Each test rebuilds the testing module from scratch
+  // with its own guest data instead of mutating the shared singleton.
+
+  describe('cateringViews', () => {
+    function createWithGuests(guests: Guest[]): FloorPlanCanvas {
+      TestBed.resetTestingModule();
+
+      const spy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
+        'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions'
+      ]);
+      spy.getAllGuests.and.returnValue(of(guests));
+      spy.getTables.and.returnValue(of([table1]));
+      spy.getInvitations.and.returnValue(of([]));
+
+      TestBed.configureTestingModule({
+        imports: [FloorPlanCanvas],
+        providers: [
+          { provide: FirestoreService, useValue: spy },
+          { provide: MessageService, useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) },
+          TablePlannerStateService
+        ]
+      });
+
+      return TestBed.createComponent(FloorPlanCanvas).componentInstance;
+    }
+
+    it('sorts seated guests by seat number rather than name', () => {
+      const c = createWithGuests([
+        makeGuest({ id: 'g1', firstName: 'Zara', tableId: 't1', seatNumber: 3 }),
+        makeGuest({ id: 'g2', firstName: 'Amir', tableId: 't1', seatNumber: 1 }),
+        makeGuest({ id: 'g3', firstName: 'Beth', tableId: 't1', seatNumber: 2 })
+      ]);
+
+      const view = c.cateringViews().find(v => v.table.id === 't1')!;
+      expect(view.rows.map(r => r.firstName)).toEqual(['Amir', 'Beth', 'Zara']);
+    });
+
+    it('places guests without a seat number last', () => {
+      const c = createWithGuests([
+        makeGuest({ id: 'g1', firstName: 'NoSeat', tableId: 't1', seatNumber: null }),
+        makeGuest({ id: 'g2', firstName: 'HasSeat', tableId: 't1', seatNumber: 1 })
+      ]);
+
+      const view = c.cateringViews().find(v => v.table.id === 't1')!;
+      expect(view.rows.map(r => r.firstName)).toEqual(['HasSeat', 'NoSeat']);
+    });
+  });
+
+  // ── formatChips / printLang ────────────────────────────────────────────────
+
+  describe('formatChips', () => {
+    it('returns the placeholder dash when there are no values', () => {
+      expect(component.formatChips(undefined)).toBe('—');
+      expect(component.formatChips([])).toBe('—');
+    });
+
+    it('returns English values unchanged when printLang is en', () => {
+      expect(component.formatChips(['Vegetarian', 'Nuts'])).toBe('Vegetarian, Nuts');
+    });
+
+    it('translates known chip values to Spanish when printLang is es', () => {
+      component.printLang.set('es');
+      expect(component.formatChips(['Vegetarian', 'Nuts'])).toBe('Vegetariano, Frutos Secos');
+    });
+
+    it('falls back to the raw value for an unrecognised chip in Spanish', () => {
+      component.printLang.set('es');
+      expect(component.formatChips(['Custom request'])).toBe('Custom request');
+    });
+  });
+
+  describe('shapeLabel', () => {
+    it('translates table shape according to printLang', () => {
+      expect(component.shapeLabel('round')).toBe('Round');
+      expect(component.shapeLabel('rectangle')).toBe('Rectangle');
+      component.printLang.set('es');
+      expect(component.shapeLabel('round')).toBe('Redonda');
+      expect(component.shapeLabel('rectangle')).toBe('Rectangular');
     });
   });
 });

@@ -37,6 +37,22 @@
         <i class="pi pi-save text-xs"></i>
         {{ saving() ? 'Saving…' : 'Save Layout' }}
       </button>
+      <div class="flex items-center border border-slate-300 text-[10px] uppercase tracking-widest overflow-hidden">
+        <button
+          (click)="printLang.set('en')"
+          [class]="printLang() === 'en' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'"
+          class="px-2 py-2 transition-colors"
+          title="Print sheet language: English">
+          EN
+        </button>
+        <button
+          (click)="printLang.set('es')"
+          [class]="printLang() === 'es' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'"
+          class="px-2 py-2 border-l border-slate-300 transition-colors"
+          title="Print sheet language: Spanish">
+          ES
+        </button>
+      </div>
       <button
         (click)="print()"
         class="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-900 border border-slate-300 hover:border-slate-900 px-4 py-2 transition-colors">
@@ -114,8 +130,8 @@
   <div class="print-page">
 
     <header class="print-header">
-      <h1 class="print-h1">Wedding Table Layout &amp; Floor Plan</h1>
-      <p class="print-subtitle">For venue setup crew — do not distribute to guests</p>
+      <h1 class="print-h1">{{ printStrings().floorPlanTitle }}</h1>
+      <p class="print-subtitle">{{ printStrings().floorPlanSubtitle }}</p>
     </header>
 
     <!-- Canvas scaled to fit page width -->
@@ -142,10 +158,10 @@
 
     <!-- Summary legend below map -->
     <div class="print-legend">
-      <span>{{ tables().length }} tables</span>
-      <span>{{ totalSeated() }}&thinsp;/&thinsp;{{ totalCap() }} seats filled</span>
+      <span>{{ printStrings().tablesLabel(tables().length) }}</span>
+      <span>{{ printStrings().seatsFilledLabel(totalSeated(), totalCap()) }}</span>
       @if (unseatedCount() > 0) {
-        <span class="print-warning">{{ unseatedCount() }} attending guest{{ unseatedCount() === 1 ? '' : 's' }} not yet seated</span>
+        <span class="print-warning">{{ printStrings().unseatedWarning(unseatedCount()) }}</span>
       }
     </div>
   </div>
@@ -154,8 +170,8 @@
   <div class="print-page print-page-break">
 
     <header class="print-header">
-      <h1 class="print-h1">Catering &amp; Dietary Reference Sheet</h1>
-      <p class="print-subtitle">For catering team use only — confirm with planner on the day</p>
+      <h1 class="print-h1">{{ printStrings().cateringTitle }}</h1>
+      <p class="print-subtitle">{{ printStrings().cateringSubtitle }}</p>
     </header>
 
     @for (view of cateringViews(); track view.table.id) {
@@ -163,34 +179,36 @@
         <div class="print-section-heading">
           <span class="print-section-name">{{ view.table.name }}</span>
           <span class="print-section-meta">
-            {{ view.table.shape | titlecase }} &nbsp;·&nbsp;
+            {{ shapeLabel(view.table.shape) }} &nbsp;·&nbsp;
             {{ view.table.shape === 'round' ? 'Ø' : '' }}
-            {{ view.occupancy }}&thinsp;/&thinsp;{{ view.table.capacity }} guests
+            {{ printStrings().guestsLabel(view.occupancy, view.table.capacity) }}
           </span>
           @if (view.isOverCapacity) {
-            <span class="print-over-capacity">OVER CAPACITY</span>
+            <span class="print-over-capacity">{{ printStrings().overCapacity }}</span>
           }
         </div>
 
         @if (view.rows.length === 0) {
-          <p class="print-empty">No guests assigned to this table.</p>
+          <p class="print-empty">{{ printStrings().noGuestsAssigned }}</p>
         } @else {
           <table class="print-table">
             <thead>
               <tr>
-                <th class="col-name">Guest Name</th>
-                <th class="col-diet">Dietary Preferences</th>
-                <th class="col-allergy">Allergies</th>
-                <th class="col-notes">Notes</th>
+                <th class="col-name">{{ printStrings().colGuestName }}</th>
+                <th class="col-seat">{{ printStrings().colSeat }}</th>
+                <th class="col-diet">{{ printStrings().colDietary }}</th>
+                <th class="col-allergy">{{ printStrings().colAllergy }}</th>
+                <th class="col-notes">{{ printStrings().colNotes }}</th>
               </tr>
             </thead>
             <tbody>
               @for (row of view.rows; track row.id) {
                 <tr [class.print-row-flagged]="row.hasDietary">
                   <td>{{ row.firstName }} {{ row.lastName }}</td>
-                  <td>{{ row.dietaryPreferences?.join(', ') || '—' }}</td>
-                  <td>{{ row.allergies?.join(', ') || '—' }}</td>
-                  <td>{{ row.dietaryNotes || '—' }}</td>
+                  <td>{{ row.seatNumber ?? printStrings().none }}</td>
+                  <td>{{ formatChips(row.dietaryPreferences) }}</td>
+                  <td>{{ formatChips(row.allergies) }}</td>
+                  <td>{{ row.dietaryNotes || printStrings().none }}</td>
                 </tr>
               }
             </tbody>
@@ -202,25 +220,25 @@
     @if (unseatedGuests().length > 0) {
       <section class="print-section">
         <div class="print-section-heading">
-          <span class="print-section-name">Unseated Attending Guests</span>
-          <span class="print-section-meta">{{ unseatedGuests().length }} guest{{ unseatedGuests().length === 1 ? '' : 's' }} without a table assignment</span>
+          <span class="print-section-name">{{ printStrings().unseatedSectionTitle }}</span>
+          <span class="print-section-meta">{{ printStrings().unseatedSectionMeta(unseatedGuests().length) }}</span>
         </div>
         <table class="print-table">
           <thead>
             <tr>
-              <th class="col-name">Guest Name</th>
-              <th class="col-diet">Dietary Preferences</th>
-              <th class="col-allergy">Allergies</th>
-              <th class="col-notes">Notes</th>
+              <th class="col-name">{{ printStrings().colGuestName }}</th>
+              <th class="col-diet">{{ printStrings().colDietary }}</th>
+              <th class="col-allergy">{{ printStrings().colAllergy }}</th>
+              <th class="col-notes">{{ printStrings().colNotes }}</th>
             </tr>
           </thead>
           <tbody>
             @for (g of unseatedGuests(); track g.id) {
               <tr [class.print-row-flagged]="!!(g.dietaryPreferences?.length || g.allergies?.length || g.dietaryNotes)">
                 <td>{{ g.firstName }} {{ g.lastName }}</td>
-                <td>{{ g.dietaryPreferences?.join(', ') || '—' }}</td>
-                <td>{{ g.allergies?.join(', ') || '—' }}</td>
-                <td>{{ g.dietaryNotes || '—' }}</td>
+                <td>{{ formatChips(g.dietaryPreferences) }}</td>
+                <td>{{ formatChips(g.allergies) }}</td>
+                <td>{{ g.dietaryNotes || printStrings().none }}</td>
               </tr>
             }
           </tbody>

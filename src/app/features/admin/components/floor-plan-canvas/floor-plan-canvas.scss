@@ -216,11 +216,13 @@
     border-bottom:  2pt solid #0f172a; // overrides the general 1pt rule
   }
 
-  // Column widths
-  .col-name    { width: 24%; }
-  .col-diet    { width: 28%; }
-  .col-allergy { width: 24%; }
-  .col-notes   { width: 24%; }
+  // Column widths (name/seat/diet/allergy/notes sum to 100%; the unseated
+  // table omits the seat column and lets its last column absorb the slack)
+  .col-name    { width: 22%; }
+  .col-seat    { width: 8%; }
+  .col-diet    { width: 26%; }
+  .col-allergy { width: 22%; }
+  .col-notes   { width: 22%; }
 
   // Flagged row — guest has dietary requirements.
   // Background tint won't print without "Background graphics"; use a bold

@@ -33,6 +33,102 @@ interface CateringRow extends Guest {
   hasDietary: boolean;
 }
 
+// ── Print localisation ────────────────────────────────────────────────────────
+//
+// The print sheet is generated via window.print(), not a server-rendered PDF,
+// so "translating the PDF" means rendering the print-root content in the
+// chosen language before the browser print dialog opens. Kept as a small,
+// self-contained dictionary (rather than routing through ngx-translate)
+// because it must be available synchronously the instant Print is clicked —
+// no async translation-file load to race against.
+
+export type PrintLang = 'en' | 'es';
+
+interface PrintStrings {
+  floorPlanTitle: string;
+  floorPlanSubtitle: string;
+  cateringTitle: string;
+  cateringSubtitle: string;
+  tablesLabel: (n: number) => string;
+  seatsFilledLabel: (seated: number, cap: number) => string;
+  unseatedWarning: (n: number) => string;
+  guestsLabel: (occupancy: number, capacity: number) => string;
+  overCapacity: string;
+  noGuestsAssigned: string;
+  colGuestName: string;
+  colSeat: string;
+  colDietary: string;
+  colAllergy: string;
+  colNotes: string;
+  unseatedSectionTitle: string;
+  unseatedSectionMeta: (n: number) => string;
+  none: string;
+  shapeRound: string;
+  shapeRectangle: string;
+}
+
+export const PRINT_STRINGS: Record<PrintLang, PrintStrings> = {
+  en: {
+    floorPlanTitle:      'Wedding Table Layout & Floor Plan',
+    floorPlanSubtitle:   'For venue setup crew — do not distribute to guests',
+    cateringTitle:       'Catering & Dietary Reference Sheet',
+    cateringSubtitle:    'For catering team use only — confirm with planner on the day',
+    tablesLabel:         n => `${n} table${n === 1 ? '' : 's'}`,
+    seatsFilledLabel:    (seated, cap) => `${seated} / ${cap} seats filled`,
+    unseatedWarning:     n => `${n} attending guest${n === 1 ? '' : 's'} not yet seated`,
+    guestsLabel:         (occ, cap) => `${occ} / ${cap} guests`,
+    overCapacity:        'OVER CAPACITY',
+    noGuestsAssigned:    'No guests assigned to this table.',
+    colGuestName:        'Guest Name',
+    colSeat:             'Seat',
+    colDietary:           'Dietary Preferences',
+    colAllergy:          'Allergies',
+    colNotes:            'Notes',
+    unseatedSectionTitle: 'Unseated Attending Guests',
+    unseatedSectionMeta: n => `${n} guest${n === 1 ? '' : 's'} without a table assignment`,
+    none:                '—',
+    shapeRound:          'Round',
+    shapeRectangle:      'Rectangle'
+  },
+  es: {
+    floorPlanTitle:      'Disposición de Mesas y Plano del Salón',
+    floorPlanSubtitle:   'Para el equipo de montaje — no distribuir a los invitados',
+    cateringTitle:       'Hoja de Referencia de Catering y Dietas',
+    cateringSubtitle:    'Solo para el equipo de catering — confirmar con el organizador el día del evento',
+    tablesLabel:         n => `${n} mesa${n === 1 ? '' : 's'}`,
+    seatsFilledLabel:    (seated, cap) => `${seated} / ${cap} asientos ocupados`,
+    unseatedWarning:     n => `${n} invitado${n === 1 ? '' : 's'} confirmado${n === 1 ? '' : 's'} sin asiento asignado`,
+    guestsLabel:         (occ, cap) => `${occ} / ${cap} invitados`,
+    overCapacity:        'AFORO EXCEDIDO',
+    noGuestsAssigned:    'No hay invitados asignados a esta mesa.',
+    colGuestName:        'Nombre del Invitado',
+    colSeat:             'Asiento',
+    colDietary:           'Preferencias Dietéticas',
+    colAllergy:          'Alergias',
+    colNotes:            'Notas',
+    unseatedSectionTitle: 'Invitados Confirmados Sin Asiento',
+    unseatedSectionMeta: n => `${n} invitado${n === 1 ? '' : 's'} sin mesa asignada`,
+    none:                '—',
+    shapeRound:          'Redonda',
+    shapeRectangle:      'Rectangular'
+  }
+};
+
+// Dietary/allergy chip values are stored as canonical English text (see
+// shared/models/dietary-options.ts). Spanish labels mirror the ES strings
+// already used for the same chips in assets/i18n/es.json.
+const CHIP_LABELS_ES: Record<string, string> = {
+  'Vegetarian':      'Vegetariano',
+  'Vegan':           'Vegano',
+  'Pescatarian':     'Pescetariano',
+  "Children's Meal": 'Menú Infantil',
+  'Nuts':            'Frutos Secos',
+  'Shellfish':       'Marisco',
+  'Eggs':            'Huevos',
+  'Gluten Free':     'Gluten',
+  'Dairy Free':      'Lácteos'
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 @Component({
@@ -161,16 +257,33 @@ export class FloorPlanCanvas {
   readonly cateringViews = computed(() =>
     this.plannerState.seatedTables().map(view => ({
       ...view,
-      rows: view.guests.map(g => ({
-        ...g,
-        hasDietary: !!(g.dietaryPreferences?.length || g.allergies?.length || g.dietaryNotes)
-      } as CateringRow))
+      // Sorted by seat number (not name) so the catering crew can walk the
+      // table in physical order.
+      rows: [...view.guests]
+        .sort((a, b) => (a.seatNumber ?? Infinity) - (b.seatNumber ?? Infinity))
+        .map(g => ({
+          ...g,
+          hasDietary: !!(g.dietaryPreferences?.length || g.allergies?.length || g.dietaryNotes)
+        } as CateringRow))
     }))
   );
 
   readonly unseatedGuests = computed(() => this.plannerState.unseatedGuests());
 
   // ── Print ──────────────────────────────────────────────────────────────────
+
+  readonly printLang    = signal<PrintLang>('en');
+  readonly printStrings = computed(() => PRINT_STRINGS[this.printLang()]);
+
+  shapeLabel(shape: Table['shape']): string {
+    return shape === 'round' ? this.printStrings().shapeRound : this.printStrings().shapeRectangle;
+  }
+
+  formatChips(values: string[] | null | undefined): string {
+    if (!values?.length) return this.printStrings().none;
+    const lang = this.printLang();
+    return values.map(v => (lang === 'es' ? (CHIP_LABELS_ES[v] ?? v) : v)).join(', ');
+  }
 
   print(): void { window.print(); }
 }
