@@ -39,7 +39,7 @@ export interface ActivityActor {
 }
 
 export interface ActivitySubject {
-  type: 'guest' | 'invitation' | 'table';
+  type: 'guest' | 'invitation' | 'table' | 'floor_plan';
   id: string;
   /** Denormalised display label so the feed renders fast without joins. */
   name: string;
@@ -65,4 +65,5 @@ export type ActivityAction =
   | 'table_updated'
   | 'table_deleted'
   | 'layout_saved'
-  | 'seating_saved';
+  | 'seating_saved'
+  | 'floor_plan_settings_updated';

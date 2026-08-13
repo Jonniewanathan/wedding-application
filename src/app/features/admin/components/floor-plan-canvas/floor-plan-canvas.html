@@ -1,4 +1,32 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FLOOR PLAN SETTINGS PANEL                                               -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="floor-plan-settings-panel p-4 border-b border-slate-100">
+  <h3>Floor Plan Settings</h3>
+  <div class="p-fluid p-formgrid p-grid">
+    <div class="p-field p-col-12 p-md-6">
+      <label for="width">Width</label>
+      <p-inputNumber id="width" [(ngModel)]="editingWidth" [showButtons]="true" buttonLayout="horizontal" spinnerMode="horizontal"
+                     [step]="10" [min]="100" [max]="3000"></p-inputNumber>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="height">Height</label>
+      <p-inputNumber id="height" [(ngModel)]="editingHeight" [showButtons]="true" buttonLayout="horizontal" spinnerMode="horizontal"
+                     [step]="10" [min]="100" [max]="3000"></p-inputNumber>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="unit">Unit</label>
+      <p-select id="unit" [(ngModel)]="editingUnit" [options]="unitOptions" optionLabel="label" optionValue="value"></p-select>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="scaleFactor">Scale Factor</label>
+      <p-inputNumber id="scaleFactor" [(ngModel)]="editingScaleFactor" [showButtons]="true" buttonLayout="horizontal" spinnerMode="horizontal"
+                     [step]="0.1" [min]="0.1" [max]="10" [minFractionDigits]="1" [maxFractionDigits]="2"></p-inputNumber>
+    </div>
+  </div>
+  <button pButton type="button" label="Save Floor Plan Settings" (click)="saveFloorPlanSettings()" [disabled]="saving()"></button>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- SCREEN VIEW                                                             -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
@@ -67,8 +95,8 @@
     <div
       #canvasSurface
       class="canvas-surface relative shrink-0"
-      [style.width.px]="CANVAS_WIDTH"
-      [style.height.px]="CANVAS_HEIGHT">
+      [style.width.px]="CANVAS_WIDTH()"
+      [style.height.px]="CANVAS_HEIGHT()">
 
       @if (tables().length === 0) {
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">

@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 
@@ -10,12 +10,18 @@ import { LayoutDraftService } from '../../../../core/services/layout-draft/layou
 import { TableVisual } from '../../../../shared/components/table-visual/table-visual';
 import { Table } from '../../../../shared/models/table.model';
 import { Guest } from '../../../../shared/models/guest.model';
+import { FloorPlanSettings } from '../../../../shared/models/floor-plan-settings.model';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { SelectModule } from 'primeng/select';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
 
 // ── Layout constants (exported for specs) ────────────────────────────────────
 
 export const GRID_SIZE     = 20;
-export const CANVAS_WIDTH  = 1400;
-export const CANVAS_HEIGHT = 800;
+// export const CANVAS_WIDTH  = 800; // Now dynamic
+// export const CANVAS_HEIGHT = 1400; // Now dynamic
 
 // ── Pure helper (exported for specs) ─────────────────────────────────────────
 
@@ -134,20 +140,45 @@ const CHIP_LABELS_ES: Record<string, string> = {
 @Component({
   selector: 'app-floor-plan-canvas',
   standalone: true,
-  imports: [CommonModule, DragDropModule, TableVisual],
+  imports: [CommonModule, DragDropModule, TableVisual, InputNumberModule, SelectModule, FormsModule, ButtonModule],
   templateUrl: './floor-plan-canvas.html',
   styleUrl:    './floor-plan-canvas.scss'
 })
-export class FloorPlanCanvas {
+export class FloorPlanCanvas implements OnInit {
   private readonly plannerState     = inject(TablePlannerStateService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly messageService   = inject(MessageService);
   private readonly layoutDraft      = inject(LayoutDraftService);
 
+  // Floor plan settings
+  floorPlanSettings = toSignal(this.firestoreService.getFloorPlanSettings(), {
+    initialValue: { id: 'floorPlan', width: 800, height: 1400, unit: 'px', scaleFactor: 1 } as FloorPlanSettings
+  });
+
   // Expose constants to template
-  readonly GRID_SIZE     = GRID_SIZE;
-  readonly CANVAS_WIDTH  = CANVAS_WIDTH;
-  readonly CANVAS_HEIGHT = CANVAS_HEIGHT;
+  readonly GRID_SIZE = GRID_SIZE;
+  readonly CANVAS_WIDTH = computed(() => this.floorPlanSettings().width);
+  readonly CANVAS_HEIGHT = computed(() => this.floorPlanSettings().height);
+
+  // Form state for editing dimensions
+  editingWidth = signal(this.floorPlanSettings().width);
+  editingHeight = signal(this.floorPlanSettings().height);
+  editingUnit = signal(this.floorPlanSettings().unit);
+  editingScaleFactor = signal(this.floorPlanSettings().scaleFactor);
+
+  unitOptions = [
+    { label: 'Pixels', value: 'px' },
+    { label: 'Meters', value: 'm' },
+    { label: 'Centimeters', value: 'cm' }
+  ];
+
+  ngOnInit(): void {
+    // Initialize editing signals with current settings
+    this.editingWidth.set(this.floorPlanSettings().width);
+    this.editingHeight.set(this.floorPlanSettings().height);
+    this.editingUnit.set(this.floorPlanSettings().unit);
+    this.editingScaleFactor.set(this.floorPlanSettings().scaleFactor);
+  }
 
   // ── Optimistic position state ─────────────────────────────────────────────
 
@@ -199,8 +230,8 @@ export class FloorPlanCanvas {
   onDragEnded(event: CdkDragEnd, table: Table): void {
     const raw = event.source.getFreeDragPosition();
 
-    const snappedX = Math.max(0, Math.min(snap(raw.x), CANVAS_WIDTH  - 60));
-    const snappedY = Math.max(0, Math.min(snap(raw.y), CANVAS_HEIGHT - 60));
+    const snappedX = Math.max(0, Math.min(snap(raw.x), this.CANVAS_WIDTH()  - 60));
+    const snappedY = Math.max(0, Math.min(snap(raw.y), this.CANVAS_HEIGHT() - 60));
 
     // 1. Optimistic UI — instant, no flicker.
     this._localPositions.update(m => {
@@ -244,6 +275,36 @@ export class FloorPlanCanvas {
       this.saving.set(false);
     }
   }
+
+  // ── Save Floor Plan Settings ─────────────────────────────────────────────
+  async saveFloorPlanSettings(): Promise<void> {
+    this.saving.set(true);
+    try {
+      const settings: FloorPlanSettings = {
+        id: 'floorPlan', // Fixed ID for the single document
+        width: this.editingWidth(),
+        height: this.editingHeight(),
+        unit: this.editingUnit(),
+        scaleFactor: this.editingScaleFactor()
+      };
+      await this.firestoreService.updateFloorPlanSettings(settings);
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Settings Saved',
+        detail: 'Floor plan dimensions updated.'
+      });
+    } catch (err) {
+      console.error('Failed to save floor plan settings', err);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Save Failed',
+        detail: 'Could not save floor plan dimensions. Please try again.'
+      });
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {

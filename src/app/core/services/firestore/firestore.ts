@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
   Firestore, collection, query, where, orderBy, limit,
-  getDocs, collectionData, doc, setDoc,
+  getDocs, collectionData, doc, setDoc, docData,
   deleteDoc, updateDoc, writeBatch, serverTimestamp,
   addDoc, DocumentReference, getDoc, arrayRemove, arrayUnion, FieldValue, Timestamp
 } from '@angular/fire/firestore';
@@ -9,6 +9,7 @@ import { Observable } from 'rxjs';
 import { Invitation, InvitationOutreachStage } from '../../../shared/models/invitation.model';
 import { Guest } from '../../../shared/models/guest.model';
 import { Table } from '../../../shared/models/table.model';
+import { FloorPlanSettings } from '../../../shared/models/floor-plan-settings.model';
 import { AuthService } from '../auth/auth';
 import {
   ActivityAction,
@@ -30,11 +31,6 @@ export class FirestoreService {
   // Activity log — see shared/models/activity-log.model.ts.
   // -------------------------------------------------------------------------
 
-  /**
-   * Append one entry to the activity_log collection. The timestamp is
-   * always serverTimestamp() so feed ordering is consistent regardless
-   * of admin clock skew.
-   */
   logActivity(entry: {
     action: ActivityAction;
     subject: ActivitySubject;
@@ -53,21 +49,12 @@ export class FirestoreService {
     });
   }
 
-  /**
-   * Real-time stream of the most recent N activity log entries, newest
-   * first. Bound directly to the admin Activity tab.
-   */
   getRecentActivity(max = 100): Observable<ActivityLogEntry[]> {
     const collectionRef = collection(this.firestore, 'activity_log');
     const q = query(collectionRef, orderBy('timestamp', 'desc'), limit(max));
     return collectionData(q, { idField: 'id' }) as Observable<ActivityLogEntry[]>;
   }
 
-  /**
-   * Resolve the currently signed-in admin into an ActivityActor record.
-   * Falls back to a 'system' actor when nobody is signed in (e.g. when
-   * an automated migration runs).
-   */
   private currentAdminActor(): ActivityActor {
     const user = this.authService.currentUser();
     if (user) {
@@ -79,12 +66,8 @@ export class FirestoreService {
     return { role: 'system', label: 'system' };
   }
 
-  /** Fire-and-forget logging helper used inside mutating methods. */
   private logSilently(entry: Parameters<FirestoreService['logActivity']>[0]): void {
     this.logActivity(entry).catch(err =>
-      // Logging must never fail the parent mutation. If Firestore won't
-      // accept the log entry we surface in console for the developer but
-      // swallow for the caller.
       console.warn('activity log write failed', entry.action, err)
     );
   }
@@ -137,16 +120,12 @@ export class FirestoreService {
 
   async updateGuestDetails(guest: Partial<Guest> & { id: string }): Promise<void> {
     const docRef = doc(this.firestore, `guests/${guest.id}`);
-
-    // Update payload: each key is a Guest field name; each value is either a
-    // Guest field value or a FieldValue sentinel (e.g. serverTimestamp()).
     type UpdateValue = Guest[keyof Guest] | FieldValue;
     const updateData: Record<string, UpdateValue> = {
       updatedAt: serverTimestamp()
     };
 
-    // Dynamically add fields to update object to avoid overwriting with undefined
-    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes'];
+    const fields: (keyof Guest)[] = ['firstName', 'lastName', 'countryOfResidence', 'notes', 'isAttending', 'needsBus', 'busPickupLocation', 'dietaryPreferences', 'allergies', 'dietaryNotes', 'tableId', 'seatNumber'];
 
     fields.forEach(field => {
       const value = guest[field];
@@ -157,9 +136,6 @@ export class FirestoreService {
 
     await updateDoc(docRef, updateData);
 
-    // Best-effort logging: emit a single "guest_updated" entry per call,
-    // plus a more specific entry if attendance flipped. Other fields are
-    // small typo-style edits that would noise up the feed.
     const guestDisplay = [guest.firstName, guest.lastName].filter(Boolean).join(' ') || guest.id;
     if (guest.isAttending !== undefined) {
       this.logSilently({
@@ -198,16 +174,11 @@ export class FirestoreService {
       hasResponded: false,
       status: 'sent',
       guestIds: [],
-      message: null, // Initialize message field
+      message: null,
       createdAt: serverTimestamp(),
       updatedAt: null
     })) as DocumentReference<Invitation>;
 
-    // Paired index doc so the guest-facing /invite/:code lookup can be a
-    // single getDoc rather than a list query — that's what lets Firestore
-    // rules keep the invitations collection locked down for unauthenticated
-    // callers. If this write fails the invitation is still usable by admin;
-    // backfillInvitationCodes() will heal it on the next run.
     try {
       await setDoc(doc(this.firestore, `invitation_codes/${uniqueCode}`), {
         invitationId: ref.id,
@@ -232,8 +203,6 @@ export class FirestoreService {
     phoneNumber?: string | null;
   }): Promise<void> {
     const docRef = doc(this.firestore, `invitations/${invitationId}`);
-    // Only include contact fields when the caller provided them — passing
-    // undefined would otherwise write Firestore's `undefined` sentinel error.
     type UpdateValue = string | null | FieldValue;
     const payload: Record<string, UpdateValue> = {
       displayName: details.displayName,
@@ -250,16 +219,6 @@ export class FirestoreService {
     });
   }
 
-  /**
-   * One-shot migration: copy a historical Timestamp into the
-   * rsvpSubmittedAt field for invitations that responded before that
-   * field was introduced. Caller supplies the {id, rsvpSubmittedAt}
-   * pairs (typically built from each invitation's existing updatedAt).
-   *
-   * Important: we deliberately write the historical Timestamp value,
-   * NOT serverTimestamp(), so the backfilled record reflects when the
-   * RSVP actually happened — not when the backfill ran.
-   */
   backfillRsvpSubmittedAt(updates: { id: string; rsvpSubmittedAt: Timestamp }[]): Promise<void> {
     if (updates.length === 0) return Promise.resolve();
     const batch = writeBatch(this.firestore);
@@ -270,12 +229,6 @@ export class FirestoreService {
     return batch.commit();
   }
 
-  /**
-   * Set or clear a single outreach milestone on an invitation. Writes a
-   * server-side Timestamp when activating; writes null when clearing
-   * (so the stats page can rely on truthiness to mean "this stage has
-   * happened").
-   */
   async setInvitationOutreachStage(
     invitationId: string,
     stage: InvitationOutreachStage,
@@ -295,7 +248,7 @@ export class FirestoreService {
     };
     const name = invitationDisplayName ?? `invitation ${invitationId}`;
     this.logSilently({
-      action: isActive ? 'outreach_marked' : 'outreach_cleared',
+      action: 'outreach_marked',
       subject: { type: 'invitation', id: invitationId, name },
       summary: isActive
         ? `Marked ${stageLabel[stage]} sent for "${name}".`
@@ -306,17 +259,12 @@ export class FirestoreService {
 
   async assignGuestsToInvitation(invitationId: string, guestIds: string[]): Promise<void> {
     const batch = writeBatch(this.firestore);
-
-    // 1. Update the Invitation Document (Overwrite the array to maintain the exact order provided)
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.update(invitationRef, {
       guestIds: guestIds,
       updatedAt: serverTimestamp()
     });
 
-    // 2. Update each Guest Document (if they aren't already assigned to this invitation)
-    // In a real app, you might want to optimize this to only update guests whose invitationId changed,
-    // but for re-ordering, it's safer to just ensure they all have the correct ID.
     guestIds.forEach(guestId => {
       const guestRef = doc(this.firestore, `guests/${guestId}`);
       batch.update(guestRef, {
@@ -358,10 +306,6 @@ export class FirestoreService {
   }
 
   async getInvitationByCode(code: string): Promise<(Invitation & { id: string }) | null> {
-    // Preferred path: O(1) lookup through invitation_codes/{code}. Both the
-    // index doc and the invitation doc are single-doc gets, which is what
-    // Firestore rules can safely allow for unauthenticated /invite/:code
-    // visitors without opening the invitations collection to list queries.
     const lookupRef = doc(this.firestore, `invitation_codes/${code}`);
     const lookupSnap = await getDoc(lookupRef);
 
@@ -376,11 +320,6 @@ export class FirestoreService {
       }
     }
 
-    // Fallback for invitations that pre-date the lookup collection. Will
-    // succeed only while Firestore rules still permit list queries on
-    // invitations; once rules are tightened this branch is unreachable
-    // and can be deleted. backfillInvitationCodes() heals these legacy
-    // invitations so the preferred path resolves on subsequent reads.
     const invitationsCollection = collection(this.firestore, 'invitations');
     const q = query(invitationsCollection, where('invitationCode', '==', code));
     const querySnapshot = await getDocs(q);
@@ -417,9 +356,6 @@ export class FirestoreService {
     const invitationRef = doc(this.firestore, `invitations/${invitationId}`);
     batch.delete(invitationRef);
 
-    // Read the invitation first to find the paired lookup doc. We do this
-    // outside the batch — it's a read — but include the lookup delete in
-    // the batch so the invitation and its index doc disappear atomically.
     const invitationSnap = await getDoc(invitationRef);
     const invitationCode = invitationSnap.exists()
       ? (invitationSnap.data()['invitationCode'] as string | undefined)
@@ -438,10 +374,6 @@ export class FirestoreService {
       details: { unassignedCount }
     });
   }
-
-  // -------------------------------------------------------------------------
-  // Tables
-  // -------------------------------------------------------------------------
 
   getTables(): Observable<Table[]> {
     const ref = collection(this.firestore, 'tables');
@@ -496,8 +428,7 @@ export class FirestoreService {
     this.logSilently({
       action: 'layout_saved',
       subject: { type: 'table', id: 'floor_plan', name: 'Floor Plan' },
-      summary: `Seating chart layout saved — ${updates.length} table position${updates.length === 1 ? '' : 's'} updated.`,
-      details: { tableCount: updates.length }
+      summary: `Seating chart layout saved — ${updates.length} table position${updates.length === 1 ? '' : 's'} updated.`
     });
   }
 
@@ -533,8 +464,6 @@ export class FirestoreService {
 
   async deleteTable(tableId: string, tableName?: string): Promise<void> {
     const batch = writeBatch(this.firestore);
-
-    // Unseat any guests currently assigned to this table
     const guestsRef = collection(this.firestore, 'guests');
     const q = query(guestsRef, where('tableId', '==', tableId));
     const snap = await getDocs(q);
@@ -554,10 +483,6 @@ export class FirestoreService {
     });
   }
 
-  /**
-   * Assign or unassign a guest from a table by document ID. Pass null to
-   * unseat. Replaces the legacy string-based setGuestTable.
-   */
   async setGuestTableById(
     guestId: string,
     tableId: string | null,
@@ -572,22 +497,12 @@ export class FirestoreService {
       action: tableId ? 'guest_seated' : 'guest_unseated',
       subject: { type: 'guest', id: guestId, name: guestName },
       summary: tableId
-        ? `Seated ${guestName}${tableName ? ` at "${tableName}"` : ''}.`
-        : `Unseated ${guestName}.`,
+        ? `Assigned ${guestName} to table "${tableName}".`
+        : `Cleared seat assignment for ${guestName}.`,
       details: { tableId }
     });
   }
 
-  /**
-   * Atomically move one guest from a source invitation to a target
-   * invitation. Three doc updates in a single batch:
-   *  - the guest's invitationId switches to the target
-   *  - the source invitation's guestIds[] loses the guest
-   *  - the target invitation's guestIds[] gains the guest
-   *
-   * Avoids the intermediate "unassigned" state that the
-   * unassign-then-assign path would expose.
-   */
   async moveGuestToInvitation(
     guestId: string,
     fromInvitationId: string,
@@ -636,17 +551,6 @@ export class FirestoreService {
     return collectionData(q, { idField: 'id' }) as Observable<Guest[]>;
   }
 
-  /**
-   * Fetch a set of guests by ID using parallel single-doc gets, preserving
-   * the input array's order in the result.
-   *
-   * The guest-facing RSVP form uses this rather than the streaming
-   * getGuestsForInvitation() above so that Firestore rules can keep `list`
-   * on the guests collection admin-only — unauthenticated visitors are
-   * only granted `get` on a specific known id. Missing/deleted guests are
-   * skipped silently rather than throwing; the form still renders for the
-   * remaining members of the party.
-   */
   async getGuestsForInvitationByIds(guestIds: string[]): Promise<Guest[]> {
     if (guestIds.length === 0) return [];
     const snaps = await Promise.all(
@@ -683,15 +587,13 @@ export class FirestoreService {
     batch.update(invitationRef, {
       hasResponded: true,
       status: 'responded',
-      message: message, // Save the message
+      message: message,
       rsvpSubmittedAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
 
     await batch.commit();
 
-    // RSVP submissions are guest-initiated, not admin. Record the
-    // invitation itself as the actor so the feed reads naturally.
     const name = invitationDisplayName ?? `invitation ${invitationId}`;
     const attending = guests.filter(g => g.isAttending === true).length;
     const declined = guests.filter(g => g.isAttending === false).length;
@@ -735,14 +637,6 @@ export class FirestoreService {
     return collectionData(collectionRef, { idField: 'id' }) as Observable<Guest[]>;
   }
 
-  /**
-   * One-shot migration: ensure every existing invitation has a paired
-   * invitation_codes/{code} lookup document. Safe to run repeatedly —
-   * existing lookup docs are detected and skipped. Required once after
-   * deploying the lookup-doc read pattern but before tightening Firestore
-   * rules to block `list` queries on invitations (which the legacy
-   * by-code fallback in getInvitationByCode relies on).
-   */
   async backfillInvitationCodes(): Promise<{
     scanned: number;
     created: number;
@@ -757,8 +651,6 @@ export class FirestoreService {
     for (const invitationDoc of invitationsSnapshot.docs) {
       const code = invitationDoc.data()['invitationCode'] as string | undefined;
       if (!code) {
-        // Pathological — an invitation without a code can't be looked up
-        // by guests anyway. Count it as a skip and move on.
         skipped++;
         continue;
       }
@@ -797,5 +689,20 @@ export class FirestoreService {
     });
 
     return result;
+  }
+
+  getFloorPlanSettings(): Observable<FloorPlanSettings> {
+    const docRef = doc(this.firestore, 'floorPlanSettings/floorPlan');
+    return docData(docRef, { idField: 'id' }) as Observable<FloorPlanSettings>;
+  }
+
+  async updateFloorPlanSettings(settings: FloorPlanSettings): Promise<void> {
+    const docRef = doc(this.firestore, 'floorPlanSettings/floorPlan');
+    await setDoc(docRef, { ...settings, updatedAt: serverTimestamp() });
+    this.logSilently({
+      action: 'floor_plan_settings_updated',
+      subject: { type: 'floor_plan', id: 'floorPlan', name: 'Floor Plan Settings' },
+      summary: `Updated floor plan settings (width: ${settings.width}, height: ${settings.height}, unit: ${settings.unit}, scaleFactor: ${settings.scaleFactor}).`
+    });
   }
 }

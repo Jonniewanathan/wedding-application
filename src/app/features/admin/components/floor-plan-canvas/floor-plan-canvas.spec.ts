@@ -5,8 +5,6 @@ import { of } from 'rxjs';
 import { MessageService } from 'primeng/api';
 
 import {
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
   GRID_SIZE,
   FloorPlanCanvas,
   snap
@@ -95,11 +93,12 @@ describe('FloorPlanCanvas', () => {
 
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
-      'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions'
+      'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions', 'getFloorPlanSettings'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
     firestoreSpy.getTables.and.returnValue(of([table1, table2]));
+    firestoreSpy.getFloorPlanSettings.and.returnValue(of({ id: 'floorPlan', width: 800, height: 1400, unit: 'px', scaleFactor: 1 }));
     firestoreSpy.updateTable.and.returnValue(Promise.resolve());
     firestoreSpy.saveTablePositions.and.returnValue(Promise.resolve());
 
@@ -166,13 +165,13 @@ describe('FloorPlanCanvas', () => {
     });
 
     it('clamps x to CANVAS_WIDTH - 60 when dragged past right edge', () => {
-      component.onDragEnded(makeDragEnd(CANVAS_WIDTH + 100, 40), table1);
-      expect(component.tablePositions().get('t1')?.x).toBe(CANVAS_WIDTH - 60);
+      component.onDragEnded(makeDragEnd(component.CANVAS_WIDTH() + 100, 40), table1);
+      expect(component.tablePositions().get('t1')?.x).toBe(component.CANVAS_WIDTH() - 60);
     });
 
     it('clamps y to CANVAS_HEIGHT - 60 when dragged past bottom edge', () => {
-      component.onDragEnded(makeDragEnd(40, CANVAS_HEIGHT + 100), table1);
-      expect(component.tablePositions().get('t1')?.y).toBe(CANVAS_HEIGHT - 60);
+      component.onDragEnded(makeDragEnd(40, component.CANVAS_HEIGHT() + 100), table1);
+      expect(component.tablePositions().get('t1')?.y).toBe(component.CANVAS_HEIGHT() - 60);
     });
 
     it('shows an error toast when saveLayout Firestore write fails', async () => {
@@ -207,11 +206,12 @@ describe('FloorPlanCanvas', () => {
       TestBed.resetTestingModule();
 
       const spy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
-        'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions'
+        'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions', 'getFloorPlanSettings'
       ]);
       spy.getAllGuests.and.returnValue(of(guests));
       spy.getTables.and.returnValue(of([table1]));
       spy.getInvitations.and.returnValue(of([]));
+      spy.getFloorPlanSettings.and.returnValue(of({ id: 'floorPlan', width: 800, height: 1400, unit: 'px', scaleFactor: 1 }));
 
       TestBed.configureTestingModule({
         imports: [FloorPlanCanvas],
