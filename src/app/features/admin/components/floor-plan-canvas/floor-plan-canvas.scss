@@ -53,8 +53,10 @@
   // ── Canvas scaling
   //
   // `transform: scale()` does NOT affect the layout box — the browser still
-  // paginates the full 1400px width, producing blank overflow pages.
-  // `zoom` DOES affect the layout box: the element occupies 980×560 in flow.
+  // paginates the full canvas width, producing blank overflow pages.
+  // `zoom` DOES affect the layout box, so it's set inline (bound to
+  // FloorPlanCanvas.printZoom) alongside width/height, both of which come
+  // from the configured floor plan settings rather than a fixed size.
   // Chrome/Edge only, but those are the only browsers used for "Save as PDF".
 
   .print-canvas-outer {
@@ -63,9 +65,6 @@
 
   .print-canvas-inner {
     position: relative;
-    width:    1400px;
-    height:    800px;
-    zoom:      0.70;
     border:    1pt solid #e2e8f0;
     background: #f8fafc;
   }

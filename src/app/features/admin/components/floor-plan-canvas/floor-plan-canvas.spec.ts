@@ -7,7 +7,9 @@ import { MessageService } from 'primeng/api';
 import {
   GRID_SIZE,
   FloorPlanCanvas,
-  snap
+  snap,
+  toCanvasPx,
+  fromCanvasPx
 } from './floor-plan-canvas';
 import { FirestoreService } from '../../../../core/services/firestore/firestore';
 import { TablePlannerStateService } from '../../services/table-planner-state.service';
@@ -81,6 +83,42 @@ describe('snap', () => {
   });
 });
 
+// ── toCanvasPx / fromCanvasPx ──────────────────────────────────────────────────
+
+describe('toCanvasPx', () => {
+  it('passes px values through unchanged', () => {
+    expect(toCanvasPx(500, 'px', 100)).toBe(500);
+  });
+
+  it('multiplies meters by pixels-per-meter', () => {
+    expect(toCanvasPx(8, 'm', 100)).toBe(800);
+  });
+
+  it('derives cm from meters via the fixed 100:1 ratio, using the same pixels-per-meter scale', () => {
+    // 150cm = 1.5m, at 200px/m
+    expect(toCanvasPx(150, 'cm', 200)).toBe(300);
+  });
+
+  it('gives the same result for an equivalent m and cm value at the same scale', () => {
+    expect(toCanvasPx(8, 'm', 100)).toBe(toCanvasPx(800, 'cm', 100));
+  });
+});
+
+describe('fromCanvasPx', () => {
+  it('passes px values through unchanged', () => {
+    expect(fromCanvasPx(500, 'px', 100)).toBe(500);
+  });
+
+  it('divides px by pixels-per-meter for meters', () => {
+    expect(fromCanvasPx(800, 'm', 100)).toBe(8);
+  });
+
+  it('derives cm from meters via the fixed 100:1 ratio, using the same pixels-per-meter scale', () => {
+    // 300px at 200px/m = 1.5m = 150cm
+    expect(fromCanvasPx(300, 'cm', 200)).toBe(150);
+  });
+});
+
 // ── FloorPlanCanvas component ─────────────────────────────────────────────────
 
 describe('FloorPlanCanvas', () => {
@@ -93,7 +131,8 @@ describe('FloorPlanCanvas', () => {
 
   beforeEach(() => {
     firestoreSpy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
-      'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions', 'getFloorPlanSettings'
+      'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions',
+      'getFloorPlanSettings', 'updateFloorPlanSettings'
     ]);
     firestoreSpy.getAllGuests.and.returnValue(of([]));
     firestoreSpy.getInvitations.and.returnValue(of([]));
@@ -101,6 +140,7 @@ describe('FloorPlanCanvas', () => {
     firestoreSpy.getFloorPlanSettings.and.returnValue(of({ id: 'floorPlan', width: 800, height: 1400, unit: 'px', scaleFactor: 1 }));
     firestoreSpy.updateTable.and.returnValue(Promise.resolve());
     firestoreSpy.saveTablePositions.and.returnValue(Promise.resolve());
+    firestoreSpy.updateFloorPlanSettings.and.returnValue(Promise.resolve());
 
     messageSpy = jasmine.createSpyObj<MessageService>('MessageService', ['add']);
 
@@ -277,6 +317,106 @@ describe('FloorPlanCanvas', () => {
       component.printLang.set('es');
       expect(component.shapeLabel('round')).toBe('Redonda');
       expect(component.shapeLabel('rectangle')).toBe('Rectangular');
+    });
+  });
+
+  // ── Floor plan settings ────────────────────────────────────────────────────
+
+  describe('floor plan settings', () => {
+    it('displays width/height converted from canvas px into the saved unit', () => {
+      TestBed.resetTestingModule();
+
+      const spy = jasmine.createSpyObj<FirestoreService>('FirestoreService', [
+        'getAllGuests', 'getInvitations', 'getTables', 'updateTable', 'saveTablePositions', 'getFloorPlanSettings'
+      ]);
+      spy.getAllGuests.and.returnValue(of([]));
+      spy.getInvitations.and.returnValue(of([]));
+      spy.getTables.and.returnValue(of([]));
+      // 800px wide canvas, saved as 8m at a scale of 100px/m.
+      spy.getFloorPlanSettings.and.returnValue(of({ id: 'floorPlan', width: 800, height: 400, unit: 'm', scaleFactor: 100 }));
+
+      TestBed.configureTestingModule({
+        imports:   [FloorPlanCanvas],
+        providers: [
+          { provide: FirestoreService, useValue: spy },
+          { provide: MessageService,   useValue: jasmine.createSpyObj<MessageService>('MessageService', ['add']) },
+          TablePlannerStateService
+        ]
+      });
+
+      const c = TestBed.createComponent(FloorPlanCanvas).componentInstance;
+      expect(c.editingUnit()).toBe('m');
+      expect(c.editingWidth()).toBe(8);
+      expect(c.editingHeight()).toBe(4);
+      // The canvas itself stays in px regardless of the display unit.
+      expect(c.CANVAS_WIDTH()).toBe(800);
+      expect(c.CANVAS_HEIGHT()).toBe(400);
+    });
+
+    it('converts editing values back to canvas px when saving', async () => {
+      component.editingUnit.set('m');
+      component.editingScaleFactor.set(100);
+      component.editingWidth.set(10);
+      component.editingHeight.set(6);
+
+      await component.saveFloorPlanSettings();
+
+      expect(firestoreSpy.updateFloorPlanSettings).toHaveBeenCalledWith(
+        jasmine.objectContaining({ width: 1000, height: 600, unit: 'm', scaleFactor: 100 })
+      );
+    });
+
+    it('converts cm using the same pixels-per-meter scale as m, not an independent per-unit scale', async () => {
+      component.editingUnit.set('cm');
+      component.editingScaleFactor.set(100); // 100px/m
+      component.editingWidth.set(800);  // 8m
+      component.editingHeight.set(400); // 4m
+
+      await component.saveFloorPlanSettings();
+
+      expect(firestoreSpy.updateFloorPlanSettings).toHaveBeenCalledWith(
+        jasmine.objectContaining({ width: 800, height: 400, unit: 'cm', scaleFactor: 100 })
+      );
+    });
+
+    describe('onUnitChange', () => {
+      it('preserves the real-world size when switching from meters to centimeters', () => {
+        component.editingUnit.set('m');
+        component.editingScaleFactor.set(100);
+        component.editingWidth.set(8);
+        component.editingHeight.set(4);
+
+        component.onUnitChange('cm');
+
+        expect(component.editingUnit()).toBe('cm');
+        expect(component.editingWidth()).toBe(800);
+        expect(component.editingHeight()).toBe(400);
+      });
+
+      it('preserves the real-world size when switching from centimeters back to meters', () => {
+        component.editingUnit.set('cm');
+        component.editingScaleFactor.set(100);
+        component.editingWidth.set(800);
+        component.editingHeight.set(400);
+
+        component.onUnitChange('m');
+
+        expect(component.editingUnit()).toBe('m');
+        expect(component.editingWidth()).toBe(8);
+        expect(component.editingHeight()).toBe(4);
+      });
+
+      it('preserves the canvas px size when switching to and from px', () => {
+        component.editingUnit.set('m');
+        component.editingScaleFactor.set(100);
+        component.editingWidth.set(8);
+
+        component.onUnitChange('px');
+        expect(component.editingWidth()).toBe(800);
+
+        component.onUnitChange('m');
+        expect(component.editingWidth()).toBe(8);
+      });
     });
   });
 });

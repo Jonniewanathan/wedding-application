@@ -1,7 +1,11 @@
 export interface FloorPlanSettings {
-  id: string; // Added ID field
+  id: string;
+  /** Canvas width in px — always px regardless of `unit`. */
   width: number;
+  /** Canvas height in px — always px regardless of `unit`. */
   height: number;
+  /** Display unit shown in the settings panel; the canvas itself always works in px. */
   unit: 'px' | 'm' | 'cm';
-  scaleFactor: number; // Pixels per unit (e.g., 100 for 1m = 100px)
+  /** Pixels per *meter*, always — cm is derived from meters via the fixed 100:1 ratio (e.g. 100 means 1m = 100px). */
+  scaleFactor: number;
 }

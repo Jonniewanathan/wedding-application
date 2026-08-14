@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, HostListener, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDragEnd, DragDropModule } from '@angular/cdk/drag-drop';
 
@@ -20,10 +20,8 @@ import { ButtonModule } from 'primeng/button';
 // ── Layout constants (exported for specs) ────────────────────────────────────
 
 export const GRID_SIZE     = 20;
-// export const CANVAS_WIDTH  = 800; // Now dynamic
-// export const CANVAS_HEIGHT = 1400; // Now dynamic
 
-// ── Pure helper (exported for specs) ─────────────────────────────────────────
+// ── Pure helpers (exported for specs) ────────────────────────────────────────
 
 /**
  * Round `value` to the nearest multiple of `gridSize`.
@@ -31,6 +29,33 @@ export const GRID_SIZE     = 20;
  */
 export function snap(value: number, gridSize: number = GRID_SIZE): number {
   return Math.round(value / gridSize) * gridSize;
+}
+
+const CM_PER_METER = 100;
+
+/**
+ * Convert a dimension entered in `unit` to canvas pixels. The canvas itself
+ * always works in px (drag/snap/positions) — only the settings panel's
+ * input/output is unit-aware. `scaleFactor` is always pixels-per-*meter*,
+ * never pixels-per-selected-unit — cm is derived from meters via the fixed
+ * 100:1 ratio so switching between m and cm can't drift onto independent,
+ * inconsistent scales.
+ */
+export function toCanvasPx(value: number, unit: FloorPlanSettings['unit'], pxPerMeter: number): number {
+  switch (unit) {
+    case 'px': return value;
+    case 'm':  return value * pxPerMeter;
+    case 'cm': return (value / CM_PER_METER) * pxPerMeter;
+  }
+}
+
+/** Inverse of {@link toCanvasPx} — canvas px back to the display unit. */
+export function fromCanvasPx(px: number, unit: FloorPlanSettings['unit'], pxPerMeter: number): number {
+  switch (unit) {
+    case 'px': return px;
+    case 'm':  return px / pxPerMeter;
+    case 'cm': return (px / pxPerMeter) * CM_PER_METER;
+  }
 }
 
 // ── Catering sheet type ───────────────────────────────────────────────────────
@@ -144,15 +169,16 @@ const CHIP_LABELS_ES: Record<string, string> = {
   templateUrl: './floor-plan-canvas.html',
   styleUrl:    './floor-plan-canvas.scss'
 })
-export class FloorPlanCanvas implements OnInit {
+export class FloorPlanCanvas {
   private readonly plannerState     = inject(TablePlannerStateService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly messageService   = inject(MessageService);
   private readonly layoutDraft      = inject(LayoutDraftService);
 
-  // Floor plan settings
+  // Floor plan settings — canvas always stays in px internally regardless
+  // of the display unit chosen in the settings panel.
   floorPlanSettings = toSignal(this.firestoreService.getFloorPlanSettings(), {
-    initialValue: { id: 'floorPlan', width: 800, height: 1400, unit: 'px', scaleFactor: 1 } as FloorPlanSettings
+    initialValue: { id: 'floorPlan', width: 1400, height: 800, unit: 'px', scaleFactor: 100 } as FloorPlanSettings
   });
 
   // Expose constants to template
@@ -160,9 +186,9 @@ export class FloorPlanCanvas implements OnInit {
   readonly CANVAS_WIDTH = computed(() => this.floorPlanSettings().width);
   readonly CANVAS_HEIGHT = computed(() => this.floorPlanSettings().height);
 
-  // Form state for editing dimensions
-  editingWidth = signal(this.floorPlanSettings().width);
-  editingHeight = signal(this.floorPlanSettings().height);
+  // Form state for editing dimensions, expressed in the selected display unit.
+  editingWidth = signal(fromCanvasPx(this.floorPlanSettings().width, this.floorPlanSettings().unit, this.floorPlanSettings().scaleFactor));
+  editingHeight = signal(fromCanvasPx(this.floorPlanSettings().height, this.floorPlanSettings().unit, this.floorPlanSettings().scaleFactor));
   editingUnit = signal(this.floorPlanSettings().unit);
   editingScaleFactor = signal(this.floorPlanSettings().scaleFactor);
 
@@ -172,12 +198,43 @@ export class FloorPlanCanvas implements OnInit {
     { label: 'Centimeters', value: 'cm' }
   ];
 
-  ngOnInit(): void {
-    // Initialize editing signals with current settings
-    this.editingWidth.set(this.floorPlanSettings().width);
-    this.editingHeight.set(this.floorPlanSettings().height);
-    this.editingUnit.set(this.floorPlanSettings().unit);
-    this.editingScaleFactor.set(this.floorPlanSettings().scaleFactor);
+  // Bounds/step for the width & height inputs depend on the chosen unit —
+  // "3000" means very different things in px vs. m. cm bounds are the exact
+  // ×100 of the m bounds so both units cover the same physical range.
+  readonly widthHeightBounds = computed(() => {
+    switch (this.editingUnit()) {
+      case 'm':  return { min: 1,   max: 50,   step: 0.5 };
+      case 'cm': return { min: 100, max: 5000, step: 50 };
+      default:   return { min: 100, max: 3000, step: 10 };
+    }
+  });
+
+  /**
+   * Switch the display unit while preserving the real-world size — e.g.
+   * 8m becomes 800cm, not "8" reinterpreted as 8cm. Routes through canvas
+   * px so it stays consistent with the single pixels-per-meter scale.
+   */
+  onUnitChange(newUnit: FloorPlanSettings['unit']): void {
+    const oldUnit = this.editingUnit();
+    const scaleFactor = this.editingScaleFactor();
+    const widthPx = toCanvasPx(this.editingWidth(), oldUnit, scaleFactor);
+    const heightPx = toCanvasPx(this.editingHeight(), oldUnit, scaleFactor);
+    this.editingUnit.set(newUnit);
+    this.editingWidth.set(fromCanvasPx(widthPx, newUnit, scaleFactor));
+    this.editingHeight.set(fromCanvasPx(heightPx, newUnit, scaleFactor));
+  }
+
+  constructor() {
+    // Re-sync the editing fields whenever the underlying Firestore document
+    // changes — including the initial load, which arrives after the
+    // fallback initialValue above has already been used to seed the signals.
+    effect(() => {
+      const settings = this.floorPlanSettings();
+      this.editingWidth.set(fromCanvasPx(settings.width, settings.unit, settings.scaleFactor));
+      this.editingHeight.set(fromCanvasPx(settings.height, settings.unit, settings.scaleFactor));
+      this.editingUnit.set(settings.unit);
+      this.editingScaleFactor.set(settings.scaleFactor);
+    });
   }
 
   // ── Optimistic position state ─────────────────────────────────────────────
@@ -280,12 +337,14 @@ export class FloorPlanCanvas implements OnInit {
   async saveFloorPlanSettings(): Promise<void> {
     this.saving.set(true);
     try {
+      const unit = this.editingUnit();
+      const scaleFactor = this.editingScaleFactor();
       const settings: FloorPlanSettings = {
         id: 'floorPlan', // Fixed ID for the single document
-        width: this.editingWidth(),
-        height: this.editingHeight(),
-        unit: this.editingUnit(),
-        scaleFactor: this.editingScaleFactor()
+        width: toCanvasPx(this.editingWidth(), unit, scaleFactor),
+        height: toCanvasPx(this.editingHeight(), unit, scaleFactor),
+        unit,
+        scaleFactor
       };
       await this.firestoreService.updateFloorPlanSettings(settings);
       this.messageService.add({
@@ -335,6 +394,16 @@ export class FloorPlanCanvas implements OnInit {
 
   readonly printLang    = signal<PrintLang>('en');
   readonly printStrings = computed(() => PRINT_STRINGS[this.printLang()]);
+
+  // The print sheet uses CSS `zoom` (not `transform: scale`, which doesn't
+  // affect the layout box and causes blank overflow pages) to fit the
+  // configured canvas size within the printable page width. 980px is the
+  // width that previously fit at zoom 0.70 for the old fixed 1400px canvas;
+  // larger canvases scale down further, smaller ones are shown at 100%.
+  private static readonly PRINT_TARGET_WIDTH_PX = 980;
+  readonly printZoom = computed(() =>
+    Math.min(1, FloorPlanCanvas.PRINT_TARGET_WIDTH_PX / this.CANVAS_WIDTH())
+  );
 
   shapeLabel(shape: Table['shape']): string {
     return shape === 'round' ? this.printStrings().shapeRound : this.printStrings().shapeRectangle;

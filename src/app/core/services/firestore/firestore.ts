@@ -248,7 +248,7 @@ export class FirestoreService {
     };
     const name = invitationDisplayName ?? `invitation ${invitationId}`;
     this.logSilently({
-      action: 'outreach_marked',
+      action: isActive ? 'outreach_marked' : 'outreach_cleared',
       subject: { type: 'invitation', id: invitationId, name },
       summary: isActive
         ? `Marked ${stageLabel[stage]} sent for "${name}".`
@@ -697,6 +697,7 @@ export class FirestoreService {
   }
 
   async updateFloorPlanSettings(settings: FloorPlanSettings): Promise<void> {
+
     const docRef = doc(this.firestore, 'floorPlanSettings/floorPlan');
     await setDoc(docRef, { ...settings, updatedAt: serverTimestamp() });
     this.logSilently({
