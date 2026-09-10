@@ -1,0 +1,70 @@
+<!-- Bounding container — sized precisely to fit table surface + all seat rings -->
+<div
+  class="relative select-none"
+  [style.width.px]="dimensions().containerWidth"
+  [style.height.px]="dimensions().containerHeight">
+
+  <!-- ── Table surface ───────────────────────────────────────────────────── -->
+  <div
+    class="absolute flex items-center justify-center bg-amber-50 border-2 border-amber-300 shadow-sm overflow-hidden"
+    [style.left.px]="tableSurfaceLeft()"
+    [style.top.px]="tableSurfaceTop()"
+    [style.width.px]="dimensions().tableWidth"
+    [style.height.px]="dimensions().tableHeight"
+    [style.borderRadius]="tableRadiusStyle()">
+    <span class="font-serif italic text-amber-800 text-center leading-tight px-2"
+          [style.fontSize.px]="dimensions().tableWidth > 80 ? 12 : 10">
+      {{ table().name }}
+    </span>
+  </div>
+
+  <!-- ── Seat slots ──────────────────────────────────────────────────────── -->
+  @for (seat of seats(); track seat.index) {
+    @if (interactive()) {
+      <!-- Interactive: acts as a CDK drop target for drag-to-seat assignment -->
+      <div
+        class="absolute flex items-center justify-center"
+        [style.left.px]="seat.left"
+        [style.top.px]="seat.top"
+        [style.width.px]="SEAT_SIZE"
+        [style.height.px]="SEAT_SIZE"
+        [id]="'seat-' + table().id + '-' + (seat.index + 1)"
+        cdkDropList
+        [cdkDropListData]="seat.guest ? [seat.guest] : []"
+        (cdkDropListDropped)="onSeatDrop($event, seat.index + 1)"
+        [title]="seat.guest
+          ? seat.guest.firstName + ' ' + seat.guest.lastName + ' — Seat ' + (seat.index + 1)
+          : 'Seat ' + (seat.index + 1) + ' — empty, drop a guest here'">
+        @if (seat.guest) {
+          <div class="w-full h-full rounded-full bg-slate-700 text-white flex items-center justify-center font-medium text-[10px] tracking-wide shadow-sm ring-2 ring-white cursor-default">
+            {{ seat.initials }}
+          </div>
+        } @else {
+          <div class="w-full h-full rounded-full border-2 border-dashed border-slate-300 bg-white/80 flex items-center justify-center transition-colors">
+            <span class="text-[9px] text-slate-400 select-none">{{ seat.index + 1 }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Non-interactive: display only, used in floor plan canvas -->
+      <div
+        class="absolute flex items-center justify-center"
+        [style.left.px]="seat.left"
+        [style.top.px]="seat.top"
+        [style.width.px]="SEAT_SIZE"
+        [style.height.px]="SEAT_SIZE"
+        [title]="seat.guest ? seat.guest.firstName + ' ' + seat.guest.lastName : 'Empty'">
+        @if (seat.guest) {
+          <div class="w-full h-full rounded-full bg-slate-700 text-white flex items-center justify-center font-medium text-[10px] tracking-wide shadow-sm ring-2 ring-white">
+            {{ seat.initials }}
+          </div>
+        } @else {
+          <div class="w-full h-full rounded-full border-2 border-dashed border-slate-300 bg-white/80 flex items-center justify-center">
+            <span class="text-[9px] text-slate-400 select-none">{{ seat.index + 1 }}</span>
+          </div>
+        }
+      </div>
+    }
+  }
+
+</div>

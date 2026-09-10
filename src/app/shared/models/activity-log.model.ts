@@ -39,7 +39,7 @@ export interface ActivityActor {
 }
 
 export interface ActivitySubject {
-  type: 'guest' | 'invitation';
+  type: 'guest' | 'invitation' | 'table' | 'floor_plan';
   id: string;
   /** Denormalised display label so the feed renders fast without joins. */
   name: string;
@@ -50,6 +50,7 @@ export type ActivityAction =
   | 'guest_attendance_changed'
   | 'guest_seated'
   | 'guest_unseated'
+  | 'guest_seat_assigned'
   | 'guest_moved'
   | 'guest_updated'
   | 'invitation_created'
@@ -59,4 +60,10 @@ export type ActivityAction =
   | 'outreach_cleared'
   | 'rsvp_submitted'
   | 'rsvp_timestamps_backfilled'
-  | 'invitation_codes_backfilled';
+  | 'invitation_codes_backfilled'
+  | 'table_created'
+  | 'table_updated'
+  | 'table_deleted'
+  | 'layout_saved'
+  | 'seating_saved'
+  | 'floor_plan_settings_updated';

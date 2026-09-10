@@ -134,7 +134,7 @@ service cloud.firestore {
         && request.resource.data.summary is string
         && request.resource.data.summary.size() <= 500
         && request.resource.data.actor.role in ['admin', 'guest', 'system']
-        && request.resource.data.subject.type in ['guest', 'invitation']
+        && request.resource.data.subject.type in ['guest', 'invitation', 'table', 'floor_plan']
         // Only admins (and system, which only runs from admin contexts)
         // may claim non-guest actor roles. Unauthenticated writers are
         // capped at role:'guest' so they can't forge admin actions in
@@ -146,6 +146,26 @@ service cloud.firestore {
         && request.resource.data.timestamp == request.time;
 
       allow update, delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // tables/{tableId}
+    // Admin-only. Tables are an internal planning resource — guests never
+    // need to read or write this collection directly. No public get is
+    // granted (unlike invitations/guests) because table data is not part
+    // of any guest-facing read path.
+    // -------------------------------------------------------------------------
+    match /tables/{tableId} {
+      allow read, write: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // floorPlanSettings/{settingsId}
+    // Single-document config (id: 'floorPlan') controlling canvas size/unit
+    // for the seating floor plan. Admin-only, same rationale as tables/.
+    // -------------------------------------------------------------------------
+    match /floorPlanSettings/{settingsId} {
+      allow read, write: if isAdmin();
     }
   }
 }

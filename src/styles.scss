@@ -164,4 +164,26 @@ html, body, app-root {
   .p-dialog .p-dialog-content {
     padding: 0 !important;
   }
+
+  // Floor plan / catering sheet.
+  // body { visibility: hidden } above blankets everything. Restore the
+  // print-root subtree without position:fixed so the content flows
+  // across multiple pages (unlike the invite QR which is one fixed panel).
+  app-floor-plan-canvas .print-root,
+  app-floor-plan-canvas .print-root * {
+    visibility: visible !important;
+  }
+
+  // TableVisual seat circles — bg-slate-700 / text-white don't print without
+  // "Background graphics". Switch to a dark border + dark ink approach so
+  // occupied seats are legible by default.
+  app-floor-plan-canvas app-table-visual {
+    .rounded-full.bg-slate-700 {
+      background-color: transparent !important;
+      border:           1.5pt solid #334155 !important;
+      color:            #334155 !important;
+      box-shadow:       none !important;
+      ring:             none !important;
+    }
+  }
 }

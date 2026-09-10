@@ -1,0 +1,288 @@
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FLOOR PLAN SETTINGS PANEL                                               -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="floor-plan-settings-panel p-4 border-b border-slate-100">
+  <h3>Floor Plan Settings</h3>
+  <div class="p-fluid p-formgrid p-grid">
+    <div class="p-field p-col-12 p-md-6">
+      <label for="width">Width ({{ editingUnit() }})</label>
+      <p-inputNumber id="width" [ngModel]="editingWidth()" (ngModelChange)="editingWidth.set($event)"
+                     [showButtons]="true" buttonLayout="horizontal"
+                     [step]="widthHeightBounds().step" [min]="widthHeightBounds().min" [max]="widthHeightBounds().max"></p-inputNumber>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="height">Height ({{ editingUnit() }})</label>
+      <p-inputNumber id="height" [ngModel]="editingHeight()" (ngModelChange)="editingHeight.set($event)"
+                     [showButtons]="true" buttonLayout="horizontal"
+                     [step]="widthHeightBounds().step" [min]="widthHeightBounds().min" [max]="widthHeightBounds().max"></p-inputNumber>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="unit">Unit</label>
+      <p-select id="unit" [ngModel]="editingUnit()" (ngModelChange)="onUnitChange($event)"
+                 [options]="unitOptions" optionLabel="label" optionValue="value"></p-select>
+    </div>
+    <div class="p-field p-col-12 p-md-6">
+      <label for="scaleFactor">Scale Factor</label>
+      <p-inputNumber id="scaleFactor" [ngModel]="editingScaleFactor()" (ngModelChange)="editingScaleFactor.set($event)"
+                     [showButtons]="true" buttonLayout="horizontal"
+                     [step]="1" [min]="1" [max]="1000"></p-inputNumber>
+      @if (editingUnit() !== 'px') {
+        <small class="text-slate-400">Pixels per meter — e.g. 100 means 1m (or 100cm) = 100px on the canvas.</small>
+      }
+    </div>
+  </div>
+  <button pButton type="button" label="Save Floor Plan Settings" (click)="saveFloorPlanSettings()" [disabled]="saving()"></button>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SCREEN VIEW                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="screen-view flex flex-col" style="height: calc(100vh - 220px); min-height: 500px;">
+
+  <!-- Toolbar -->
+  <div class="flex items-center justify-between px-1 py-3 border-b border-slate-100 shrink-0">
+    <div class="flex items-center gap-4">
+      <span class="text-xs text-slate-400 font-light">
+        {{ tables().length }} table{{ tables().length === 1 ? '' : 's' }}
+        &nbsp;·&nbsp;
+        {{ totalSeated() }}&thinsp;/&thinsp;{{ totalCap() }} seated
+      </span>
+      @if (unseatedCount() > 0) {
+        <span class="text-[10px] uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5">
+          {{ unseatedCount() }} unseated
+        </span>
+      }
+      <span class="text-[10px] text-slate-300 uppercase tracking-widest">
+        {{ GRID_SIZE }}px grid · drag to arrange · snaps on release
+      </span>
+      @if (hasPendingChanges()) {
+        <span class="text-[10px] uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5">
+          {{ pendingCount() }} unsaved
+        </span>
+      }
+    </div>
+    <div class="flex items-center gap-2">
+      <button
+        (click)="saveLayout()"
+        [disabled]="!hasPendingChanges() || saving()"
+        class="flex items-center gap-2 text-[10px] uppercase tracking-widest px-4 py-2 transition-colors border"
+        [class]="hasPendingChanges()
+          ? 'text-slate-900 bg-white border-slate-900 hover:bg-slate-900 hover:text-white'
+          : 'text-slate-300 border-slate-200 cursor-not-allowed'">
+        <i class="pi pi-save text-xs"></i>
+        {{ saving() ? 'Saving…' : 'Save Layout' }}
+      </button>
+      <div class="flex items-center border border-slate-300 text-[10px] uppercase tracking-widest overflow-hidden">
+        <button
+          (click)="printLang.set('en')"
+          [class]="printLang() === 'en' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'"
+          class="px-2 py-2 transition-colors"
+          title="Print sheet language: English">
+          EN
+        </button>
+        <button
+          (click)="printLang.set('es')"
+          [class]="printLang() === 'es' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'"
+          class="px-2 py-2 border-l border-slate-300 transition-colors"
+          title="Print sheet language: Spanish">
+          ES
+        </button>
+      </div>
+      <button
+        (click)="print()"
+        class="flex items-center gap-2 text-[10px] uppercase tracking-widest text-slate-900 border border-slate-300 hover:border-slate-900 px-4 py-2 transition-colors">
+        <i class="pi pi-print text-xs"></i>
+        Print / Save PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Canvas — scrollable, fills remaining space -->
+  <div class="flex-1 overflow-auto bg-slate-100">
+    <div
+      #canvasSurface
+      class="canvas-surface relative shrink-0"
+      [style.width.px]="CANVAS_WIDTH()"
+      [style.height.px]="CANVAS_HEIGHT()">
+
+      @if (tables().length === 0) {
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <p class="text-sm text-slate-400 italic font-light">
+            Add tables in the Seating tab, then arrange them here.
+          </p>
+        </div>
+      }
+
+      @for (tableView of tables(); track tableView.table.id) {
+        @let pos = tablePositions().get(tableView.table.id) ?? { x: 40, y: 40 };
+        <div
+          cdkDrag
+          [cdkDragFreeDragPosition]="pos"
+          [cdkDragBoundary]="canvasSurface"
+          (cdkDragEnded)="onDragEnded($event, tableView.table)"
+          class="absolute select-none cursor-grab active:cursor-grabbing"
+          style="left: 0; top: 0"
+          [attr.data-table-id]="tableView.table.id">
+
+          <!-- Drag handle — full visual area -->
+          <div class="flex flex-col items-center">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block pointer-events-none shrink-0">
+            </app-table-visual>
+            <span class="mt-1 text-[10px] text-slate-500 uppercase tracking-widest pointer-events-none whitespace-nowrap">
+              {{ tableView.table.name }}
+            </span>
+          </div>
+
+          <!-- Drag preview -->
+          <div *cdkDragPreview class="flex flex-col items-center opacity-80">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block shrink-0">
+            </app-table-visual>
+            <span class="mt-1 text-[10px] text-slate-500 uppercase tracking-widest whitespace-nowrap">
+              {{ tableView.table.name }}
+            </span>
+          </div>
+
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- PRINT LAYOUT — hidden on screen, rendered on print                      -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+<div class="print-root">
+
+  <!-- ── Page 1: Visual Floor Plan ── -->
+  <div class="print-page">
+
+    <header class="print-header">
+      <h1 class="print-h1">{{ printStrings().floorPlanTitle }}</h1>
+      <p class="print-subtitle">{{ printStrings().floorPlanSubtitle }}</p>
+    </header>
+
+    <!-- Canvas scaled to fit page width -->
+    <div class="print-canvas-outer">
+      <div class="print-canvas-inner"
+           [style.width.px]="CANVAS_WIDTH()"
+           [style.height.px]="CANVAS_HEIGHT()"
+           [style.zoom]="printZoom()">
+
+        @for (tableView of tables(); track tableView.table.id) {
+          @let pos = tablePositions().get(tableView.table.id) ?? { x: 40, y: 40 };
+          <div
+            class="print-table-chip"
+            [style.left.px]="pos.x"
+            [style.top.px]="pos.y">
+            <app-table-visual
+              [table]="tableView.table"
+              [guests]="tableView.guests"
+              class="block shrink-0">
+            </app-table-visual>
+            <span class="print-table-chip-label">{{ tableView.table.name }}</span>
+          </div>
+        }
+
+      </div>
+    </div>
+
+    <!-- Summary legend below map -->
+    <div class="print-legend">
+      <span>{{ printStrings().tablesLabel(tables().length) }}</span>
+      <span>{{ printStrings().seatsFilledLabel(totalSeated(), totalCap()) }}</span>
+      @if (unseatedCount() > 0) {
+        <span class="print-warning">{{ printStrings().unseatedWarning(unseatedCount()) }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- ── Page 2+: Catering & Dietary Sheet ── -->
+  <div class="print-page print-page-break">
+
+    <header class="print-header">
+      <h1 class="print-h1">{{ printStrings().cateringTitle }}</h1>
+      <p class="print-subtitle">{{ printStrings().cateringSubtitle }}</p>
+    </header>
+
+    @for (view of cateringViews(); track view.table.id) {
+      <section class="print-section">
+        <div class="print-section-heading">
+          <span class="print-section-name">{{ view.table.name }}</span>
+          <span class="print-section-meta">
+            {{ shapeLabel(view.table.shape) }} &nbsp;·&nbsp;
+            {{ view.table.shape === 'round' ? 'Ø' : '' }}
+            {{ printStrings().guestsLabel(view.occupancy, view.table.capacity) }}
+          </span>
+          @if (view.isOverCapacity) {
+            <span class="print-over-capacity">{{ printStrings().overCapacity }}</span>
+          }
+        </div>
+
+        @if (view.rows.length === 0) {
+          <p class="print-empty">{{ printStrings().noGuestsAssigned }}</p>
+        } @else {
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th class="col-name">{{ printStrings().colGuestName }}</th>
+                <th class="col-seat">{{ printStrings().colSeat }}</th>
+                <th class="col-diet">{{ printStrings().colDietary }}</th>
+                <th class="col-allergy">{{ printStrings().colAllergy }}</th>
+                <th class="col-notes">{{ printStrings().colNotes }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of view.rows; track row.id) {
+                <tr [class.print-row-flagged]="row.hasDietary">
+                  <td>{{ row.firstName }} {{ row.lastName }}</td>
+                  <td>{{ row.seatNumber ?? printStrings().none }}</td>
+                  <td>{{ formatChips(row.dietaryPreferences) }}</td>
+                  <td>{{ formatChips(row.allergies) }}</td>
+                  <td>{{ row.dietaryNotes || printStrings().none }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+    }
+
+    @if (unseatedGuests().length > 0) {
+      <section class="print-section">
+        <div class="print-section-heading">
+          <span class="print-section-name">{{ printStrings().unseatedSectionTitle }}</span>
+          <span class="print-section-meta">{{ printStrings().unseatedSectionMeta(unseatedGuests().length) }}</span>
+        </div>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th class="col-name">{{ printStrings().colGuestName }}</th>
+              <th class="col-diet">{{ printStrings().colDietary }}</th>
+              <th class="col-allergy">{{ printStrings().colAllergy }}</th>
+              <th class="col-notes">{{ printStrings().colNotes }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of unseatedGuests(); track g.id) {
+              <tr [class.print-row-flagged]="!!(g.dietaryPreferences?.length || g.allergies?.length || g.dietaryNotes)">
+                <td>{{ g.firstName }} {{ g.lastName }}</td>
+                <td>{{ formatChips(g.dietaryPreferences) }}</td>
+                <td>{{ formatChips(g.allergies) }}</td>
+                <td>{{ g.dietaryNotes || printStrings().none }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    }
+
+  </div><!-- /catering page -->
+</div><!-- /print-root -->

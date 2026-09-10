@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/services/auth/auth';
 import { FirestoreService } from '../../core/services/firestore/firestore';
 import { AdminStateService } from './services/admin-state.service';
+import { TablePlannerStateService } from './services/table-planner-state.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Guest } from '../../shared/models/guest.model';
@@ -15,6 +16,7 @@ import { ActivityLog } from './components/activity-log/activity-log';
 import { GuestPool } from './components/guest-pool/guest-pool.component';
 import { InvitationGroups } from './components/invitation-groups/invitation-groups.component';
 import { SeatingChart } from './components/seating-chart/seating-chart';
+import { FloorPlanCanvas } from './components/floor-plan-canvas/floor-plan-canvas';
 import { StatsComponent } from './components/stats/stats.component';
 import { StatsV2 } from './components/stats-v2/stats-v2';
 
@@ -27,10 +29,10 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
   standalone: true,
   imports: [
     CommonModule, ToastModule, ConfirmDialogModule,
-    GuestPool, InvitationGroups, SeatingChart, StatsComponent, StatsV2, ActivityLog
+    GuestPool, InvitationGroups, SeatingChart, FloorPlanCanvas, StatsComponent, StatsV2, ActivityLog
   ],
   providers: [
-    DialogService, ConfirmationService, MessageService, AdminStateService
+    DialogService, ConfirmationService, MessageService, AdminStateService, TablePlannerStateService
   ],
   templateUrl: './admin.html',
 })
@@ -64,10 +66,10 @@ export class Admin {
   readonly pendingInvitationCount = computed(
     () => this.allInvitations().filter(inv => inv.status !== 'responded').length
   );
-  /** Attending guests with no tableName — drives the Seating tab badge. */
+  /** Attending guests with no tableId — drives the Seating tab badge. */
   readonly unseatedAttendingCount = computed(
     () => this.allGuests().filter(
-      g => g.isAttending === true && (!g.tableName || g.tableName.trim().length === 0)
+      g => g.isAttending === true && !g.tableId
     ).length
   );
 

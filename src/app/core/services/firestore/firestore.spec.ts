@@ -53,7 +53,7 @@ describe('FirestoreService', () => {
     expect(typeof service.setInvitationOutreachStage).toBe('function');
     expect(typeof service.backfillRsvpSubmittedAt).toBe('function');
     expect(typeof service.moveGuestToInvitation).toBe('function');
-    expect(typeof service.setGuestTable).toBe('function');
+    expect(typeof service.setGuestTableById).toBe('function');
     expect(typeof service.logActivity).toBe('function');
     expect(typeof service.getRecentActivity).toBe('function');
     expect(typeof service.assignGuestsToInvitation).toBe('function');

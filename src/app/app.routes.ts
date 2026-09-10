@@ -3,6 +3,7 @@ import { SaveTheDate } from './shared/components/save-the-date/save-the-date';
 import { authGuard } from './core/guards/auth/auth-guard';
 import { MainLayout } from './core/layout/main-layout/main-layout';
 import { guestGuard } from './core/guards/guest/guest-guard';
+import { pendingChangesGuard } from './core/guards/pending-changes/pending-changes.guard';
 
 export const routes: Routes = [
   {
@@ -18,7 +19,8 @@ export const routes: Routes = [
         path: 'admin',
         loadComponent: () =>
           import('./features/admin/admin').then(m => m.Admin),
-        canActivate: [authGuard]
+        canActivate: [authGuard],
+        canDeactivate: [pendingChangesGuard]
       },
       // SaveTheDate stays eager — it's the default landing route, so its
       // bundle is fetched on first paint anyway. Lazy-loading it would

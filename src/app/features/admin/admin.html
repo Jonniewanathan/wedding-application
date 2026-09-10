@@ -3,7 +3,7 @@
 
 <div class="min-h-screen bg-white text-slate-900 p-4 md:p-6 lg:p-12 pb-24">
 
-  <header class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-100 pb-6 md:pb-8 mb-8 md:mb-10 gap-4">
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-100 pb-6 md:pb-8 mb-8 md:mb-10 gap-4 print:hidden">
     <div>
       <span class="block text-xs font-sans uppercase tracking-[0.3em] text-slate-500 mb-2">
         Admin Suite
@@ -31,7 +31,7 @@
   </header>
 
   <!-- Custom Tabs for Eager Loading -->
-  <div class="editorial-tabs mb-4 w-full overflow-x-auto border-b border-slate-200">
+  <div class="editorial-tabs mb-4 w-full overflow-x-auto border-b border-slate-200 print:hidden">
     <div class="p-tablist flex space-x-6 min-w-max">
       <button
         (click)="activeTabIndex = 0"
@@ -78,7 +78,7 @@
         [class.text-slate-900]="activeTabIndex === 3"
         [class.font-medium]="activeTabIndex === 3"
         class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
-        Stats & Export
+        Floor Plan
       </button>
       <button
         (click)="activeTabIndex = 4"
@@ -87,8 +87,7 @@
         [class.text-slate-900]="activeTabIndex === 4"
         [class.font-medium]="activeTabIndex === 4"
         class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
-        Stats V2
-        <span class="ml-1 text-[8px] text-amber-600 uppercase tracking-widest">Preview</span>
+        Stats & Export
       </button>
       <button
         (click)="activeTabIndex = 5"
@@ -96,6 +95,16 @@
         [class.border-slate-900]="activeTabIndex === 5"
         [class.text-slate-900]="activeTabIndex === 5"
         [class.font-medium]="activeTabIndex === 5"
+        class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
+        Stats V2
+        <span class="ml-1 text-[8px] text-amber-600 uppercase tracking-widest">Preview</span>
+      </button>
+      <button
+        (click)="activeTabIndex = 6"
+        [class.border-b-2]="activeTabIndex === 6"
+        [class.border-slate-900]="activeTabIndex === 6"
+        [class.text-slate-900]="activeTabIndex === 6"
+        [class.font-medium]="activeTabIndex === 6"
         class="pb-2 text-xs md:text-sm text-slate-500 hover:text-slate-800 transition-colors uppercase tracking-widest border-b-2 border-transparent">
         Activity
       </button>
@@ -113,14 +122,17 @@
     @if (activeTabIndex === 2) {
       <app-seating-chart></app-seating-chart>
     }
-    <!-- IMPORTANT FIX: Use *ngIf for charts. Chart.js fails to initialize correctly if its container starts with display: none -->
     @if (activeTabIndex === 3) {
+      <app-floor-plan-canvas></app-floor-plan-canvas>
+    }
+    <!-- IMPORTANT FIX: Use @if for charts. Chart.js fails to initialize correctly if its container starts with display: none -->
+    @if (activeTabIndex === 4) {
       <app-stats></app-stats>
     }
-    @if (activeTabIndex === 4) {
+    @if (activeTabIndex === 5) {
       <app-stats-v2></app-stats-v2>
     }
-    @if (activeTabIndex === 5) {
+    @if (activeTabIndex === 6) {
       <app-activity-log></app-activity-log>
     }
   </div>

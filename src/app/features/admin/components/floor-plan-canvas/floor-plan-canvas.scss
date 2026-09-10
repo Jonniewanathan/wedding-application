@@ -1,0 +1,242 @@
+// ── Screen / print visibility ─────────────────────────────────────────────────
+//
+// Tailwind's print: variant ordering is not guaranteed to override `hidden`
+// (`display:none`) reliably in v4. Owning this here is unambiguous.
+
+.screen-view {
+  // Visible on screen — no rule needed; default display is block/flex.
+}
+
+.print-root {
+  display: none; // hidden on screen
+}
+
+@media print {
+  .screen-view { display: none !important; }
+  .print-root  { display: block !important; }
+}
+
+
+// ── Canvas grid ──────────────────────────────────────────────────────────────
+
+.canvas-surface {
+  background-color: #f8fafc; // slate-50
+  background-image: radial-gradient(circle, #94a3b8 1px, transparent 1px); // slate-400 dots
+  background-size: 20px 20px;
+
+  // Subtle inner shadow to suggest bounds
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.04);
+}
+
+// CDK drag placeholder — faint ghost where the element started
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+// CDK drag animating back on failed drop
+.cdk-drag-animating {
+  transition: transform 150ms ease-out;
+}
+
+
+// ── Print layout ──────────────────────────────────────────────────────────────
+
+@media print {
+
+  // ── Page setup
+  @page {
+    margin: 12mm 15mm;
+  }
+  // @page :first { size: A4 landscape } removed — inconsistent browser support
+  // causes a blank first page in some Chrome builds.
+
+  // ── Canvas scaling
+  //
+  // `transform: scale()` does NOT affect the layout box — the browser still
+  // paginates the full canvas width, producing blank overflow pages.
+  // `zoom` DOES affect the layout box, so it's set inline (bound to
+  // FloorPlanCanvas.printZoom) alongside width/height, both of which come
+  // from the configured floor plan settings rather than a fixed size.
+  // Chrome/Edge only, but those are the only browsers used for "Save as PDF".
+
+  .print-canvas-outer {
+    margin-bottom: 10pt;
+  }
+
+  .print-canvas-inner {
+    position: relative;
+    border:    1pt solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .print-table-chip {
+    position: absolute;
+  }
+
+  .print-table-chip-label {
+    display:         block;
+    text-align:      center;
+    font-size:       8pt;
+    text-transform:  uppercase;
+    letter-spacing:  0.1em;
+    color:           #475569; // slate-600
+    margin-top:      2px;
+  }
+
+  // ── Page-level containers
+
+  .print-page {
+    // No min-height — letting it grow to its natural content height prevents
+    // blank pages caused by forcing each section to fill a full print page.
+  }
+
+  .print-page-break {
+    page-break-before: always;
+    break-before:      page;
+  }
+
+  // ── Header
+
+  .print-header {
+    margin-bottom: 14pt;
+    border-bottom: 2pt solid #0f172a; // slate-900
+    padding-bottom: 6pt;
+  }
+
+  .print-h1 {
+    font-family:   Georgia, 'Times New Roman', serif;
+    font-size:     20pt;
+    font-weight:   bold;
+    color:         #0f172a;
+    margin-bottom: 2pt;
+  }
+
+  .print-subtitle {
+    font-size:   9pt;
+    color:       #64748b; // slate-500
+    font-style:  italic;
+  }
+
+  // ── Legend below map
+
+  .print-legend {
+    display:     flex;
+    gap:         20pt;
+    margin-top:  8pt;
+    font-size:   9pt;
+    color:       #475569;
+  }
+
+  .print-warning {
+    color:       #b45309; // amber-700
+    font-weight: bold;
+  }
+
+  // ── Catering sheet sections
+
+  .print-section {
+    margin-bottom: 14pt;
+    page-break-inside: avoid;
+    break-inside:      avoid;
+  }
+
+  // Section headings use borders + dark ink — no background fill needed.
+  // Dark-fill + white-text was invisible without "Background graphics" in Chrome.
+
+  .print-section-heading {
+    display:         flex;
+    align-items:     baseline;
+    gap:             10pt;
+    border-top:      2pt solid #0f172a;
+    border-bottom:   1pt solid #0f172a;
+    padding:         4pt 4pt;
+    margin-bottom:   0;
+    color:           #0f172a;
+  }
+
+  .print-section-name {
+    font-family:   Georgia, serif;
+    font-size:     12pt;
+    font-weight:   bold;
+    font-style:    italic;
+    color:         #0f172a;
+  }
+
+  .print-section-meta {
+    font-size:  9pt;
+    color:      #475569; // slate-500 — explicit dark value, not opacity-based
+  }
+
+  .print-over-capacity {
+    margin-left:     auto;
+    font-size:       8pt;
+    font-weight:     bold;
+    color:           #dc2626; // red-600 — dark enough to print on white
+    letter-spacing:  0.05em;
+  }
+
+  .print-empty {
+    font-size:  9pt;
+    color:      #94a3b8;
+    font-style: italic;
+    padding:    4pt 0;
+  }
+
+  // ── Data table
+
+  .print-table {
+    width:           100%;
+    border-collapse: collapse;
+    font-size:       9pt;
+    margin-bottom:   0;
+  }
+
+  // Column headers: thick bottom border instead of dark fill.
+  // Dark-fill + white-text was invisible without "Background graphics".
+
+  .print-table thead tr {
+    border-bottom: 2pt solid #0f172a;
+  }
+
+  .print-table th,
+  .print-table td {
+    border:         1pt solid #94a3b8; // slate-400 — light grid lines
+    padding:        3pt 6pt;
+    text-align:     left;
+    vertical-align: top;
+  }
+
+  .print-table th {
+    font-size:      8pt;
+    font-weight:    bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color:          #0f172a;
+    border-bottom:  2pt solid #0f172a; // overrides the general 1pt rule
+  }
+
+  // Column widths (name/seat/diet/allergy/notes sum to 100%; the unseated
+  // table omits the seat column and lets its last column absorb the slack)
+  .col-name    { width: 22%; }
+  .col-seat    { width: 8%; }
+  .col-diet    { width: 26%; }
+  .col-allergy { width: 22%; }
+  .col-notes   { width: 22%; }
+
+  // Flagged row — guest has dietary requirements.
+  // Background tint won't print without "Background graphics"; use a bold
+  // left border as the primary indicator instead.
+  .print-row-flagged {
+    font-weight: bold;
+
+    td:first-child {
+      border-left: 3pt solid #d97706; // amber-600 — prints reliably
+    }
+
+    td:first-child::before {
+      content: '⚑ ';
+      color:   #92400e; // amber-900 — dark enough on white
+    }
+  }
+
+} // end @media print
